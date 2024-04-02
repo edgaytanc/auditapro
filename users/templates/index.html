@@ -1,0 +1,22 @@
+<!-- templates/index.html -->
+
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inicio</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+  <div class="container text-center mt-5">
+    <img src="{% static 'img/logo-vertical.png' %}" alt="Logo" class="mb-3 logo">
+    <h1>Bienvenido {{ nombre_usuario }}</h1>
+  </div>
+  <!-- Incluir los archivos JavaScript de Bootstrap si aún no están incluidos -->
+  <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
