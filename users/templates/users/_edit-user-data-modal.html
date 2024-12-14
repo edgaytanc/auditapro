@@ -1,0 +1,31 @@
+{% load filters %}
+
+{% block content %}
+
+<div class="modal fade" id="modal-{{field}}" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalLabel-{{ modal_id }}" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="modalLabel-{{field}}">Editar</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form data-modal-form="true" action="{% url 'edit_field' field=field %}" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+            <label for="modal-{{field}}" class="form-label">{{ edit_field }}</label>
+            {% if field == "email" %}
+            <input type="email" name="value" id="{{field}}" class="form-control w-100" value="{{ user|getattr:field }}" required>
+            {% else %}
+            <input type="text" name="value" id="{{field}}" class="form-control w-100" value="{{ user|getattr:field }}" required>
+            {% endif %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

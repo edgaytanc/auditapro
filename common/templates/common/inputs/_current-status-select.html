@@ -1,0 +1,11 @@
+<select class="form-select"
+        aria-label="Estado Actual"
+        name="current-status"
+        id="current-status-input"
+        {% if form %}form="{{ form }}"{% endif %}>
+  {{ current_status }}
+  {% for current_status in current_statuses %}
+    <option value="{{ current_status.id }}"
+            {% if selected_id and current_status.id == selected_id %}selected{% endif %}>{{ current_status }}</option>
+  {% endfor %}
+</select>

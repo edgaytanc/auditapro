@@ -1,0 +1,301 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Actividades
+{% endblock title %}
+
+{% load filters %}
+
+{% block page_title %}
+  Detalles de la Actividad
+{% endblock page_title %}
+{% block page_subtitle %}
+  Referencia: {{ activity.reference }}
+{% endblock page_subtitle %}
+{% block main_header_content %}
+  <div class="row justify-content-end align-items-end g-3">
+    <div class="col-sm-auto col-12">
+      <button class="btn btn-primary d-flex gap-2 col-12 align-items-center justify-content-center"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#update-days-modal">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             fill="none"
+             viewBox="0 0 24 24"
+             stroke-width="1.5"
+             stroke="currentColor"
+             width="24"
+             height="24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+        </svg>
+        Editar
+      </button>
+      <div class="modal fade" tabindex="-1" id="update-days-modal">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Actualizar Actividad</h5>
+              <button type="button"
+                      class="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form action="{% url 'activity' activity.id %}"
+                    id="update-activity-form"
+                    class="d-none"
+                    method="post">
+                {% csrf_token %}
+              </form>
+              <div class="mb-3">
+                <label for="activity" class="form-label">Nombre de la Actividad</label>
+                <input type="text"
+                       class="form-control"
+                       id="activity"
+                       name="activity"
+                       placeholder="Ingrese el nombre de la actividad"
+                       value="{{ activity.activity }}"
+                       form="update-activity-form"
+                       required />
+              </div>
+              <div class="mb-3">
+                <label for="appointment-number" class="form-label">Número de Nombramiento</label>
+                <input type="text"
+                       class="form-control"
+                       id="appointment-number"
+                       name="appointment-number"
+                       placeholder="Ingrese el número de nombramiento de la actividad"
+                       value="{{ activity.appointment_number }}"
+                       form="update-activity-form"
+                       required />
+              </div>
+              <div class="mb-3">
+                <label for="start-date-input" class="form-label">Fecha de Inicio</label>
+                <input type="date"
+                       class="form-control"
+                       id="start-date-input"
+                       name="start-date"
+                       placeholder="Ingrese la fecha de inicio"
+                       value="{{ activity.start_date|date:'Y-m-d' }}"
+                       form="update-activity-form"
+                       required />
+              </div>
+              <div class="mb-3">
+                <label for="end-date-input" class="form-label">Fecha de Finalización</label>
+                <input type="date"
+                       class="form-control"
+                       id="end-date-input"
+                       name="end-date"
+                       placeholder="Ingrese la fecha de finilización"
+                       value="{{ activity.end_date|date:'Y-m-d' }}"
+                       form="update-activity-form"
+                       required />
+              </div>
+              <div class="mb-3">
+                <label for="current-status-input" class="form-label">Estado</label>
+
+                {% include "common/inputs/_current-status-select.html" with selected_id=activity.current_status.id form="update-activity-form" %}
+
+              </div>
+              <div class="mb-3">
+                <label for="observations-input" class="form-label">Observaciones</label>
+                <textarea class="form-control"
+                          placeholder="Ingrese alguna observación"
+                          id="observations-input"
+                          name="observations"
+                          form="update-activity-form"
+                          style="height: 150px">{{activity.observations}}</textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="reset"
+                      class="btn btn-secondary"
+                      data-bs-dismiss="modal"
+                      form="update-activity-form">Cancelar</button>
+              <button type="submit" class="btn btn-primary" form="update-activity-form">Actualizar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock main_header_content %}
+{% block main_content %}
+  <section class="w-100 d-flex flex-column gap-5">
+    <article class="w-100" id="tabs-container">
+      <header class="d-flex justify-content-start mb-3">
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+          <li class="nav-item" role="presentation">
+            <a class="nav-link active text-truncate"
+               id="activity-info-tab"
+               data-bs-toggle="tab"
+               href="#activity-info"
+               role="tab"
+               aria-controls="info"
+               aria-selected="true">Detalles del Auditor</a>
+          </li>
+          <li class="nav-item" role="presentation">
+            <a class="nav-link text-truncate"
+               id="time-register-tab"
+               data-bs-toggle="tab"
+               href="#time-register"
+               role="tab"
+               aria-controls="otro"
+               aria-selected="false">Registro de tiempo</a>
+          </li>
+        </ul>
+      </header>
+      <div class="tab-content" id="myTabContent">
+        <div class="tab-pane fade show active"
+             id="activity-info"
+             role="tabpanel"
+             aria-labelledby="info-tab">
+          <div class="container-fluid">
+            <div class="row gx-md-5 gy-5">
+              <div class="col">
+                <div class="card shadow-sm">
+                  <div class="card-body">
+                    <h3 class="card-title fs-5 fw-semibold mb-3">Información General</h3>
+                    <ol class="list-unstyled d-flex flex-column gap-3">
+                      <li class="d-flex flex-row align-items-center w-100 gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke-width="1.5"
+                             stroke="currentColor"
+                             width="24"
+                             height="24">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                        </svg>
+                        <div class="d-flex flex-column">
+                          <p class="p-0 m-0 fw-medium text-secondary">Creado por</p>
+                          <strong class="p-0 m-0">{{ activity.created_by }}</strong>
+                        </div>
+                      </li>
+                      <li class="d-flex flex-row align-items-center w-100 gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             width="24"
+                             height="24"
+                             viewBox="0 0 24 24"
+                             fill="none"
+                             stroke="currentColor"
+                             stroke-width="2"
+                             stroke-linecap="round"
+                             stroke-linejoin="round"
+                             class="lucide lucide-briefcase h-5 w-5 text-gray-500 mr-2"
+                             data-id="60">
+                          <path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                          <rect width="20" height="14" x="2" y="6" rx="2"></rect>
+                        </svg>
+                        <div class="d-flex flex-column">
+                          <p class="p-0 m-0 fw-medium text-secondary">Auditoría</p>
+                          <strong class="p-0 m-0">{{ activity.audit }}</strong>
+                        </div>
+                      </li>
+                      <li class="d-flex flex-row align-items-center w-100 gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke-width="1.5"
+                             stroke="currentColor"
+                             width="24"
+                             height="24">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-2.1-19.5-3.9 19.5" />
+                        </svg>
+                        <div class="d-flex flex-column">
+                          <p class="p-0 m-0 fw-medium text-secondary">Número de Nombramiento</p>
+                          <strong class="p-0 m-0">{{ activity.appointment_number }}</strong>
+                        </div>
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+              <div class="col">
+                <div class="col">
+                  <div class="card shadow-sm">
+                    <div class="card-body">
+                      <h3 class="card-title fs-5 fw-semibold mb-3">Detalles de la Actividad</h3>
+                      <ol class="list-unstyled d-flex flex-column gap-3">
+                        <li class="d-flex flex-row align-items-center w-100">
+                          <div class="d-flex flex-column">
+                            <p class="p-0 m-0 fw-medium text-secondary">Nombre de la Actividad</p>
+                            <strong class="p-0 m-0">{{ activity.activity }}</strong>
+                          </div>
+                        </li>
+                        <li class="d-flex flex-row align-items-center justify-content-between w-100 gap-3">
+                          <div class="d-flex flex-column">
+                            <p class="p-0 m-0 fw-medium text-secondary">Fecha de Inicio</p>
+                            <strong class="p-0 m-0">{{ activity.start_date|format_date }}</strong>
+                          </div>
+                          <div class="d-flex flex-column">
+                            <p class="p-0 m-0 fw-medium text-secondary">Fecha de Finalización</p>
+                            <strong class="p-0 m-0">{{ activity.end_date|format_date }}</strong>
+                          </div>
+                        </li>
+                        <li class="d-flex flex-row align-items-center justify-content-between w-100 gap-3">
+                          <div class="d-flex flex-column">
+                            <p class="p-0 m-0 fw-medium text-secondary">Estado Actual</p>
+                            <strong class="p-0 m-0">{{ activity.current_status }}</strong>
+                          </div>
+                          <div class="d-flex flex-column">
+                            <p class="p-0 m-0 fw-medium text-secondary">Días Totales</p>
+                            <strong class="p-0 m-0">{{ activity.get_total_days|format_duration:"days" }}</strong>
+                          </div>
+                        </li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card shadow-sm mt-5">
+            <div class="card-body">
+              <h3 class="card-title fs-5 fw-semibold mb-3">Observaciones</h3>
+              <p>
+                {% if activity.observations %}
+                  {{ activity.observations }}
+                {% else %}
+                  No hay observaciones por el momento.
+                {% endif %}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane fade"
+             id="time-register"
+             role="tabpanel"
+             aria-labelledby="otro-tab">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <form action="{% url 'activity_total_days_per_month' activity.id %}"
+                    method="post"
+                    class="d-none"
+                    id="total-days-form">
+                {% csrf_token %}
+              </form>
+              <h3 class="card-title fs-5 fw-semibold mb-3">Editar Días Totales Trabajados</h3>
+              <ol class="list-unstyled">
+                {% for total_days_per_month in total_days_per_month_list %}
+                  <li>
+                    <div class="input-group mb-3">
+                      <span class="input-group-text">{{ total_days_per_month.month_name|title }} ({{ total_days_per_month.year }})</span>
+                      <input type="text"
+                             class="form-control text-end"
+                             name="month-{{ total_days_per_month.month }}&year-{{ total_days_per_month.year }}"
+                             value="{{ total_days_per_month.total_days|format_duration_only_number }}"
+                             maxlength="2"
+                             form="total-days-form" />
+                    </div>
+                  </li>
+                {% endfor %}
+              </ol>
+              <button class="btn btn-primary ms-auto" form="total-days-form" type="submit">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+{% endblock main_content %}

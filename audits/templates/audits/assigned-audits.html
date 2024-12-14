@@ -1,0 +1,138 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+    Auditorias Asignadas
+{% endblock title %}
+{% block page_title %}
+    Auditorías
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_header_content %}
+    {% if user.role.name == "audit_manager" %}
+        <div class="px-5 d-flex justify-content-end">
+            <a href="{% url 'create_audit' %}">
+                <button type="button" class="btn btn-secondary">Crear Auditoria</button>
+            </a>
+        </div>
+    {% endif %}
+{% endblock main_header_content %}
+
+{% load filters %}
+
+{% block main_content %}
+    {% if user.role.name == "supervisor" or user.role.name == "auditor" %}
+        {% if assigned_audits %}
+            <h2 class="mb-4 display-6">Auditorias Asignadas</h2>
+            <ul class="list-unstyled gap-5 d-flex flex-column w-100 px-3">
+                {% for audit in assigned_audits %}
+                    <li class="card card-custom bg-card shadow-md col-md-6 col-12 my-4 mx-auto"
+                        id="audit-card-{{ audit.id }}">
+                        <header class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-1 fw-semibold">{{ audit.title }}</h4>
+                                    <p class="mb-1 text-secondary">{{ audit.company }}.</p>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <svg width="24"
+                                         height="24"
+                                         viewBox="0 0 24 24"
+                                         fill="none"
+                                         xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M15 17C16.1046 17 17 16.1046 17 15C17 13.8954 16.1046 13 15 13C13.8954 13 13 13.8954 13 15C13 16.1046 13.8954 17 15 17Z" fill="currentColor" />
+                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M6 3C4.34315 3 3 4.34315 3 6V18C3 19.6569 4.34315 21 6 21H18C19.6569 21 21 19.6569 21 18V6C21 4.34315 19.6569 3 18 3H6ZM5 18V7H19V18C19 18.5523 18.5523 19 18 19H6C5.44772 19 5 18.5523 5 18Z" fill="currentColor" />
+                                    </svg>
+                                    <span>fecha</span>
+                                </div>
+                            </div>
+                        </header>
+                        <main class="card-body p-4">
+                            <p class="text-secondary">{{ audit.description }}</p>
+                            <div class="d-flex justify-content-between mt-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         width="24"
+                                         height="24"
+                                         viewBox="0 0 24 24"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         stroke-width="2"
+                                         stroke-linecap="round"
+                                         stroke-linejoin="round"
+                                         class="text-muted-foreground">
+                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                    <span class="text-secondary">{{ audit.audit_manager.get_full_name }}</span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                         width="24"
+                                         height="24"
+                                         viewBox="0 0 24 24"
+                                         fill="none"
+                                         stroke="currentColor"
+                                         stroke-width="2"
+                                         stroke-linecap="round"
+                                         stroke-linejoin="round"
+                                         class="text-muted-foreground">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    <span class="text-secondary">{{ audit.created_at|format_date }}</span>
+                                </div>
+                            </div>
+                        </main>
+                        <footer class="card-body d-flex justify-content-between">
+                            <button type="button"
+                                    class="btn btn-secondary hover-bg-accent text-white"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#audit-details-modal{{ audit.id }}">Detalles</button>
+                            <button class="btn btn-primary">Realizar</button>
+                        </footer>
+                    </li>
+                    {% with audit=audit %}
+
+                        {% include "audits/_audit-details-modal.html" with audit=audit %}
+
+                    {% endwith %}
+                {% endfor %}
+            </ul>
+        {% else %}
+            <h4 class="mb-4 display-6">No tiene auditorias asignadas por el momento.</h4>
+        {% endif %}
+    {% elif user.role.name == "audit_manager" %}
+        {% if audits_to_manage %}
+            <h2 class="mb-4 display-6">Auditorias Para Gestionar</h2>
+            <div class="overflow-hidden p-0">
+                <ul class="row list-unstyled gx-5 gy-5 w-100 px-md-3 justify-content-center mx-auto">
+                    {% for audit in audits_to_manage %}
+                        <li id="audit-card-{{ audit.id }}" class="p-0">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title fw-semibold">{{ audit.title }}</h5>
+                                    <h6 class="card-subtitle mb-2 text-secondary">{{ audit.company }}</h6>
+                                    <p class="card-text">
+                                        <div class="d-flex flex-column justify-content-between">
+                                            <p>
+                                                <strong>Estado:</strong>En progreso
+                                            </p>
+                                            <p>
+                                                <strong>Creada en:</strong>{{ audit.created_at|format_date }}
+                                            </p>
+                                        </div>
+                                    </p>
+                                    <a href="{% url 'manage_audit' audit.id %}"
+                                       class="btn btn-outline-primary w-100">Gestionar Detalles</a>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% else %}
+            <h4 class="mb-4 display-6">No tiene auditorias para gestionar por el momento.</h4>
+        {% endif %}
+    {% endif %}
+{% endblock main_content %}

@@ -1,0 +1,15 @@
+{% extends "tools/base-pdf.html" %}
+
+{% load filters %}
+
+{% block page_title %}
+  Estado de Papeles De Trabajo
+{% endblock page_title %}
+{% block styles %}
+{% endblock styles %}
+
+{% load render_table from django_tables2 %}
+
+{% block table_content %}
+  {% render_table table %}
+{% endblock table_content %}

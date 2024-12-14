@@ -1,0 +1,72 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Crear Auditoria
+{% endblock title %}
+{% block page_title %}
+  Crear Auditoría
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_content %}
+  <section class="card w-100 bg-body-tertiary shadow">
+    <header class="card-body p-4">
+      <h3 class="card-title text-2xl font-semibold">Crear Auditoría</h3>
+      <p class="text-muted">Llene los detalles de la auditoría para crearla.</p>
+    </header>
+    <article class="card-body p-4">
+      <form class="row g-3" action="{% url 'create_audit' %}" method="post">
+        {% csrf_token %}
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="title" class="form-label">Título</label>
+            <input type="text"
+                   class="form-control"
+                   id="audit_title"
+                   name="audit_title"
+                   placeholder="Enter audit title"
+                   required />
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="company" class="form-label">Compañía</label>
+            <input type="text"
+                   class="form-control"
+                   id="audit_company"
+                   name="audit_company"
+                   placeholder="Enter company name"
+                   required />
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="mb-3">
+            <label for="description" class="form-label">Descripción</label>
+            <textarea class="form-control"
+                      id="audit_description"
+                      rows="3"
+                      name="audit_description"
+                      placeholder="Provide a description for the audit"
+                      required></textarea>
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="mb-3">
+            <label class="form-label">Asignar a</label>
+            {% with select_options=select_options %}
+
+              {% include "common/_select-input.html" with select_id="audit_assigned_users_ids" select_options=select_options option_value="username" text_to_show1="get_full_name" text_to_show2="role" select_placeholder="Asignar usuarios para la auditoria" %}
+
+            {% endwith %}
+          </div>
+        </div>
+        <div class="col-12 d-flex justify-content-end">
+          <button type="submit" class="btn btn-primary">Crear auditoria</button>
+        </div>
+      </form>
+    </article>
+  </section>
+{% endblock main_content %}
+{% block extra_scripts %}
+  {{ block.super }}
+{% endblock extra_scripts %}

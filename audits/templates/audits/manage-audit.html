@@ -1,0 +1,248 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+    Gestionar Auditoria - {{ audit_to_manage.id }}
+{% endblock title %}
+{% block page_title %}
+    Gestionar Auditoría
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+
+{% load filters %}
+
+{% block main_content %}
+    {% if user.id == audit_to_manage.audit_manager.id %}
+        <div class="container">
+            <div class="row mb-4">
+                <div class="col d-flex align-items-center gap-3">
+                    <span>
+                        <svg width="24"
+                             height="24"
+                             viewBox="0 0 24 24"
+                             fill="none"
+                             xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 18H17V16H7V18Z" fill="currentColor" />
+                            <path d="M17 14H7V12H17V14Z" fill="currentColor" />
+                            <path d="M7 10H11V8H7V10Z" fill="currentColor" />
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9C21 5.13401 17.866 2 14 2H6ZM6 4H13V9H19V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4ZM15 4.10002C16.6113 4.4271 17.9413 5.52906 18.584 7H15V4.10002Z" fill="currentColor" />
+                        </svg>
+                    </span>
+                    <h1 class="flex-grow-1 fs-4 fw-semibold mb-0">Auditoria: {{ audit_to_manage.title }}</h1>
+                    <form action="{% url 'manage_audit' audit_to_manage.id %}"
+                          method="post"
+                          class="d-none"
+                          id="update_audit{{ audit_to_manage.id }}_form">
+                        {% csrf_token %}
+                    </form>
+                    <div class="d-none d-md-flex gap-2">
+                        <button class="btn btn-outline-secondary btn-sm">Descartar</button>
+                        <button class="btn btn-primary btn-sm"
+                                form="update_audit{{ audit_to_manage.id }}_form">Guardar Cambios</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title fs-5 fw-semibold">Detalles de la Auditoria</h3>
+                            <p class="card-text">Revice y cambie los datos según lo necesite.</p>
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Título de la Auditoría</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="audit_title"
+                                       name="audit_title"
+                                       value="{{ audit_to_manage.title }}"
+                                       form="update_audit{{ audit_to_manage.id }}_form"
+                                       required />
+                            </div>
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Descripción</label>
+                                <textarea class="form-control"
+                                          id="audit_description"
+                                          name="audit_description"
+                                          rows="3"
+                                          form="update_audit{{audit_to_manage.id}}_form"
+                                          required>{{audit_to_manage.description}}</textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="company" class="form-label">Compañía</label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="audit_company"
+                                       value="{{ audit_to_manage.company }}"
+                                       name="audit_company"
+                                       form="update_audit{{ audit_to_manage.id }}_form"
+                                       required />
+                            </div>
+                            <div class="mb-3">
+                                <label for="finishDate" class="form-label">Fecha de entrega</label>
+                                <input type="date"
+                                       class="form-control"
+                                       id="finishDate"
+                                       value="2023-12-31"
+                                       form="update_audit{{ audit_to_manage.id }}_form" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-body">
+                            {% if audit_to_manage.assigned_users.all %}
+                                <h3 class="card-title fs-5 fw-semibold">Auditores Asignados</h3>
+                                <p class="card-text">Gestione los Auditores y supervisores asignados para esta auditoría.</p>
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Correo electrónico</th>
+                                                <th class="text-end">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for user in audit_to_manage.assigned_users.all %}
+                                                <tr>
+                                                    <td>{{ user.get_full_name }}</td>
+                                                    <td>{{ user.email }}</td>
+                                                    <td class="text-end">
+                                                        <button class="btn btn-outline-secondary btn-sm" aria-label="Notificar">Notificar</button>
+                                                        <form action="{% url 'unassign_audit' audit_to_manage.id user.id %}"
+                                                              method="post"
+                                                              class="d-none"
+                                                              id="unassigned_audit_form{{ user.id }}">
+                                                            {% csrf_token %}
+                                                        </form>
+                                                        <button type="submit"
+                                                                aria-label="Desasignar"
+                                                                class="btn btn-outline-danger btn-sm"
+                                                                form="unassigned_audit_form{{ user.id }}">
+                                                            Desasignar
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <h5 class="text-center">No hay Auditores asignados para esta Auditoría</h5>
+                            {% endif %}
+                            <div class="text-center mt-3">
+                                <button type="button"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#assign_audit_to_auditor_modal"
+                                        class="btn btn-outline-primary btn-sm">Añadir Auditor</button>
+                                {% with modal_id="assign_audit_to_auditor_modal" %}
+
+                                    {% include "audits/_assign-auditor-to-audit-modal.html" with modal_id=modal_id modal_label_id="assign_audit_to_auditor_modal_label" select_id="user_ids" auditors_options=users_that_can_be_assigned audit_id=audit_to_manage.id %}
+
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 d-flex gap-5 flex-column justify-content-between">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title fs-5 fw-semibold">Estado de la Auditoría</h3>
+                            <p class="card-text">Gestione el estado de la auditoría para esta auditoría.</p>
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select id="status" class="form-select">
+                                    <option value="">Estado ejemplo</option>
+                                    <option value="">Estado ejemplo</option>
+                                    <option value="">Estado ejemplo</option>
+                                    <option value="">Estado ejemplo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title fs-5 fw-semibold">Audit Actions</h3>
+                            <p class="card-text">Perform actions related to the audit.</p>
+                            <div class="d-grid gap-2">
+                                <button type="button"
+                                        class="btn btn-danger btn-sm"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#delete_audit_confirmation_dialog">Borrar Auditoría</button>
+                                <div class="modal fade"
+                                     id="delete_audit_confirmation_dialog"
+                                     tabindex="-1"
+                                     aria-labelledby="delete_audit_confirmation_dialog_label"
+                                     aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h1 class="modal-title fs-5 text-danger"
+                                                    id="delete_audit_confirmation_dialog_label">
+                                                    ¿Está seguro de borrar esta Auditoría
+                                                </h1>
+                                                <button type="button"
+                                                        class="btn-close"
+                                                        data-bs-dismiss="modal"
+                                                        aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>
+                                                    Esta acción es irreversible, todas las notificaciones, reportes, informes y cualquier dato relacionado con esta Auditoría será borrado permanentemente
+                                                </p>
+                                                <p class="text-warning">
+                                                    <strong>Auditoría:</strong>{{ audit_to_manage.title }}
+                                                </p>
+                                                <form action="{% url 'delete_audit' audit_to_manage.id %}"
+                                                      method="post"
+                                                      class="needs-validation"
+                                                      id="validation-delete-audit-form"
+                                                      novalidate>
+                                                    {% csrf_token %}
+                                                    <label for="">Escribe el nombre de la auditoría para confirmar.</label>
+                                                    <input type="text"
+                                                           class="form-control"
+                                                           id="validation-delete-audit-form-input-confirmation"
+                                                           required />
+                                                </form>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit"
+                                                        class="btn btn-danger"
+                                                        form="validation-delete-audit-form"
+                                                        id="validation-delete-audit-form-submit-button"
+                                                        disabled>Borrar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-sm">Completar Auditoría</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-md-none d-flex justify-content-center gap-2 mt-4">
+                <button class="btn btn-outline-secondary btn-sm">Descargar</button>
+                <button class="btn btn-primary btn-sm">Guardar Auditoría</button>
+            </div>
+        </div>
+    {% endif %}
+{% endblock main_content %}
+{% block extra_scripts %}
+    {{ block.super }}
+    <script>
+    window.addEventListener("DOMContentLoaded", () => {
+        const button = document.getElementById("validation-delete-audit-form-submit-button");
+        const input = document.getElementById("validation-delete-audit-form-input-confirmation");
+        input.addEventListener("input", (e) => {
+            if(e.target.value !== "{{audit_to_manage.title}}") {
+                button.disabled = true
+            }
+            else { 
+                button.disabled = false
+            };
+        })
+    })
+    </script>
+{% endblock extra_scripts %}

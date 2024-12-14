@@ -1,0 +1,108 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Archivo Permanente
+{% endblock title %}
+{% block page_title %}
+  Archivo Permanente
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_header_content %}
+  <p class="w-100">
+    <b>Instrucción:</b> Debes hacer clic en el nombre del archivo para abrirlo, visualizarlo y trabajar en la
+    plantilla, hacer cambios, guardarlo, descargarlo en Excel o PDF, enviar el archivo por correo y hacer
+    videollamadas.
+  </p>
+{% endblock main_header_content %}
+
+{% load static %}
+
+{% block main_content %}
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <button class="loadButton btn btn-primary w-100"
+                  data-url="{{ informe_general_url }}">1 Información General</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <button class="loadButton btn btn-primary w-100"
+                  data-url="{{ estructura_organizacional_url }}">2 Estructura Organizacional</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <button class="loadButton btn btn-primary w-100"
+                  data-url="{{ leyes_regulaciones_url }}">3 Leyes y Regulaciones</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <button class="loadButton btn btn-primary w-100"
+                  data-url="{{ planificacion_operaciones_url }}">4 Planificación de Operaciones</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <button class="loadButton btn btn-primary w-100"
+                  data-url="{{ informacion_administrativa_url }}">5 Información Administrativa</button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <button class="loadButton btn btn-primary w-100"
+                  data-url="{{ informacion_contable_url }}">
+            6 Información Contable, Presupuestaria y Financiera
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Contenedor de la hoja de trabajo -->
+  <div class="col mt-4 flex-column d-none w-100" id="spreadsheetContainer">
+    <iframe class="border rounded shadow-sm"
+            sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups-to-escape-sandbox allow-presentation allow-top-navigation allow-storage-access-by-user-activation"
+            src=""
+            width="100%"
+            height="1000"
+            id="spreadsheetIframe"></iframe>
+    <a id="directLink"
+       href=""
+       target="_blank"
+       class="btn btn-primary mt-3 mr-auto">Abrir en nueva pestaña</a>
+  </div>
+{% endblock main_content %}
+{% block extra_scripts %}
+  <script>
+  const buttons = document.querySelectorAll(".loadButton");
+  const iframeContainer = document.getElementById("spreadsheetContainer");
+  const iframe = document.getElementById("spreadsheetIframe");
+  const directLink = document.getElementById("directLink");
+
+  const handleClickButton = (btn) => {
+    const url = btn.getAttribute("data-url");
+
+    if (url) {
+      iframe.src = url;
+      directLink.href = url;
+      iframeContainer.classList.remove("d-none");
+      iframeContainer.classList.add("d-flex");
+    }
+  }
+
+  buttons.forEach((btn) => btn.addEventListener("click", () => handleClickButton(btn)))
+  </script>
+{% endblock extra_scripts %}

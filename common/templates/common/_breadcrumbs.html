@@ -1,0 +1,13 @@
+<nav aria-label="breadcrumb" style="--bs-breadcrumb-divider: '>';">
+  <ol class="breadcrumb m-0">
+    {% for name, url in breadcrumbs %}
+      <li class="breadcrumb-item {% if request.path == url %}active{% endif %}">
+        {% if request.path == url %}
+          <span aria-current="page">{{ name }}</span>
+        {% else %}
+          <a href="{{ url }}">{{ name }}</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+</nav>

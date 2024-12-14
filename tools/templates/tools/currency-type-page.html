@@ -1,0 +1,102 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Marca de Auditoría {{ currency_type }}
+{% endblock title %}
+
+{% load filters %}
+
+{% block page_title %}
+  {{ currency_type }}
+{% endblock page_title %}
+{% block page_subtitle %}
+  Editar los valores del tipo de moneda
+{% endblock page_subtitle %}
+{% block main_content %}
+  <div class="card shadow-sm col-6">
+    <div class="card-body">
+      <form action="{% url 'currency_type' currency_type.id %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="currency" class="form-label">Moneda</label>
+          <input type="text"
+                 class="form-control"
+                 id="currency"
+                 placeholder="Ingrese el símbolo o representación de la moneda"
+                 name="currency"
+                 value="{{ currency_type.currency }}"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="name" class="form-label">Nombre</label>
+          <input type="text"
+                 class="form-control"
+                 id="name"
+                 placeholder="Ingrese el nombre de la moneda"
+                 name="name"
+                 value="{{ currency_type.name }}"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="name" class="form-label">Código</label>
+          <input type="text"
+                 class="form-control"
+                 id="code"
+                 placeholder="Ingrese el código único de la moneda"
+                 name="code"
+                 maxlength="4"
+                 value="{{ currency_type.code }}"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="country" class="form-label">País</label>
+          <select name="country" id="country" class="form-select">
+            <option selected>Ingrese el país de la moneda</option>
+            {% for country in countries %}
+              <option value="{{ country.id }}"
+                      {% if currency_type.country.id == country.id %}selected{% endif %}>{{ country }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="d-flex flex-row justify-content-between">
+          <button type="submit" class="btn btn-primary" id="submitButton" disabled>Guardar</button>
+          <button type="reset" class="btn btn-secondary" id="resetButton">Restablecer Cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock main_content %}
+{% block extra_scripts %}
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const inputs = document.querySelectorAll(".form-control, .form-select");
+      const submitButton = document.getElementById("submitButton");
+      const resetButton = document.getElementById("resetButton");
+
+      const country = "{{currency_type.country.id}}";
+      const name = "{{currency_type.name}}";
+      const code = "{{currency_type.code}}"
+      const currency = "{{currency_type.currency}}"
+
+      const handleChange = (value, field) => {
+        const isFieldUnchanged = 
+          value === "" || 
+          (field === "country" && value === country) || 
+          (field === "name" && value === name) || 
+          (field === "currency" && value === currency) || 
+          (field === "code" && value === code);
+        if (isFieldUnchanged) {
+          submitButton.setAttribute("disabled", true);
+          return;
+        }
+        submitButton.removeAttribute("disabled");
+      };
+      
+      inputs.forEach((input) => {
+        input.addEventListener("input", (e) => handleChange(e.currentTarget.value, e.target.id));
+      });
+
+      resetButton.addEventListener("click", () => submitButton.setAttribute("disabled", true));
+    });
+  </script>
+{% endblock extra_scripts %}

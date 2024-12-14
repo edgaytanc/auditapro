@@ -1,0 +1,58 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+    Auditorias Asignadas
+{% endblock title %}
+
+{% load filters %}
+
+{% block page_title %}
+    Crear Resumen de Horas Trabajadas
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_content %}
+    <div class="card shadow-sm col-6">
+        <div class="card-body">
+            <form action="{% url 'create_summary_hours_worked' %}" method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="month-input" class="form-label">Mes</label>
+                    <select class="form-select" aria-label="Mes" name="month" id="month-input">
+                        <option selected>Seleccione un mes</option>
+                        {% for month in months %}<option value="{{ month.id }}">{{ month.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="scheduled-hours-input" class="form-label">Total de horas programadas</label>
+                    <input type="number"
+                           class="form-control"
+                           id="scheduled-hours-input"
+                           aria-describedby="scheduledHoursHelp"
+                           placeholder="Ingrese las horas totales programadas"
+                           name="scheduled-hours"
+                           required />
+                </div>
+                <div class="mb-3">
+                    <label for="worked-hours-input" class="form-label">Total de horas trabajadas</label>
+                    <input type="number"
+                           class="form-control"
+                           id="worked-hours-input"
+                           aria-describedby="workedHoursHelp"
+                           placeholder="Ingrese las horas totales trabajadas"
+                           name="worked-hours"
+                           required />
+                </div>
+                <div class="mb-3">
+                    <label for="observations-input" class="form-label">Observaciones</label>
+                    <textarea class="form-control"
+                              placeholder="Ingrese alguna observación"
+                              id="observations-input"
+                              name="observations"
+                              style="height: 150px"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+    </div>
+{% endblock main_content %}

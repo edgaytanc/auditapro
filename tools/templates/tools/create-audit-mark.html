@@ -1,0 +1,50 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Auditorias Asignadas
+{% endblock title %}
+
+{% load filters %}
+
+{% block page_title %}
+  Crear Resumen
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_content %}
+  <div class="card shadow-sm col-6">
+    <div class="card-body">
+      <form action="{% url 'create_audit_mark' %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="image" class="form-label">URL Ícono</label>
+          <input type="text"
+                 class="form-control"
+                 id="image"
+                 placeholder="Ingrese el URL de el ícono"
+                 name="image"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="name" class="form-label">Nombre</label>
+          <input type="text"
+                 class="form-control"
+                 id="name"
+                 placeholder="Ingrese el nombre de la marca"
+                 name="name"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="description" class="form-label">Descripción</label>
+          <textarea class="form-control"
+                    placeholder="Ingrese la descripción de la marca"
+                    id="description"
+                    name="description"
+                    style="height: 150px"
+                    required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </form>
+    </div>
+  </div>
+{% endblock main_content %}

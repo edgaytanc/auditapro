@@ -1,0 +1,134 @@
+{% load static %}
+{% load render_table from django_tables2 %}
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      {% block title %}
+      {% endblock title %}
+    </title>
+    {% block styles %}
+    {% endblock styles %}
+    <style type="text/css" media="all">
+      @page {
+          size: A4 landscape;
+          margin: 5mm;
+      }
+  
+      * {
+          margin: 0;
+          padding: 0;
+      }
+  
+      html, body {
+          height: 100%;
+      }
+  
+      body {
+          font-family: Arial, sans-serif;
+          line-height: 1.4;
+          font-size: 12px;
+          display: flex;
+          flex-direction: column;
+          min-height: 100vh;
+      }
+  
+      h1, h2, h3 {
+          text-align: center;
+      }
+  
+      .header {
+          min-width: 100%;
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+      }
+  
+      .header-logo {
+          width: 80px;
+          height: auto;
+      }
+  
+      .header-logo img {
+          width: 100%;
+          height: auto;
+      }
+  
+      .header-title {
+          font-size: 1.2rem;
+          font-weight: bold;
+          color: #f00000;
+      }
+  
+      .table-container {
+          flex: 1;
+          margin-bottom: auto;
+      }
+  
+      table {
+          width: 100%;
+          border-collapse: collapse;
+      }
+  
+      td {
+          border: 1px solid #ccc;
+          text-align: left;
+          font-size: 11px; 
+          padding: 4px;
+          word-wrap: break-word; 
+          white-space: pre-wrap; 
+          vertical-align: top; 
+          max-height: 50px; 
+          overflow: hidden; 
+      }
+
+      .td-image {
+        width: 50px;
+        text-align: center;
+      }
+
+      th {
+          border: 1px solid #ccc;
+          text-align: left;
+          white-space: nowrap; 
+          background-color: #f2f2f2;
+          padding: 6px;
+          font-size: 12px;
+      }
+  
+      tr {
+          height: auto;
+      }
+  
+      img {
+          max-height: 50px;
+          width: auto;
+          height: auto;
+      }
+  
+      .page-title {
+          margin-bottom: 2mm;
+      }
+  
+      .table-title {
+          margin-bottom: 2mm;
+      }
+    </style>
+  </head>
+  <body>
+    <h2 class="page-title">Tipos de Moneda</h2>
+    <h3 class="table-title"></h3>
+    <!-- Contenedor de tabla -->
+    <div class="table-container">
+      {% block table_content %}
+        {% render_table table %}
+      {% endblock table_content %}
+    </div>
+  </body>
+</html>

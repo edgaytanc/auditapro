@@ -1,0 +1,354 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Resumen Tiempo de Auditoria
+{% endblock title %}
+
+{% load filters %}
+{% load render_table from django_tables2 %}
+
+{% block page_title %}
+  Resumen de Tiempo Auditoría
+{% endblock page_title %}
+{% block page_subtitle %}
+  Nombramiento No. {{ audit_time_summary.appointment_number }}
+{% endblock page_subtitle %}
+{% block main_header_content %}
+  <div class="row justify-content-end align-items-end g-3">
+    <div class="col-sm-auto col-12">
+      <a class="btn btn-outline-secondary d-flex gap-2 col-12 align-items-center justify-content-center"
+         href="{% url 'audit_time_summary' audit_time_summary.id %}?generate_pdf=true">
+        <svg width="24"
+             height="24"
+             viewBox="0 0 24 24"
+             fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 18H17V16H7V18Z" fill="currentColor" />
+          <path d="M17 14H7V12H17V14Z" fill="currentColor" />
+          <path d="M7 10H11V8H7V10Z" fill="currentColor" />
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9C21 5.13401 17.866 2 14 2H6ZM6 4H13V9H19V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4ZM15 4.10002C16.6113 4.4271 17.9413 5.52906 18.584 7H15V4.10002Z" fill="currentColor" />
+        </svg>
+        Exportar Informe
+      </a>
+    </div>
+    <div class="col-sm-auto col-12">
+      <button class="btn btn-primary d-flex gap-2 col-12 align-items-center justify-content-center"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#update-days-modal">
+        <svg width="24"
+             height="24"
+             viewBox="0 0 24 24"
+             fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 7H11V12H16V14H9V7Z" fill="currentColor" />
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12ZM20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12Z" fill="currentColor" />
+        </svg>
+        Actualizar Tiempo
+      </button>
+      <div class="modal fade" tabindex="-1" id="update-days-modal">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Actualizar Días</h5>
+              <button type="button"
+                      class="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="scheduled-days-input" class="form-label">Días Programados</label>
+                <input type="number"
+                       class="form-control"
+                       id="scheduled-days-input"
+                       name="scheduled-days"
+                       placeholder="Ingrese los días programados"
+                       value="{{ audit_time_summary.scheduled_days|format_duration_only_number:'days' }}"
+                       form="update-audit-time-summary-form"
+                       required />
+              </div>
+              <div class="mb-3">
+                <label for="worked-days-input" class="form-label">Días Reales Trabajados</label>
+                <input type="number"
+                       class="form-control"
+                       id="worked-days-input"
+                       name="worked-days"
+                       placeholder="Ingrese los días reales trabajados"
+                       form="update-audit-time-summary-form"
+                       value="{{ audit_time_summary.worked_days|format_duration_only_number:'days' }}"
+                       required />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="reset" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Guardar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock main_header_content %}
+{% block main_content %}
+  <article class="overflow-hidden w-100">
+    <div class="row g-3" style="min-width: 100% !important;">
+      <div class="col col-12 col-lg-4 col-xl-3 mx-auto"
+           style="min-height: 100% !important">
+        <div class="card p-2 h-100">
+          <div class="card-body">
+            <h5 class="card-title d-flex justify-content-between mb-4 fw-semibold fs-6">
+              Días Programados
+              <svg width="24"
+                   height="24"
+                   viewBox="0 0 24 24"
+                   fill="none"
+                   xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 9C7.44772 9 7 9.44771 7 10C7 10.5523 7.44772 11 8 11H16C16.5523 11 17 10.5523 17 10C17 9.44771 16.5523 9 16 9H8Z" fill="currentColor" />
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M6 3C4.34315 3 3 4.34315 3 6V18C3 19.6569 4.34315 21 6 21H18C19.6569 21 21 19.6569 21 18V6C21 4.34315 19.6569 3 18 3H6ZM5 18V7H19V18C19 18.5523 18.5523 19 18 19H6C5.44772 19 5 18.5523 5 18Z" fill="currentColor" />
+              </svg>
+            </h5>
+            <p class="card-text fs-3 fw-bold">{{ audit_time_summary.scheduled_days|format_duration_day_number }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col col-12 col-lg-4 col-xl-3 mx-auto"
+           style="min-height: 100% !important">
+        <div class="card p-2 h-100">
+          <div class="card-body">
+            <h5 class="card-title d-flex justify-content-between mb-4 fw-semibold fs-6">
+              Días Trabajados
+              <svg width="24"
+                   height="24"
+                   viewBox="0 0 24 24"
+                   fill="none"
+                   xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 9C7.44772 9 7 9.44771 7 10C7 10.5523 7.44772 11 8 11H16C16.5523 11 17 10.5523 17 10C17 9.44771 16.5523 9 16 9H8Z" fill="currentColor" />
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M6 3C4.34315 3 3 4.34315 3 6V18C3 19.6569 4.34315 21 6 21H18C19.6569 21 21 19.6569 21 18V6C21 4.34315 19.6569 3 18 3H6ZM5 18V7H19V18C19 18.5523 18.5523 19 18 19H6C5.44772 19 5 18.5523 5 18Z" fill="currentColor" />
+              </svg>
+            </h5>
+            <p class="card-text fs-3 fw-bold">{{ audit_time_summary.worked_days|format_duration_day_number }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col col-12 col-lg-4 col-xl-3 mx-auto"
+           style="min-height: 100% !important">
+        <div class="card p-2 h-100">
+          <div class="card-body">
+            <h5 class="card-title d-flex justify-content-between mb-4 fw-semibold fs-6">
+              Diferencias
+              <svg width="24"
+                   height="24"
+                   viewBox="0 0 24 24"
+                   fill="none"
+                   xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 9C7.44772 9 7 9.44771 7 10C7 10.5523 7.44772 11 8 11H16C16.5523 11 17 10.5523 17 10C17 9.44771 16.5523 9 16 9H8Z" fill="currentColor" />
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M6 3C4.34315 3 3 4.34315 3 6V18C3 19.6569 4.34315 21 6 21H18C19.6569 21 21 19.6569 21 18V6C21 4.34315 19.6569 3 18 3H6ZM5 18V7H19V18C19 18.5523 18.5523 19 18 19H6C5.44772 19 5 18.5523 5 18Z" fill="currentColor" />
+              </svg>
+            </h5>
+            <p class="card-text fs-3 fw-bold">{{ audit_time_summary.differences|format_duration_day_number }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="col col-12 col-lg-4 col-xl-3 mx-auto"
+           style="min-height: 100% !important">
+        <div class="card p-2 h-100">
+          <div class="card-body">
+            <h5 class="card-title d-flex justify-content-between mb-4 fw-semibold fs-6">
+              Progreso
+              <svg width="24"
+                   height="24"
+                   viewBox="0 0 24 24"
+                   fill="none"
+                   xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 9C7.44772 9 7 9.44771 7 10C7 10.5523 7.44772 11 8 11H16C16.5523 11 17 10.5523 17 10C17 9.44771 16.5523 9 16 9H8Z" fill="currentColor" />
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M6 3C4.34315 3 3 4.34315 3 6V18C3 19.6569 4.34315 21 6 21H18C19.6569 21 21 19.6569 21 18V6C21 4.34315 19.6569 3 18 3H6ZM5 18V7H19V18C19 18.5523 18.5523 19 18 19H6C5.44772 19 5 18.5523 5 18Z" fill="currentColor" />
+              </svg>
+            </h5>
+            <p class="card-text fs-3 fw-bold">{{ progress }} %</p>
+            <div class="progress"
+                 role="progressbar"
+                 aria-label="Basic example"
+                 aria-valuenow="100"
+                 aria-valuemin="0"
+                 aria-valuemax="100"
+                 style="height: 10px">
+              <div class="progress-bar" style="width: {{ progress }}%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+  <article class="w-100" id="tabs-container">
+    <header class="d-flex justify-content-start mb-3">
+      <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <a class="nav-link active text-truncate"
+             id="auditor-info-tab"
+             data-bs-toggle="tab"
+             href="#auditor-info"
+             role="tab"
+             aria-controls="info"
+             aria-selected="true">Detalles del Auditor</a>
+        </li>
+        <li class="nav-item" role="presentation">
+          <a class="nav-link text-truncate"
+             id="time-register-tab"
+             data-bs-toggle="tab"
+             href="#time-register"
+             role="tab"
+             aria-controls="otro"
+             aria-selected="false">Registro de tiempo</a>
+        </li>
+      </ul>
+    </header>
+    <div class="card w-full">
+      <div class="card-body">
+        <div class="tab-content" id="myTabContent">
+          <div class="tab-pane fade show active"
+               id="auditor-info"
+               role="tabpanel"
+               aria-labelledby="info-tab">
+            <h4 class="card-title d-flex justify-content-between mb-5 fw-semibold">Detalles</h4>
+            <div class="row w-full">
+              <div class="mb-3 col-md-6 col-12">
+                <h5>Nombre Completo</h5>
+                <p>{{ audit_time_summary.assigned_auditor.get_full_name }}</p>
+              </div>
+              <div class="mb-3 col-md-6 col-12">
+                <h5>Cargo</h5>
+                <p>{{ audit_time_summary.assigned_auditor.role.verbose_name }}</p>
+              </div>
+              <div class="mb-3 col-md-6 col-12">
+                <label for="appointmentNumber" class="form-label">Nombramiento No.</label>
+                <input type="text"
+                       class="form-control"
+                       id="appointmentNumber"
+                       value="{{ audit_time_summary.appointment_number }}"
+                       form="update-audit-time-summary-form"
+                       name="appointment-number" />
+              </div>
+            </div>
+          </div>
+          <div class="tab-pane fade"
+               id="time-register"
+               role="tabpanel"
+               aria-labelledby="otro-tab">
+            <h4 class="card-title d-flex justify-content-between mb-5 fw-semibold">Registro de Tiempo</h4>
+            <div class="w-100 d-flex flex-column gap-3">
+              <div class="d-flex w-100 justify-content-between">
+                <span class="fs-6 fw-bold">Días Programados</span>
+                <span class="fw-bolder fs-3">{{ audit_time_summary.scheduled_days|format_duration_day_number }}</span>
+              </div>
+              <div class="d-flex w-100 justify-content-between">
+                <span class="fs-6 fw-bold">Días Trabajados</span>
+                <span class="fw-bolder fs-3">{{ audit_time_summary.worked_days|format_duration_day_number }}</span>
+              </div>
+              <div class="d-flex w-100 justify-content-between">
+                <span class="fs-6 fw-bold">Diferencias</span>
+                <span class="fw-bolder fs-3 text-danger">{{ audit_time_summary.differences|format_duration_day_number }}</span>
+              </div>
+            </div>
+            <div class="mt-3">
+              <label for="observations-input" class="form-label">Observaciones</label>
+              <textarea class="form-control"
+                        placeholder="Ingrese alguna observación"
+                        id="observations-input"
+                        name="observations"
+                        style="height: 100px"
+                        form="update-audit-time-summary-form">{{ audit_time_summary.observations }}</textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+  <article class="w-100">
+    <div class="card w-full">
+      <div class="card-body pb-5">
+        <h4 class="card-title d-flex justify-content-between mb-5 fw-semibold">Gráfico del Progreso</h4>
+        <div class="d-flex w-100 px-lg-5 px-2 gap-5" style="height: 20rem;">
+          <div class="w-50 d-flex flex-column align-items-center h-100">
+            <div class="d-flex align-items-end col-12 col-lg-9 mb-3"
+                 style="height: 95%">
+              <div class="bg-primary w-100 d-flex justify-content-center align-items-end h-100 pb-2"
+                   style="height: {{ progress }}% !important">
+                <span class="{% if progress > 0 %}
+                               text-white
+                             {% else %}
+                               text-body
+                             {% endif %}
+                             fw-bold fs-5">{{ audit_time_summary.worked_days|format_duration:'days' }}</span>
+              </div>
+            </div>
+            <h6 class="fw-semibold fs-6" style="height: 5%;">Días Trabajados</h6>
+          </div>
+          <div class="w-50 d-flex flex-column align-items-center h-100">
+            <div class="d-flex align-items-end col-12 col-lg-9 mb-3"
+                 style="height: 95%">
+              <div class="bg-secondary-subtle d-flex w-100 justify-content-center align-items-end h-100 pb-2"
+                   style="height: 100% !important">
+                <span class="text-secondary fw-bold fs-5">{{ audit_time_summary.scheduled_days|format_duration:'days' }}</span>
+              </div>
+            </div>
+            <h6 class="fw-semibold fs-6" style="height: 5%;">Días Trabajados</h6>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+  <div class="ms-auto d-none" id="save-data-buttons">
+    <form action="{% url 'audit_time_summary' audit_time_summary.id %}"
+          class="d-none"
+          id="update-audit-time-summary-form"
+          method="post">
+      {% csrf_token %}
+    </form>
+    <div class="row col-auto">
+      <div class="col-auto">
+        <button class="btn btn-outline-secondary"
+                form="update-audit-time-summary-form"
+                type="reset"
+                id="cancel-button">Cancelar</button>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary"
+                type="submit"
+                form="update-audit-time-summary-form">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+{% endblock main_content %}
+{% block extra_scripts %}
+  <script type="module">
+    const saveButtonsContainer = document.getElementById('save-data-buttons')
+    const inputs = document.querySelectorAll('.form-control')
+    const cancelButton = document.getElementById('cancel-button')
+    
+    const values = Array.from(inputs).map((input) => input.value)
+  
+    const showContainer = () => {
+      if (saveButtonsContainer.classList.contains("d-none")) {
+        saveButtonsContainer.classList.remove('d-none')
+        saveButtonsContainer.classList.add('d-flex')
+      }
+    }
+    
+    const ocultContainer = () => {
+      if (saveButtonsContainer.classList.contains("d-flex")) {
+        saveButtonsContainer.classList.remove('d-flex')
+        saveButtonsContainer.classList.add('d-none')
+      }
+    }
+    
+    const onChangeInput = (e) => showContainer()
+  
+      
+    inputs.forEach((input) => {
+      input.addEventListener('input', () => showContainer())
+    })
+    
+    cancelButton.addEventListener('click', () => ocultContainer())
+  </script>
+{% endblock extra_scripts %}

@@ -1,0 +1,36 @@
+{% extends "tools/base-pdf.html" %}
+
+{% load filters %}
+
+{% block page_title %}
+  Resumen de Horas Trabajadas
+{% endblock page_title %}
+{% block table_title %}
+  Horas Trabajadas
+{% endblock table_title %}
+{% block table_content %}
+  <table>
+    <tbody>
+      <tr>
+        <th>Mes:</th>
+        <td>{{ summary_hours_worked.month }}</td>
+      </tr>
+      <tr>
+        <th>Total de Horas Programadas:</th>
+        <td>{{ summary_hours_worked.total_scheduled_hours|format_duration:'hours' }}</td>
+      </tr>
+      <tr>
+        <th>Total de Horas Trabajadas:</th>
+        <td>{{ summary_hours_worked.total_hours_worked|format_duration:'hours' }}</td>
+      </tr>
+      <tr>
+        <th>Diferencias:</th>
+        <td>{{ summary_hours_worked.differences|format_duration:'hours' }}</td>
+      </tr>
+      <tr>
+        <th>Observaciones:</th>
+        <td>{{ summary_hours_worked.observations }}</td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock table_content %}

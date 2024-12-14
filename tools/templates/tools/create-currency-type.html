@@ -1,0 +1,58 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Crear Tipo de Moneda
+{% endblock title %}
+
+{% load filters %}
+
+{% block page_title %}
+  Crear Tipo de Moneda
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_content %}
+  <div class="card shadow-sm col-6">
+    <div class="card-body">
+      <form action="{% url 'create_currency_type' %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="currency" class="form-label">Moneda</label>
+          <input type="text"
+                 class="form-control"
+                 id="currency"
+                 placeholder="Ingrese el símbolo o representación de la moneda"
+                 name="currency"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="name" class="form-label">Nombre</label>
+          <input type="text"
+                 class="form-control"
+                 id="name"
+                 placeholder="Ingrese el nombre de la moneda"
+                 name="name"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="name" class="form-label">Código</label>
+          <input type="text"
+                 class="form-control"
+                 id="code"
+                 placeholder="Ingrese el código único de la moneda"
+                 name="code"
+                 maxlength="4"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="country" class="form-label">País</label>
+          <select name="country" id="country" class="form-select">
+            <option selected>Ingrese el país de la moneda</option>
+            {% for country in countries %}<option value="{{ country.id }}">{{ country }}</option>{% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Crear</button>
+      </form>
+    </div>
+  </div>
+{% endblock main_content %}
