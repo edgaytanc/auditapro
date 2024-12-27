@@ -30,7 +30,7 @@
            value="{{ request.GET.q }}" />
   </form>
   <div>
-    {% if user.role.name == audit_manager %}
+    {% if user.role.name == 'audit_manager' %}
       <a class="btn btn-primary"
          href="{% url 'create_summary_hours_worked' %}">Crear Registro</a>
     {% endif %}

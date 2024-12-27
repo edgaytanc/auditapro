@@ -36,8 +36,8 @@
            value="{{ request.GET.q }}" />
   </form>
   <div>
-    {% if user.role.name == audit_manager %}
-      <a class="btn btn-primary" href="{% url 'create_activity' %}">Crear Registro</a>
+    {% if user.role.name == 'audit_manager' %}
+      <a class="btn btn-primary" href="{% url 'create_activity' %}">Crear Registro</a> 
     {% endif %}
     <a href="{% url 'activities_page' %}?generate_pdf=true"
        class="btn btn-secondary">Exportar Informe</a>
