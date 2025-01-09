@@ -744,7 +744,7 @@ def create_activity(
         if not current_status_id.isdigit():
             raise InvalidCurrentStatusError()
 
-        if req.user.role.name != "audit_manager":
+        if req.user.role.name != "auditor":
             raise UserUnauthorized()
 
         audit_to_assign = Audit.objects.get(pk=audit.get("id"))
@@ -752,8 +752,8 @@ def create_activity(
         if not audit_to_assign:
             raise UserUnauthorized()
 
-        if req.user != audit_to_assign.audit_manager:
-            raise UserUnauthorized()
+        # if req.user != audit_to_assign.audit_manager:
+        #     raise UserUnauthorized()
 
         current_status_to_assign = CurrentStatus.objects.get(pk=current_status_id)
         if not current_status_to_assign:

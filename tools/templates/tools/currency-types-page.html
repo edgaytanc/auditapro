@@ -15,7 +15,7 @@
 
 {% block main_header_content %}
   <div>
-    {% if user.is_superuser %}
+    {% if user.is_superuser or user.role.name == "auditor" %}
       <a class="btn btn-primary" href="{% url 'create_currency_type' %}">Añadir Tipo de Moneda</a>
     {% endif %}
     <a href="{% url 'currency_types' %}?generate_pdf=true"

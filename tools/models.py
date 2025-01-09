@@ -324,8 +324,10 @@ class Activity(models.Model):
     def save(self, *args, **kwargs):
         if self.start_date and self.end_date and self.start_date >= self.end_date:
             raise StartDateAfterEndDateError()
-        if self.created_by != self.audit.audit_manager:
-            raise UserUnauthorized()
+        # if self.created_by != self.audit.audit_manager:
+        #     raise UserUnauthorized()
+        # if self.created_by.role.name != "auditor":
+        #     raise UserUnauthorized("Solo Uditores pueden crear actividades")
         if not self.reference:
             self.reference = (
                 f"Nom-{int(self.audit.pk):02}"

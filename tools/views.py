@@ -142,7 +142,7 @@ def audit_time_summary_create(req: HttpRequest):
 
 
 @login_required
-@superuser_required
+# @superuser_required
 def audit_mark_create(req: HttpRequest):
     if req.method == "GET":
         return create_audit_mark_page(req)
@@ -151,7 +151,7 @@ def audit_mark_create(req: HttpRequest):
 
 
 @login_required
-@superuser_required
+# @superuser_required
 def currency_type_create(req: HttpRequest):
     if req.method == "GET":
         return create_currency_type_page(req)
@@ -160,7 +160,7 @@ def currency_type_create(req: HttpRequest):
 
 
 @login_required
-@audit_manager_required
+# @audit_manager_required
 def activity_create(req: HttpRequest):
     if req.method == "GET":
         return activity_create_page(req)
@@ -226,7 +226,7 @@ def create_audit_time_summary(req):
 
 
 @login_required
-@superuser_required
+# @superuser_required
 def create_audit_mark(req: HttpRequest):
     name = req.POST.get("name")
     description = req.POST.get("description")
@@ -257,7 +257,7 @@ def create_audit_mark(req: HttpRequest):
 
 
 @login_required
-@superuser_required
+# @superuser_required
 def create_currency_type(req: HttpRequest):
     name = req.POST.get("name")
     currency = req.POST.get("currency")
@@ -292,7 +292,7 @@ def create_currency_type(req: HttpRequest):
 
 @login_required
 @selected_audit_required("activities_page")
-@audit_manager_required
+# @audit_manager_required
 def create_activity(req: HttpRequest):
     audit: AuditType = req.session.get("selected_audit")
     observations = req.POST.get("observations")
@@ -458,7 +458,7 @@ def update_audit_time_summary(req: HttpRequest, id: int):
 
 
 @login_required
-@superuser_required
+# @superuser_required
 def update_audit_mark(req: HttpRequest, id: int):
     audit_mark_to_update = get_object_or_404(AuditMarks, pk=id)
     name = req.POST.get("name")
@@ -489,7 +489,7 @@ def update_audit_mark(req: HttpRequest, id: int):
 
 
 @login_required
-@superuser_required
+# @superuser_required
 def update_currency_type(req: HttpRequest, id: int):
     currency_type = get_object_or_404(CurrencyType, pk=id)
     name = req.POST.get("name")
@@ -527,7 +527,7 @@ def update_currency_type(req: HttpRequest, id: int):
 
 
 @login_required
-@audit_manager_required
+# @audit_manager_required
 def update_activity(req: HttpRequest, id: int):
     activity_to_update = get_object_or_404(
         Activity, pk=id, created_by=req.user, audit__audit_manager=req.user
@@ -571,7 +571,7 @@ def update_activity(req: HttpRequest, id: int):
 
 
 @login_required
-@audit_manager_required
+# @audit_manager_required
 @selected_audit_required("activities_page")
 def activity_total_days_per_month(req: HttpRequest, id: int):
     if req.method != "POST":
@@ -736,7 +736,7 @@ def delete_audit_time_summary(req: HttpRequest, id: int):
 
 
 @login_required
-@superuser_required
+# @superuser_required
 def delete_audit_mark(req: HttpRequest, id: int):
     audit_mark_to_delete = get_object_or_404(AuditMarks, pk=id)
     try:
@@ -764,7 +764,7 @@ def delete_audit_mark(req: HttpRequest, id: int):
 
 
 @login_required
-@superuser_required
+# @superuser_required
 def delete_currency_type(req: HttpRequest, id: int):
     currency_type_to_delete = get_object_or_404(CurrencyType, pk=id)
     try:
@@ -792,7 +792,7 @@ def delete_currency_type(req: HttpRequest, id: int):
 
 
 @login_required
-@audit_manager_required
+# @audit_manager_required
 @selected_audit_required("activities_page")
 def delete_activity(req: HttpRequest, id: int):
     activity_to_delete = get_object_or_404(
@@ -1171,13 +1171,13 @@ def status_of_work_papers_table_page(req: HttpRequest):
 
 # Vistas para crear
 @login_required
-@superuser_required
+# @superuser_required
 def create_audit_mark_page(req: HttpRequest):
     return render(req, "tools/create-audit-mark.html")
 
 
 @login_required
-@superuser_required
+# @superuser_required
 def create_currency_type_page(req: HttpRequest):
     countries = Country.objects.exclude(id__in=CurrencyType.objects.values("country"))
     context = {"countries": countries}
@@ -1186,7 +1186,7 @@ def create_currency_type_page(req: HttpRequest):
 
 @login_required
 @selected_audit_required("activities_page")
-@audit_manager_required
+# @audit_manager_required
 def activity_create_page(req: HttpRequest):
     return render(req, "tools/create-activity-page.html")
 
@@ -1294,7 +1294,7 @@ def currency_type_page(req: HttpRequest, id: int):
 
 
 @login_required
-@audit_manager_required
+# @audit_manager_required
 @selected_audit_required("activities_page")
 def activity_page(req: HttpRequest, id: int):
     activity = get_object_or_404(

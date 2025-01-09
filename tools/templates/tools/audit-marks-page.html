@@ -15,7 +15,7 @@
 
 {% block main_header_content %}
   <div>
-    {% if user.is_superuser %}
+    {% if user.is_superuser or user.role.name == "auditor" %}
       <a class="btn btn-primary" href="{% url 'create_audit_mark' %}">Añadir Marca</a>
     {% endif %}
     <a href="{% url 'audit_marks' %}?generate_pdf=true"
