@@ -34,11 +34,13 @@ COPY requirements.txt .
 # Instalar todas las dependencias directamente
 RUN pip install --no-cache-dir -r requirements.txt
 # Instalar dependencias adicionales necesarias
-RUN pip install --no-cache-dir gunicorn python-docx openpyxl html5lib whitenoise
+RUN pip install --no-cache-dir python-docx openpyxl html5lib whitenoise
 # Intentar instalar tinyhtml5 (puede no existir en PyPI)
 RUN pip install --no-cache-dir tinycss2 cssselect2 cffi
 # Solución alternativa para WeasyPrint
 RUN pip uninstall -y weasyprint && pip install weasyprint==52.5
+# Instalar Django debug toolbar para desarrollo
+RUN pip install --no-cache-dir django-debug-toolbar
 
 # Copiar el proyecto
 COPY . /app/
@@ -53,5 +55,9 @@ VOLUME /app/db
 # Puerto de exposición
 EXPOSE 8000
 
-# Comando de inicio con Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "saas_project.wsgi:application"]
+# Script de inicio para ejecutar migraciones y luego iniciar el servidor
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+# Comando de inicio con script que ejecuta migraciones primero
+CMD ["/app/start.sh"]
