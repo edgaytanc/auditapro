@@ -1,81 +1,19 @@
 services:
   auditapro:
     build: .
-    container_name: auditapro_app
+    container_name: auditapro_local
     restart: always
 
-    # Reserva de recursos según Plan primer cliente JVSERVER
-    deploy:
-      resources:
-        limits:
-          memory: 1536M
-        reservations:
-          memory: 512M
-
-    # Variables de entorno
+    # Variables de entorno para desarrollo
     env_file:
-      - ./.env
+      - ./.env.local
 
-    # Monta tus volúmenes de datos (20GB de almacenamiento total)
+    # Monta tus volúmenes de datos
     volumes:
       - ./:/app
-      - sqlite_data:/app/db
-      - sqlite_data:/app/backups
+      - ./db:/app/db
+      - ./logs:/app/logs
 
-    # NO expongas puertos aquí, Traefik usará la red proxy
-    networks:
-      - proxy
-
-    # Etiquetas para Traefik (SSL preconfigurado)
-    labels:
-      - "traefik.enable=true"
-      # Define host y puerto interno
-      - "traefik.http.routers.auditapro.rule=Host(`sistema.auditapro.com`)"
-      - "traefik.http.routers.auditapro.entrypoints=websecure"
-      - "traefik.http.routers.auditapro.tls=true"
-      - "traefik.http.routers.auditapro.tls.certresolver=myresolver"
-      # Indica a Traefik el puerto interno donde escucha tu Gunicorn
-      - "traefik.http.services.auditapro.loadbalancer.server.port=8000"
-      # Especifica el nombre del servicio para evitar problemas con la resolución del contenedor
-      - "traefik.docker.network=proxy"
-      # Redirige HTTP→HTTPS
-      - "traefik.http.routers.auditapro-http.rule=Host(`sistema.auditapro.com`)"
-      - "traefik.http.routers.auditapro-http.entrypoints=web"
-      - "traefik.http.routers.auditapro-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      # Compresión para optimizar el uso de transferencia (1TB mensual)
-      - "traefik.http.middlewares.auditapro-compress.compress=true"
-      - "traefik.http.routers.auditapro.middlewares=auditapro-compress"
-
-    # Lanza tu comando de arranque
-    command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --no-input --clear &&
-             gunicorn saas_project.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
-
-  # Servicio para respaldos quincenales automáticos
-  backup:
-    image: alpine:latest
-    container_name: auditapro_backup
-    volumes:
-      - ./:/app
-      - sqlite_data:/app/db
-    command: >
-      sh -c "mkdir -p /app/backups &&
-             echo '0 0 1,15 * * find /app/backups -type f -mtime +30 -delete && tar -czf /app/backups/auditapro_$$(date +\"%Y%m%d\").tar.gz /app' > /etc/crontabs/root &&
-             crond -f -d 8"
-    restart: always
-    depends_on:
-      - auditapro
-
-volumes:
-  sqlite_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /var/lib/docker/volumes/auditapro_data/_data
-      o: bind
-
-networks:
-  proxy:
-    external: true
+    # Exponer puerto directamente para desarrollo local
+    ports:
+      - "8000:8000"
