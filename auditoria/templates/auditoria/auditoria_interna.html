@@ -1,0 +1,28 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+Auditoría Interna
+{% endblock title %}
+
+{% block page_title %}
+Auditoría Interna
+{% endblock page_title %}
+
+{% block main_content %}
+<div class="container">
+    <h1>Selecciona una Auditoría Interna</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="audit_select" class="form-label">Auditorías</label>
+            <select id="audit_select" name="audit_id" class="form-select" required>
+                <option value="">Seleccione una auditoría</option>
+                {% for audit in auditorias %}
+                    <option value="{{ audit.id }}">{{ audit.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Seleccionar Auditoría</button>
+    </form>
+</div>
+{% endblock main_content %}

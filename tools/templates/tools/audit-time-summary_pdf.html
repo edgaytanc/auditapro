@@ -1,0 +1,44 @@
+{% extends "tools/base-pdf.html" %}
+
+{% load filters %}
+
+{% block page_title %}
+  Resumen de Tiempo Auditoría
+{% endblock page_title %}
+{% block table_title %}
+  Días Trabajados
+{% endblock table_title %}
+{% block table_content %}
+  <table>
+    <tbody>
+      <tr>
+        <th>Número de Nombramiento:</th>
+        <td>{{ audit_time_summary.appointment_number }}</td>
+      </tr>
+      <tr>
+        <th>Nombre Completo:</th>
+        <td>{{ audit_time_summary.assigned_auditor.get_full_name }}</td>
+      </tr>
+      <tr>
+        <th>Cargo:</th>
+        <td>{{ audit_time_summary.assigned_auditor.role.verbose_name }}</td>
+      </tr>
+      <tr>
+        <th>Días Programados:</th>
+        <td>{{ audit_time_summary.scheduled_days|format_duration:'days' }}</td>
+      </tr>
+      <tr>
+        <th>Días Trabajados:</th>
+        <td>{{ audit_time_summary.worked_days|format_duration:'days' }}</td>
+      </tr>
+      <tr>
+        <th>Diferencias:</th>
+        <td>{{ audit_time_summary.differences|format_duration:'days' }}</td>
+      </tr>
+      <tr>
+        <th>Observaciones:</th>
+        <td>{{ audit_time_summary.observations }}</td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock table_content %}

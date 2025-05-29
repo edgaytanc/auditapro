@@ -1,0 +1,124 @@
+{% load filters %}
+
+<nav id="sidebar">
+  <ul>
+    <li>
+      <span class="logo fs-4">Audita</span>
+      <button id="toggle-btn" onclick="toggleSidebar()">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             height="24px"
+             viewBox="0 -960 960 960"
+             width="24px"
+             fill="#e8eaed">
+          <path d="m313-480 155 156q11 11 11.5 27.5T468-268q-11 11-28 11t-28-11L228-452q-6-6-8.5-13t-2.5-15q0-8 2.5-15t8.5-13l184-184q11-11 27.5-11.5T468-692q11 11 11 28t-11 28L313-480Zm264 0 155 156q11 11 11.5 27.5T732-268q-11 11-28 11t-28-11L492-452q-6-6-8.5-13t-2.5-15q0-8 2.5-15t8.5-13l184-184q11-11 27.5-11.5T732-692q11 11 11 28t-11 28L577-480Z" />
+        </svg>
+      </button>
+    </li>
+    <hr />
+    {% for link in aside_navbar_links %}
+      {% if not link.hide_to or user.role.name not in link.hide_to %}
+        {% if link.type == "collapse" %}
+          <li class="{% if link.active %}collapse-active{% endif %}">
+            <button class="dropdown-btn" onclick="toggleSubMenu(this)">
+              {{ link.icon|safe }}
+              <span>{{ link.name }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg"
+                   height="24px"
+                   viewBox="0 -960 960 960"
+                   width="24px"
+                   fill="#e8eaed">
+                <path d="M480-361q-8 0-15-2.5t-13-8.5L268-556q-11-11-11-28t11-28q11-11 28-11t28 11l156 156 156-156q11-11 28-11t28 11q11 11 11 28t-11 28L508-372q-6 6-13 8.5t-15 2.5Z" />
+              </svg>
+            </button>
+            <ul class="sub-menu">
+              <div>
+                {% for collapse_link in link.collapse_values %}
+                  <li class="{% if collapse_link.active %}active{% endif %}">
+                    <a href="{% url collapse_link.url %}">{{ collapse_link.name }}</a>
+                  </li>
+                {% endfor %}
+              </div>
+            </ul>
+          </li>
+        {% else %}
+          <li class="{% if link.active %}active{% endif %}">
+            <a href="{% url link.url %}">
+              {{ link.icon|safe }}
+              <span>{{ link.name }}</span>
+            </a>
+          </li>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    <hr class="mt-auto" />
+    <li class="user-section" onclick="toggleUserOptions()">
+
+      {% load static %}
+
+      <a href="{% url 'user' %}">
+        <img src="{% static 'images/placeholder-user.jpg' %}"
+             alt="User Image"
+             height="40"
+             width="40" />
+      </a>
+      <div class="user-info">
+        <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
+        <div class="user-role">{{ user.role }}</div>
+      </div>
+      <a href="{% url 'logout' %}" class="logout-button">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="ionicon"
+             viewBox="0 0 512 512">
+          <path d="M304 336v40a40 40 0 01-40 40H104a40 40 0 01-40-40V136a40 40 0 0140-40h152c22.09 0 48 17.91 48 40v40M368 336l80-80-80-80M176 256h256" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32" />
+        </svg>
+      </a>
+    </li>
+  </ul>
+</nav>
+{% block extra_scripts %}
+  <script>
+  const toggleButton = document.getElementById('toggle-btn')
+const sidebar = document.getElementById('sidebar')
+
+function toggleSidebar(){
+  sidebar.classList.toggle('close')
+  toggleButton.classList.toggle('rotate')
+
+  closeAllSubMenus()
+}
+
+function toggleSubMenu(button){
+
+  if(!button.nextElementSibling.classList.contains('show')){
+    closeAllSubMenus()
+  }
+
+  button.nextElementSibling.classList.toggle('show')
+  button.classList.toggle('rotate')
+
+  if(sidebar.classList.contains('close')){
+    sidebar.classList.toggle('close')
+    toggleButton.classList.toggle('rotate')
+  }
+}
+
+function closeAllSubMenus(){
+  Array.from(sidebar.getElementsByClassName('show')).forEach(ul => {
+    ul.classList.remove('show')
+    ul.previousElementSibling.classList.remove('rotate')
+  })
+}
+
+
+function handleResize() {
+  toggleButton.classList.remove('rotate')
+  sidebar.classList.add('close')
+  closeAllSubMenus()
+}
+  if (window.innerWidth <= 800) 
+    handleResize();
+  
+
+
+  </script>
+{% endblock extra_scripts %}

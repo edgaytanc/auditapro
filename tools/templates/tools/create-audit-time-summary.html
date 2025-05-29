@@ -1,0 +1,75 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+    Auditorias Asignadas
+{% endblock title %}
+
+{% load filters %}
+
+{% block page_title %}
+    Crear Resumen
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_content %}
+    <div class="card shadow-sm col-6">
+        <div class="card-body">
+            <form action="{% url 'create_audit_time_summary' %}" method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="full-name-input" class="form-label">Número de nombramiento</label>
+                    <input type="text"
+                           class="form-control"
+                           id="appointment-number-input"
+                           aria-describedby="appointmentNumberHelp"
+                           placeholder="Ingrese el número de nombramiento"
+                           name="appointment-number"
+                           required />
+                </div>
+                <div class="mb-3">
+                    <label for="full-name-input" class="form-label">Auditor</label>
+                    <select class="form-select"
+                            id="audit-input"
+                            aria-label="Seleccione el Auditor"
+                            name="assigned_auditor"
+                            aria-describedby="selectedAssignedAuditorHelp"
+                            required>
+                        <option selected>Seleccione el Auditor</option>
+                        {% for auditor in auditors_to_select %}
+                            <option value="{{ auditor.id }}">
+                                {{ auditor.first_name }} {{ auditor.last_name }} - {{ auditor.role.verbose_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="scheduled-days-input" class="form-label">Días Programados</label>
+                    <input type="number"
+                           class="form-control"
+                           id="scheduled-days-input"
+                           name="scheduled-days"
+                           placeholder="Ingrese los días programados"
+                           required />
+                </div>
+                <div class="mb-3">
+                    <label for="worked-days-input" class="form-label">Días Reales Trabajados</label>
+                    <input type="number"
+                           class="form-control"
+                           id="worked-days-input"
+                           name="worked-days"
+                           placeholder="Ingrese los días reales trabajados"
+                           required />
+                </div>
+                <div class="mb-3">
+                    <label for="observations-input" class="form-label">Observaciones</label>
+                    <textarea class="form-control"
+                              placeholder="Ingrese alguna observación"
+                              id="observations-input"
+                              name="observations"
+                              style="height: 150px"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+    </div>
+{% endblock main_content %}

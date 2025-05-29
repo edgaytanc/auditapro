@@ -1,0 +1,37 @@
+{% extends "tools/base-pdf.html" %}
+
+{% load filters %}
+
+{% block page_title %}
+  Estado de Papeles de Trabajo
+{% endblock page_title %}
+{% block table_content %}
+  <table>
+    <tbody>
+      <tr>
+        <th>Referencia:</th>
+        <td>{{ status_of_work_papers.reference }}</td>
+      </tr>
+      <tr>
+        <th>Papeles de Trabajo:</th>
+        <td>{{ status_of_work_papers.working_papers }}</td>
+      </tr>
+      <tr>
+        <th>Fecha de Inicio:</th>
+        <td>{{ status_of_work_papers.formatted_start_date }}</td>
+      </tr>
+      <tr>
+        <th>Fecha de Finalización:</th>
+        <td>{{ status_of_work_papers.formatted_end_date }}</td>
+      </tr>
+      <tr>
+        <th>Estado Actual:</th>
+        <td>{{ status_of_work_papers.current_status }}</td>
+      </tr>
+      <tr>
+        <th>Observaciones:</th>
+        <td>{{ status_of_work_papers.observations }}</td>
+      </tr>
+    </tbody>
+  </table>
+{% endblock table_content %}

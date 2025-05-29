@@ -1,0 +1,65 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+    Auditorias Asignadas
+{% endblock title %}
+
+{% load filters %}
+
+{% block page_title %}
+    Crear Estado De Papeles
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_content %}
+    <div class="card shadow-sm col-6">
+        <div class="card-body">
+            <form action="{% url 'create_status_of_work_papers' %}" method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="work-papers-input" class="form-label">Papeles de trabajo</label>
+                    <input type="text"
+                           class="form-control"
+                           id="work-papers-name-input"
+                           aria-describedby="workPapersNameHelp"
+                           placeholder="Ingrese los papeles de trabajo"
+                           name="working-papers"
+                           required />
+                </div>
+                <div class="mb-3">
+                    <label for="start-date-input" class="form-label">Fecha de Inicio</label>
+                    <input type="date"
+                           class="form-control"
+                           id="start-date-input"
+                           name="start-date"
+                           placeholder="Ingrese la fecha de inicio"
+                           required />
+                </div>
+                <div class="mb-3">
+                    <label for="end-date-input" class="form-label">Fecha de Inicio</label>
+                    <input type="date"
+                           class="form-control"
+                           id="end-date-input"
+                           name="end-date"
+                           placeholder="Ingrese la fecha de finilización"
+                           required />
+                </div>
+                <div class="mb-3">
+                    <label for="current-status-input" class="form-label">Estado</label>
+
+                    {% include "common/inputs/_current-status-select.html" %}
+
+                </div>
+                <div class="mb-3">
+                    <label for="observations-input" class="form-label">Observaciones</label>
+                    <textarea class="form-control"
+                              placeholder="Ingrese alguna observación"
+                              id="observations-input"
+                              name="observations"
+                              style="height: 150px"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+    </div>
+{% endblock main_content %}

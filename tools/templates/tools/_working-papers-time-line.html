@@ -1,0 +1,123 @@
+{% block styles %}
+  <style>
+.vertical-timeline {
+   width: 100%;
+   position: relative;
+   padding: 1.5rem 0 1rem;
+}
+
+.vertical-timeline::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: 67px;
+   height: 100%;
+   width: 4px;
+   background: #e9ecef;
+   border-radius: .25rem;
+}
+
+.vertical-timeline-element {
+   position: relative;
+   margin: 0 0 1rem;
+}
+
+.vertical-timeline--animate .vertical-timeline-element-icon.bounce-in {
+   visibility: visible;
+   animation: cd-bounce-1 .8s;
+}
+.vertical-timeline-element-icon {
+   position: absolute;
+   top: 0;
+   left: 60px;
+}
+
+.vertical-timeline-element-icon .badge-dot-xl {
+   box-shadow: 0 0 0 5px #fff;
+}
+
+.badge-dot-xl {
+  width: 18px; 
+  height: 18px;
+  position: relative;
+  display: inline-block;
+  min-width: 18px;
+  min-height: 18px;
+  background-color: #007bff; 
+}
+
+.badge-dot-xl::before {
+  content: "";
+  width: 10px;
+  height: 10px; 
+  border-radius: .25rem;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin: -5px 0 0 -5px; 
+  background: #fff;
+}
+
+.badge {
+  padding: 0.5em; 
+  display: inline-flex;
+  align-items: center; 
+}
+.vertical-timeline-element-content {
+   position: relative;
+   margin-left: 90px;
+   font-size: .8rem;
+}
+
+.vertical-timeline-element-content:after {
+   content: "";
+   display: table;
+   clear: both;
+}
+  </style>
+{% endblock styles %}
+<div class="vertical-timeline vertical-timeline--animate vertical-timeline--one-column">
+  {% for line in time_line %}
+    {% if line.value %}
+      <div class="vertical-timeline-item vertical-timeline-element">
+        <div>
+          <span class="vertical-timeline-element-icon bounce-in">
+            <i class="badge badge-dot badge-dot-xl
+                      {% if line.status == "inicializado" %}
+                        badge-inicializado
+                      {% elif line.status == "en proceso" %}
+                        badge-en-proceso
+                      {% elif line.status == "en revisión" %}
+                        badge-en-revision
+                      {% elif line.status == "aprobado" %}
+                        badge-aprobado
+                      {% elif line.status == "terminado" %}
+                        badge-terminado
+                      {% elif line.status == "en espera" %}
+                        badge-en-espera
+                      {% elif line.status == "rechazado" %}
+                        badge-rechazado
+                      {% elif line.status == "completado" %}
+                        badge-completado
+                      {% elif line.status == "archivado" %}
+                        badge-archivado
+                      {% elif line.status == "cancelado" %}
+                        badge-cancelado
+                      {% endif %}"> </i>
+          </span>
+          <div class="vertical-timeline-element-content bounce-in">
+            <h4 class="fs-6 text-capitalize fw-bold">{{ line.status }}</h4>
+            <p>6 de enero de 2024 a las 08:30</p>
+            <p>
+              Lorem ipsum dolor sit, amet consectetur adipisicing elit. Voluptatibus enim nisi dolores odio molestiae accusantium obcaecati blanditiis esse, officiis a. Aliquam error cupiditate saepe iusto cum. Aperiam eligendi sint porro repellat maxime aliquam corporis, fugiat deleniti ad consectetur recusandae laudantium officia numquam.
+            </p>
+            <span class="d-block position-absolute pe-3 text-end"
+                  style="left: -90px;
+                         top: 0;
+                         font-size: .7619rem">9:30 AM</span>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>

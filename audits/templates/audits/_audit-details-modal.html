@@ -1,0 +1,70 @@
+{% load filters %}
+
+<div class="modal fade" id="audit-details-modal{{ audit.id }}" tabindex="-1"
+    aria-labelledby="audit-details-modal-label{{ audit.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="audit-details-modal-label{{ audit.id }}">Detalles de la auditoría</h1>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <strong>Título:</strong>
+                <p>{{ audit.title }}</p>
+                <strong>Identidad:</strong>
+                <p>{{ audit.identidad }}</p>
+                <strong>Fecha de Inicio:</strong>
+                <p>{{ audit.fechaInit|date:"Y-m-d H:i" }}</p>
+                <strong>Fecha Final:</strong>
+                <p>{{ audit.fechaEnd|date:"Y-m-d H:i" }}</p>
+                <s<strong>Tipo de Auditoría:</strong>
+                    <p>
+                        {% if audit.tipoAuditoria == 'F' %}
+                        Financiera
+                        {% elif audit.tipoAuditoria == 'I' %}
+                        Interna
+                        {% else %}
+                        Desconocida
+                        {% endif %}
+                    </p>
+                    <strong>Creada:</strong>
+                    <p>{{ audit.created_at|format_date }}</p>
+                    <strong>Usuarios asignados:</strong>
+                    <ul class="list-group list-group-flush">
+                        {% for user in audit.assigned_users.all %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-muted-foreground">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            {{ user.get_full_name }}
+                            <span class="badge
+                                         {% if user.role.name == 'auditor' %}
+                                             bg-primary
+                                         {% elif user.role.name == 'supervisor' %}
+                                             bg-success
+                                         {% endif %}
+                                         rounded-pill">{{ user.role }}</span>
+                        </li>
+                        {% endfor %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="text-muted-foreground">
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            {{ audit.audit_manager.get_full_name }}
+                            <span class="badge bg-danger rounded-pill">{{ audit.audit_manager.role }}</span>
+                        </li>
+                    </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary">Realizar</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,279 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Estado de Papeles de Trabajo
+{% endblock title %}
+
+{% load filters %}
+{% load render_table from django_tables2 %}
+
+{% block styles %}
+  <style>
+.timeline-steps {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap
+}
+
+.timeline-steps .timeline-step {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    margin: 1rem
+}
+
+@media (min-width:768px) {
+    .timeline-steps .timeline-step:not(:last-child):after {
+        content: "";
+        display: block;
+        border-top: .25rem dotted #3b82f6;
+        width: 3.46rem;
+        position: absolute;
+        left: 7.5rem;
+        top: .3125rem
+    }
+    .timeline-steps .timeline-step:not(:first-child):before {
+        content: "";
+        display: block;
+        border-top: .25rem dotted #3b82f6;
+        width: 3.8125rem;
+        position: absolute;
+        right: 7.5rem;
+        top: .3125rem
+    }
+}
+
+.timeline-steps .timeline-content {
+    width: 10rem;
+    text-align: center
+}
+
+.timeline-steps .timeline-content .inner-circle {
+    border-radius: 1.5rem;
+    height: 1rem;
+    width: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #3b82f6
+}
+
+.timeline-steps .timeline-content .inner-circle:before {
+    content: "";
+    background-color: #3b82f6;
+    display: inline-block;
+    height: 3rem;
+    width: 3rem;
+    min-width: 3rem;
+    border-radius: 6.25rem;
+    opacity: .5
+}
+  </style>
+{% endblock styles %}
+{% block page_title %}
+  Papel de Trabajo
+{% endblock page_title %}
+Papel de Trabajo
+{% block page_subtitle %}
+  Referencia: {{ status_of_work_papers.reference }}
+{% endblock page_subtitle %}
+{% block main_header_content %}
+  <div class="row justify-content-end align-items-end g-3">
+    <div class="col-sm-auto col-12">
+      <a class="btn btn-outline-secondary d-flex gap-2 col-12 align-items-center justify-content-center"
+         href="{% url 'status_of_work_papers' status_of_work_papers.id %}?generate_pdf=true">
+        <svg width="24"
+             height="24"
+             viewBox="0 0 24 24"
+             fill="none"
+             xmlns="http://www.w3.org/2000/svg">
+          <path d="M7 18H17V16H7V18Z" fill="currentColor" />
+          <path d="M17 14H7V12H17V14Z" fill="currentColor" />
+          <path d="M7 10H11V8H7V10Z" fill="currentColor" />
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9C21 5.13401 17.866 2 14 2H6ZM6 4H13V9H19V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4ZM15 4.10002C16.6113 4.4271 17.9413 5.52906 18.584 7H15V4.10002Z" fill="currentColor" />
+        </svg>
+        Exportar Informe
+      </a>
+    </div>
+    <div class="col-sm-auto col-12">
+      <button class="btn btn-primary d-flex gap-2 col-12 align-items-center justify-content-center"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#update-working-papers">
+        <svg xmlns="http://www.w3.org/2000/svg"
+             width="16"
+             height="16"
+             fill="currentColor"
+             class="bi bi-pencil-square"
+             viewBox="0 0 16 16">
+          <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z" />
+          <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z" />
+        </svg>
+        Editar
+      </button>
+      <div class="modal fade" tabindex="-1" id="update-working-papers">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Actualizar Datos</h5>
+              <button type="button"
+                      class="btn-close"
+                      data-bs-dismiss="modal"
+                      aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <form action="{% url 'status_of_work_papers' status_of_work_papers.id %}"
+                    method="post"
+                    id="update-working-papers-form">
+                {% csrf_token %}
+                <div class="mb-3">
+                  <label for="reference-input" class="form-label">Referencia</label>
+                  <input type="text"
+                         class="form-control"
+                         id="reference-number-input"
+                         aria-describedby="referenceNumberHelp"
+                         placeholder="Ingrese la referencia"
+                         name="reference"
+                         value="{{ status_of_work_papers.reference }}"
+                         required />
+                </div>
+                <div class="mb-3">
+                  <label for="work-papers-input" class="form-label">Papeles de trabajo</label>
+                  <input type="text"
+                         class="form-control"
+                         id="work-papers-name-input"
+                         aria-describedby="workPapersNameHelp"
+                         placeholder="Ingrese los papeles de trabajo"
+                         name="working-papers"
+                         value="{{ status_of_work_papers.working_papers }}"
+                         required />
+                </div>
+                <div class="mb-3">
+                  <label for="start-date-input" class="form-label">Fecha de Inicio</label>
+                  <input type="date"
+                         class="form-control"
+                         id="start-date-input"
+                         name="start-date"
+                         placeholder="Ingrese la fecha de inicio"
+                         value="{{ status_of_work_papers.start_date|date:'Y-m-d' }}"
+                         required />
+                </div>
+                <div class="mb-3">
+                  <label for="end-date-input" class="form-label">Fecha de Finalización</label>
+                  <input type="date"
+                         class="form-control"
+                         id="end-date-input"
+                         name="end-date"
+                         placeholder="Ingrese la fecha de finalización"
+                         value="{{ status_of_work_papers.end_date|date:'Y-m-d' }}"
+                         required />
+                </div>
+                <div class="mb-3">
+                  <label for="current-status-input" class="form-label">Estado</label>
+
+                  {% include "common/inputs/_current-status-select.html" %}
+
+                </div>
+                <div class="mb-3">
+                  <label for="observations-input" class="form-label">Observaciones</label>
+                  <textarea class="form-control"
+                            placeholder="Ingrese alguna observación"
+                            id="observations-input"
+                            name="observations"
+                            style="height: 150px">{% if status_of_work_papers.observations %}{{status_of_work_papers.observations}}{% endif %}</textarea>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="reset"
+                      class="btn btn-secondary"
+                      form="update-working-papers-form"
+                      data-bs-dismiss="modal">Cancelar</button>
+              <button type="submit"
+                      class="btn btn-primary"
+                      form="update-working-papers-form">Actualizar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock main_header_content %}
+{% block main_content %}
+  <article class="w-100">
+    <div class="card w-100">
+      <div class="card-body">
+        <h4 class="card-title mb-5 fw-semibold">Detalles del Papel de Trabajo</h4>
+        <div class="container-fluid overflow-hidden text-start">
+          <div class="row gy-5">
+            <div class="col-6 d-flex flex-column">
+              <strong class="text-body-tertiary mb-2">Referencia</strong>
+              <p class="fs-5 fw-bold mb-3">{{ status_of_work_papers.reference }}</p>
+            </div>
+            <div class="col-6 d-flex flex-column">
+              <strong class="text-body-tertiary mb-2">Papeles de Trabajo</strong>
+              <p class="fs-5 fw-bold mb-3">{{ status_of_work_papers.working_papers }}</p>
+            </div>
+            <div class="col-6 d-flex flex-column">
+              <strong class="text-body-tertiary mb-2">Fecha de Inicio</strong>
+              <p class="fs-5 fw-bold mb-3">{{ status_of_work_papers.formatted_start_date }}</p>
+            </div>
+            <div class="col-6 d-flex flex-column">
+              <strong class="text-body-tertiary mb-2">Fecha de finalización</strong>
+              <p class="fs-5 fw-bold mb-3">{{ status_of_work_papers.formatted_end_date }}</p>
+            </div>
+            <div class="col-12 d-flex flex-row gap-3 align-items-center">
+              <strong class="text-body-tertiary">Estado Actual:</strong><span class="badge
+             {% if status_of_work_papers.current_status.name == "inicializado" %}
+               badge-inicializado
+             {% elif status_of_work_papers.current_status.name == "en proceso" %}
+               badge-en-proceso
+             {% elif status_of_work_papers.current_status.name == "en revisión" %}
+               badge-en-revision
+             {% elif status_of_work_papers.current_status.name == "aprobado" %}
+               badge-aprobado
+             {% elif status_of_work_papers.current_status.name == "terminado" %}
+               badge-terminado
+             {% elif status_of_work_papers.current_status.name == "en espera" %}
+               badge-en-espera
+             {% elif status_of_work_papers.current_status.name == "rechazado" %}
+               badge-rechazado
+             {% elif status_of_work_papers.current_status.name == "completado" %}
+               badge-completado
+             {% elif status_of_work_papers.current_status.name == "archivado" %}
+               badge-archivado
+             {% elif status_of_work_papers.current_status.name == "cancelado" %}
+               badge-cancelado
+             {% endif %}">{{ status_of_work_papers.current_status }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+  <article class="w-100">
+    <div class="card w-100">
+      <div class="card-body">
+        <h4 class="card-title mb-5 fw-semibold">Observaciones</h4>
+        <p class="fs-5">
+          {% if status_of_work_papers.observations %}
+            {{ status_of_work_papers.observations }}
+          {% else %}
+            No hay observaciones por el momento
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </article>
+  <article class="w-100">
+    <div class="card w-100">
+      <div class="card-body">
+        <h4 class="card-title mb-5 fw-semibold">Línea de Tiempo</h4>
+
+        {% include "tools/_working-papers-time-line.html" with time_line=time_line %}
+
+      </div>
+    </div>
+  </article>
+{% endblock main_content %}

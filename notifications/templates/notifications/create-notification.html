@@ -1,0 +1,100 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+    Crear Notificación
+{% endblock title %}
+{% block page_title %}
+    Crear Notificación
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_content %}
+    <div class="container mt-5 p-md-4 p-2 bg-light-subtle shadow-lg rounded">
+        <h2 class="mb-4">Notificación</h2>
+        <form action="{% url 'create_notification' %}" method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="audit" class="form-label">Auditoria</label>
+                <select class="form-select"
+                        aria-label="audit"
+                        id="audit_id"
+                        name="audit_id"
+                        required>
+                    <option selected>Seleccione la auditoria relacionada</option>
+                    {% for audit in audits %}<option value="{{ audit.id }}">{{ audit.title }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="notifieds_users" class="form-label">Destinatario</label>
+                <select id="notifieds_users"
+                        name="notifieds_ids"
+                        multiple="true"
+                        class="form-control"
+                        required></select>
+            </div>
+            <div class="mb-3">
+                <label for="note" class="form-label">Nota</label>
+                <textarea class="form-control"
+                          id="note"
+                          rows="5"
+                          name="notification_note"
+                          placeholder="Realizar cierta tarea..."
+                          style="resize: none"
+                          required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Enviar</button>
+        </form>
+    </div>
+{% endblock main_content %}
+{% block extra_scripts %}
+    <script>
+    $(document).ready(function() {
+        const audits = JSON.parse("{{ audits_json|escapejs }}");
+        const notifieds = JSON.parse("{{ notifieds_json|escapejs }}");
+        const auditSelect = document.getElementById("audit_id");
+        const notifiedsSelect = $('#notifieds_users');
+        let actualAudit = null;
+
+        const updateNotifiedsOptions = (assignedUsers) => {
+            notifiedsSelect.empty();
+            notifieds.forEach(notified => {
+                if (assignedUsers.includes(notified.id)) {
+                    const option = new Option(
+                        `${notified.first_name} ${notified.last_name} - ${notified.role.verbose_name}`, 
+                        notified.id, 
+                        false, 
+                        false
+                    );
+                    notifiedsSelect.append(option);
+                }
+            });
+
+            notifiedsSelect.select2({
+                placeholder: "Usuarios que serán notificados",
+                allowClear: true
+            });
+        };
+
+        if (actualAudit){
+            const usuariosAsignados = [...actualAudit.assigned_users,actualAudit.audit_manager]
+            updateNotifiedsOptions(usuariosAsignados);
+        }
+        
+
+        auditSelect.addEventListener("change", (e) => {
+            const selectedAuditId = e.target.value;
+            actualAudit = audits.find(audit => audit.id == selectedAuditId);
+            const assignedUsersIds = actualAudit.assigned_users.map((value,key) => value.id);
+            if (actualAudit) {
+                const usuariosAsignados = [...assignedUsersIds,actualAudit.audit_manager.id]
+                updateNotifiedsOptions(usuariosAsignados);
+            }
+        });
+
+        notifiedsSelect.select2({
+            placeholder: "Usuarios que serán notificados",
+            allowClear: true
+        });
+    });
+    </script>
+{% endblock extra_scripts %}

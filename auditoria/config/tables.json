@@ -1,0 +1,38 @@
+{
+  "patrones": [
+    {
+      "buscar": "Entidad:",
+      "valor": "[IDENTIDAD]"
+    },
+    {
+      "buscar": "Auditoría:",
+      "valor": "[TITULO_AUDITORIA]"
+    },
+    {
+      "buscar": "Período:",
+      "valor": "[FECHA_RANGO]"
+    },
+    {
+      "buscar": "Tipo de Auditoría:",
+      "valor": "[TIPO_AUDITORIA]"
+    }
+  ],
+  "patrones_regex": [
+    {
+      "pattern": "Entidad:[^\n]*",
+      "reemplazar_por": "[ENTIDAD_COMPLETA]"
+    },
+    {
+      "pattern": "Auditoría:[^\n]*",
+      "reemplazar_por": "[AUDITORIA_COMPLETA]"
+    },
+    {
+      "pattern": "Período:[^\n]*",
+      "reemplazar_por": "[FECHA_RANGO_COMPLETA]"
+    },
+    {
+      "pattern": "Tipo de Auditoría:[^\n]*",
+      "reemplazar_por": "[TIPO_AUDITORIA_COMPLETA]"
+    }
+  ]
+}

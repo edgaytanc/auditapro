@@ -1,0 +1,74 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Crear Actividad
+{% endblock title %}
+
+{% load filters %}
+
+{% block page_title %}
+  Crear Actividad
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_content %}
+  <div class="card shadow-sm col-12 col-md-6">
+    <div class="card-body">
+      <form action="{% url 'create_activity' %}" method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="activity" class="form-label">Nombre de la actividad</label>
+          <input type="text"
+                 class="form-control"
+                 id="activity"
+                 placeholder="Reunirse en google meet..."
+                 name="activity"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="start-date-input" class="form-label">Fecha de Inicio</label>
+          <input type="date"
+                 class="form-control"
+                 id="start-date-input"
+                 name="start-date"
+                 placeholder="Ingrese la fecha de inicio"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="end-date-input" class="form-label">Fecha de Finalización</label>
+          <input type="date"
+                 class="form-control"
+                 id="end-date-input"
+                 name="end-date"
+                 placeholder="Ingrese la fecha de finilización"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="current-status-input" class="form-label">Estado</label>
+
+          {% include "common/inputs/_current-status-select.html" %}
+
+        </div>
+        <div class="mb-3">
+          <label for="full-name-input" class="form-label">Número de nombramiento</label>
+          <input type="text"
+                 class="form-control"
+                 id="appointment-number"
+                 aria-describedby="appointmentNumberHelp"
+                 placeholder="Ingrese el número de nombramiento"
+                 name="appointment-number"
+                 required />
+        </div>
+        <div class="mb-3">
+          <label for="observations-input" class="form-label">Observaciones</label>
+          <textarea class="form-control"
+                    placeholder="Ingrese alguna observación"
+                    id="observations-input"
+                    name="observations"
+                    style="height: 150px"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar</button>
+      </form>
+    </div>
+  </div>
+{% endblock main_content %}

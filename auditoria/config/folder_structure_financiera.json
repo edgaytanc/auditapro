@@ -1,0 +1,360 @@
+{
+    "1 PROYECTO INICIAL": {
+        "1 INICIO ENCARGO.docx": [],
+        "2 INDEPENDENCIA.docx": [],
+        "3 RECOPILACION CLIENTES.docx": [],
+        "4 Investigación de Clientes.docx": [],
+        "5 CUESTIONARIO ACEPTACIÓN CLIENTE.docx": [],
+        "6 CONTINUACIÓN DE UN CLIENTE.docx": [],
+        "7 Código de Ética.docx": [],
+        "8 Validación del Equipo.docx": [],
+        "9 MANIFESTACIÓN DE INDEPENDENCIA.docx": [],
+        "10 DECLARACION DE INDEPENDENCIA.docx": [],
+        "11 ASIGNACION DE PERSONAL.docx": [],
+        "12 CARTA CONVENIO.docx": [],
+        "13 CONTRATO DE SERVICIOS.docx": [],
+        "14 Evaluación de Calidad.docx": [],
+        "15 Revisión del Desempeño.docx": [],
+        "16 Manual de Calidad para Firmas.docx": []
+    },
+    "2 ESTRATEGIA Y PLAN DE AUDITORIA": {
+        "1 ESTRATEGIA GLOBAL Y PLANIFICACIÓN": {
+            "1 Reunión Preliminar.docx": [],
+            "2 SOLICITUD INFORMACION.docx": [],
+            "3 ENTENDIMIENTO ENTIDAD.docx": [],
+            "4 Cuestionario.xlsx": [],
+            "5 NEGOCIO EN MARCHA NIA 570.docx": []
+        },
+        "2 PROCEDIMIENTOS ANALÍTICOS": {
+            "1 Estados Financieros Actuales y Anterior.xlsx": [], "2 REGISTROS AUXILIARES.xlsx": [], "3 Comparativo Estados Financieros y Registros Auxiliares.xlsx": [], "4 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx": [], "5 ANÁLISIS VERTICAL DE BALANCE GENERAL.xlsx": [],
+            "6 RATIOS FINANCIEROS.xlsx": [], "7 ANALISIS PRESUPUESTO.xlsx": [], "8 MATERIALIDAD.xlsx": [], "9 CUESTIONARIO DE EVALUACION GENERAL.xlsx": [], "10 Inspección de Documentos e Instalaciones.xlsx": [],
+            "11 CUESTIONARIO DE RIESGOS DE FRAUDE.xlsx": [], "12 PROCEDIMIENTOS DE VALORACION DE RIESGOS.xlsx": [], "13 IDENTIFICACIÓN Y VALORACIÓN DE LOS RIESGOS DE INCORRECCIÓN MATERIAL.docx": []
+        },
+        "3 ENTENDIMIENTO CONTROL INTERNO": {
+            "1 CUESTIONARIOS": {
+                "1 EVALUACION DEL CONTROL INTERNO ENFOQUE COSO.xlsx": [], "2 Cuestionario con Maxima Autoridad.xlsx": [], "3 Cuestionario con Gerencia.xlsx": [], "4 Cuestionario con Contabilidad.xlsx": [], "5 Cuestionario con Auditoría Interna.xlsx": [],
+                "6 Cuestionario con Compras.xlsx": [], "7 Cuestionario con Presupuestos.xlsx": [], "8 Cuestionario con Jurídico.xlsx": [], "9 Cuestionario con Obras.xlsx": [], "10 Cuestionario con Recursos Humanos.xlsx": [],
+                "11 Cuestionario con Informatica.xlsx": [], "12 Cuestionario con Bodega.xlsx": []
+            },
+            "2 REVISION": {
+                "1 REVISION DE ESTATUTOS.xlsx": [], "2 REVISION DE ACTAS.xlsx": [], "3 REVISION DE CONTRATOS.xlsx": [], "4 Revisión de Correspondencia.xlsx": [], "5 REVISION DE CORRESPONDENCIA.xlsx": [], "6 SEGUIMIENTO A INFORMES DE AUDITORIA.xlsx": []
+            },
+            "3 ANALISIS": {
+                "1 Evaluación del Riesgo a Cumplimiento.xlsx": [], "2 Identificacion de Riesgos a Respuestas de Responsables.xlsx": [],
+                "3 Realizar un análisis FODA.docx": [],
+                "4 Analisis PESTEL.xlsx": [],
+                "5 Análisis Fuerzar Porter.xlsx": [], "6 Prueba de Saldos Iniciales.xlsx": [],
+                "7 Comprensión y evaluación del Entorno de TI.docx": [],
+                "8 Evaluación de Indicadores Clave de Desempeño.docx": [],
+                "9 Evaluación de Riesgos de Fraude.xlsx": [],
+                "10 DELIBERACIONES EQUIPO.docx": []
+            }
+        },
+        "4 IMPORTANCIA RELATIVA": {
+            "IMPORTANCIA RELATIVA.xlsx": []
+        },
+        "5 USO DEL AUDITOR INTERNO": {
+            "UTILIZACIÓN DEL AUDITOR INTERNO.docx": []
+        },
+        "6 Uso de Terceros": {
+            "1 CUESTIONARIO DE EVALUACION DE TERCEROS.xlsx": [],
+            "2 DOCUMENTAR TERCEROS.xlsx": []
+        },
+        "7 EVALUACIÓN": {
+            "1 Consideración NIA 250.docx": [],
+            "2 Empresa funcionamiento (NIA 570).docx": [],
+            "3 Evaluar Estimaciones NIA 540.docx": [],
+            "4 Evidencia Litigios NIA 501.docx": [],
+            "5 Partes Vinculadas.docx": []
+        },
+        "8 Matriz de Riesgos": {
+            "1 MATRIZ RIESGOS DE NEGOCIO.xlsx": [],
+            "2 Matriz de Riesgos de Transacciones Significativas.xlsx": [],
+            "3 Identificación de Riesgos de Fraude en Transacciones Inusuales.xlsx": []
+        },
+        "9 ESTRATEGIA GLOBAL": {
+            "1 Estrategia de Auditoría.docx": [],
+            "2 Matriz Estrategia.docx": []
+        },
+        "10 PLAN DE AUDITORÍA": {
+            "1 Plan de Auditoría.docx": [],
+            "2 CRONOGRAMA DE AUDITORIA.xlsx": []
+        }
+    },
+    "3 EVALUACION DE CONTROL": {
+        "1 CAJA Y BANCOS": {
+            "1 CUESTIONARIO CAJA Y BANCOS.docx": [],
+            "2 Evaluación en Caja y Bancos.docx": []
+        },
+        "2 CUENTAS POR COBRAR": {
+            "1 CUESTIONARIO CUENTAS POR COBRAR.docx": [],
+            "2 Evaluación en Cuentas por Cobrar.docx": []
+        },
+        "3 INVERSIONES": {
+            "1 CUESTIONARIO INVERSIONES.docx": [],
+            "2 Evaluación en Inversiones.docx": []
+        },
+        "4 INVENTARIOS": {
+            "1 CUESTIONARIO INVENTARIOS.docx": [],
+            "2 Evaluación en Inventarios.docx": []
+        },
+        "5 CONSTRUCCIONES EN PROCESO": {
+            "1 CUESTIONARIO.docx": [],
+            "2 Evaluación.docx": []
+        },
+        "6 PROPIEDAD PLANTA Y EQUIPO": {
+            "1 CUESTIONARIO PROPIEDAD PLANTA Y EQUIPO.docx": [],
+            "2 Evaluación en Propiedad.docx": []
+        },
+        "7 ACTIVO INTANGIBLE": {
+            "1 CUESTIONARIO ACTIVO DIFERIDO.docx": [],
+            "2 Evaluación en Activos Diferidos.docx": []
+        },
+        "8 CUENTAS POR PAGAR": {
+            "1 CUESTIONARIO POR PAGAR.docx": [],
+            "2 Evaluación en Cuentas por Pagar.docx": []
+        },
+        "9 PRÉSTAMOS POR PAGAR": {
+            "1 CUESTIONARIO PRÉSTAMOS POR PAGAR.docx": [],
+            "2 Evaluación en Préstamos por Pagar.docx": []
+        },
+        "10 PATRIMONIO": {
+            "1 CUESTIONARIO CAPITAL SOCIAL.docx": [],
+            "2 Evaluación en Patrimonio.docx": []
+        },
+        "11 IMPUESTOS": {
+            "1 CUESTIONARIO IMPUESTOS.docx": [],
+            "2 Evaluación en Impuestos.docx": []
+        },
+        "12 NÓMINAS": {
+            "1 CUESTIONARIO NOMINAS.docx": [],
+            "2 Evaluación en Nóminas.docx": []
+        }
+    },
+    "4 MUESTREO": {
+        "1 Muestreo Aleatorio Simple.xlsm": [],
+        "2 MAC.xlsm": []
+    },
+    "5 PRUEBAS SUSTANTIVAS": {
+        "1 CAJA Y BANCOS": {
+            "1 PROGRAMA.docx": [],
+            "2 SUMARIA CAJAS Y BANCOS.xlsx": [],
+            "3 CONCILIACIONES BANCARIAS.xlsx": [],
+            "4 CONFIRMACION BANCARIA.docx": [],
+            "4.1 CONTROL DE CONFIRMACIONES.xlsx": [],
+            "5 ARQUEO DE CAJA.xlsx": [],
+            "6 ARQUEOS CAJA CHICA.docx": [],
+            "7 CORTE DE CHEQUES.xlsx": [],
+            "8 INTEGRACION INGRESOS.xlsx": [],
+            "9 PRUEBA DE INGRESOS.xlsx": [],
+            "10 INTEGRACION EGRESOS.xlsx": [],
+            "11 PRUEBA DE EGRESOS.xlsx": [],
+            "12 PRUEBA DE TRANSFERENCIAS.xlsx": [],
+            "13 REVISION AJUSTES CONTABLES.xlsx": [],
+            "14 PRUEBAS CIERRE CONTABLE.xlsx": [],
+            "15 PARTIDAS DE AJUSTES.docx": [],
+            "16 PARTIDAS DE RECLASIFICACION.docx": [],
+            "17 HALLAZGOS.docx": [],
+            "18 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "2 CUENTAS POR COBRAR": {
+            "1 PROGRAMA DE AUDITORIA CUENTAS POR COBRAR.docx": [],
+            "2 SUMARIA CUENTAS POR COBRAR.xlsx": [],
+            "3 INTEGRACION DE CLIENTES.xlsx": [],
+            "4 INTEGRACION DE DEUDORES.xlsx": [],
+            "5 CIRCULARIZACION DE CLIENTE.docx": [],
+            "6 CIRCULARIZACION.docx": [],
+            "7 ESTADISTICA DE CIRCULARIZACION.docx": [],
+            "8 INSPECCIONAR.xlsx": [],
+            "9 ANALISIS DE ANTIGUEDAD DE SALDOS.xlsx": [],
+            "10 PRUEBA DE COBROS POSTERIORES.xlsx": [],
+            "11 ANALISIS DE CUENTAS INCOBRABLES.xlsx": [],
+            "12 CORTE DE FORMAS.xlsx": [],
+            "13 PARTIDAS DE AJUSTES.docx": [],
+            "14 PARTIDAS DE RECLASIFICACION.docx": [],
+            "15 HALLAZGOS.docx": [],
+            "16 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "3 INVERSIONES": {
+            "1 PROGRAMA DE AUDITORIA INVERSIONES.docx": [],
+            "2 SUMARIA INVERSIONES.xlsx": [],
+            "3 PRUEBA FISICA INVERSIONES.xlsx": [],
+            "4 PARTIDAS DE AJUSTES.docx": [],
+            "5 PARTIDAS DE RECLASIFICACION.docx": [],
+            "6 HALLAZGOS.docx": [],
+            "7 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "4 INVENTARIOS": {
+            "1 PROGRAMA DE AUDITORIA INVENTARIOS.docx": [],
+            "2 SUMARIA INVENTARIOS.xlsx": [],
+            "3 INTEGRACION DE INVENTARIOS.xlsx": [],
+            "4 INVENTARIOS EN TRANSITO.xlsx": [],
+            "5 INTEGRACION INVENTARIOS OBSOLETOS.xlsx": [],
+            "6 ANALITICA DE INVENTARIOS.xlsx": [],
+            "7 MEMORANDUM TOMA FISICA DE INVENTARIO.docx": [],
+            "8 INVENTARIO FISICO.xlsx": [],
+            "9 VALUACION DE INVENTARIOS.xlsx": [],
+            "10 Comparar costos con precios de mercado.xlsx": [],
+            "11 CONFIRMACION DE INVENTARIOS.docx": [],
+            "12 CORTE DE FORMAS.xlsx": [],
+            "13 PRUEBAS DE CIERRE.docx": [],
+            "14 PARTIDAS DE AJUSTES.docx": [],
+            "15 PARTIDAS DE RECLASIFICACION.docx": [],
+            "16 HALLAZGOS.docx": [],
+            "17 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "5 CONSTRUCCIONES EN PROCESO": {
+            "1 PROGRAMA DE AUDITORIA CONSTRUCCIONES EN PROCESO.docx": [],
+            "2 SUMARIA CONSTRUCCIONES EN PROCESO.xlsx": [],
+            "3 INTEGRACION DE OBRAS.xlsx": [],
+            "4 SOLICITUD DE CONFIRMACION OBRAS TERMINADAS.docx": [],
+            "5 REVISION DE PRESUPUESTO DE OBRAS.xlsx": [],
+            "6 CEDULA REVISION GUATECOMPRAS.xlsx": [],
+            "7 PRUEBA FISICA DE OBRAS.xlsx": [],
+            "8 PRUEBA DE COSTOS.xlsx": [],
+            "9 CONFIRMACION DE REGISTROS.xlsx": [],
+            "10 PARTIDAS DE CIERRE.docx": [],
+            "11 PARTIDAS DE AJUSTES.docx": [],
+            "12 PARTIDAS DE RECLASIFICACION.docx": [],
+            "13 HALLAZGOS.docx": [],
+            "14 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "6 AUDITORIA ACTIVOS FIJOS": {
+            "1 PROGRAMA DE AUDITORIA ACTIVOS FIJOS.docx": [],
+            "2 SUMARIA ACTIVOS FIJOS.xlsx": [],
+            "3 INTEGRACION.xlsx": [],
+            "4 Revisión de títulos de propiedad, facturas y documentos legales.xlsx": [],
+            "5 INSPECCION FISICA.xlsx": [],
+            "6 PRUEBA DE ADICIONES.xlsx": [],
+            "7 PRUEBA DE BAJAS.xlsx": [],
+            "8 PRUEBA DE TRASLADOS.xlsx": [],
+            "9 METODOS USADOS.xlsx": [],
+            "10 DEPRECIACION.xlsx": [],
+            "11 PARTIDAS DE AJUSTES.docx": [],
+            "12 PARTIDAS DE RECLASIFICACION.docx": [],
+            "13 HALLAZGOS DE AUDITORIA.docx": [],
+            "14 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "7 AUDITORIA ACTIVO INTANGIBLE": {
+            "1 PROGRAMA DE ACTIVO INTANGIBLE.docx": [],
+            "2 SUMARIA ACTIVO INTANGIBLE.xlsx": [],
+            "3 INTEGRACION.xlsx": [],
+            "4 REVISION DE CONTRATOS.xlsx": [],
+            "5 SOLICITUD DE CONFIRMACION.docx": [],
+            "6 CONFIRMACION DE SEGUROS.docx": [],
+            "7 REVISIÓN DE SEGUROS PAGADOS.xlsx": [],
+            "8 PARTIDAS DE AJUSTES.docx": [],
+            "9 PARTIDAS DE RECLASIFICACION.docx": [],
+            "10 HALLAZGOS DE AUDITORIA.docx": [],
+            "11 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "8 AUDITORIA CUENTAS POR PAGAR": {
+            "1 PROGRAMA DE AUDITORIA CUENTAS POR PAGAR.docx": [],
+            "2 SUMARIA CUENTAS POR PAGAR.xlsx": [],
+            "3 INTEGRACION.xlsx": [],
+            "4 INTEGRACION DE PROVEEDORES.xlsx": [],
+            "5 PROVEEDORES SELECCIONADOS PARA CONFIRMACION.docx": [],
+            "6 OFICIOS CONFIRMACIONES A PROVEEDORES.docx": [],
+            "7 CONFIRMACIONES DE PROVEEDORES.docx": [],
+            "8 ESTADISTICA DE PROVEEDORES.docx": [],
+            "9 CIRCULARIZACION DE PASIVOS.docx": [],
+            "10 CONFIRMACION DE ABOGADOS.docx": [],
+            "11 RESPUESTA CONFIRMACION DE ABOGADOS.docx": [],
+            "12 REVISION DE FACTURAS Y DOCUMENTOS DE RESPALDO.xlsx": [],
+            "13 INSPECCION FISICA PROVEEDORES.xlsx": [],
+            "14 PRUEBA DE PASIVOS OCULTOS.xlsx": [],
+            "15 Prueba de Pagos Posteriores.xlsx": [],
+            "16 Prueba de Cálculo de Prestaciones Laborales.xlsx": [],
+            "17 PARTIDAS DE AJUSTES.docx": [],
+            "18 PARTIDAS DE RECLASIFICACION.docx": [],
+            "19 HALLAZGOS DE AUDITORIA.docx": [],
+            "20 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "9 AUDITORIA PASIVO LARGO PLAZO": {
+            "1 PROGRAMA DE AUDITORIA PRESTAMOS POR PAGAR.docx": [],
+            "2 SUMARIA PASIVO LARGO PLAZO.xlsx": [],
+            "3 ANALISIS DE PRESTAMOS.xlsx": [],
+            "4 OFICIO SOLICITUD CONFIRMACION PRESTAMOS.docx": [],
+            "5 CONFIRMACION DE PRESTAMOS.xlsx": [],
+            "6 PARTIDAS DE AJUSTES.docx": [],
+            "7 PARTIDAS DE RECLASIFICACION.docx": [],
+            "8 HALLAZGOS DE AUDITORIA.docx": [],
+            "9 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "10 AUDITORIA PATRIMONIO": {
+            "1 PROGRAMA DE AUDITORIA PATRIMONIO.docx": [],
+            "2 SUMARIA PATRIMONIO.xlsx": [],
+            "3 INTEGRACIÓN DEL PATRIMONIO.xlsx": [],
+            "4 INTEGRACIÓN DE DIVIDENDOS.xlsx": [],
+            "5 Revisión de documentación de transacciones.xlsx": [],
+            "6 PARTIDAS DE AJUSTES.docx": [],
+            "7 PARTIDAS DE RECLASIFICACION.docx": [],
+            "8 HALLAZGOS DE AUDITORIA.docx": [],
+            "9 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "11 AUDITORIA DE ESTADO RESULTADOS": {
+            "1 PROGRAMA DE AUDITORIA ESTADO RESULTADOS.docx": [],
+            "2 SUMARIA ESTADO RESULTADOS.xlsx": [],
+            "3 Análisis de tendencias y comparaciones históricas de ingresos.xlsx": [],
+            "4 Análisis de tendencias y comparaciones históricas de egresos.xlsx": [],
+            "5 Análisis comparativo de registros Ingresos.xlsx": [],
+            "6 Análisis comparativo de registros egresos.xlsx": [],
+            "7 Prueba Global de Nóminas.xlsx": [],
+            "8 PRUEBA DE PLANILLA.xlsx": [],
+            "9 VERIFICACION DE DECLARACIONES DE IMPUESTOS.xlsx": [], 
+            "10 Prueba Global Seguro Social.xlsx": [],
+            "11 PARTIDAS DE AJUSTES.docx": [],
+            "12 PARTIDAS DE RECLASIFICACION.docx": [],
+            "13 HALLAZGOS DE AUDITORIA.docx": [],
+            "14 EVIDENCIAS DE HALLAZGOS.docx": []
+        },
+        "CENTRALIZADORA DEL ESTADO DE RESULTADOS.xlsx": [],
+        "CENTRALIZADORA BALANCE.xlsx": [],
+        "CENTRALIZADORA DEL ACTIVO.xlsx": [],
+        "CENTRALIZADORA DEL PASIVO.xlsx": []
+    },
+    "6 ANALISIS": {
+        "1 CEDULA ANALISIS SOBREVALORACION OBRAS.xlsx": [],
+        "2 CEDULA ANALISIS DE HECHOS POSTERIORES.xlsx": [],
+        "3 CEDULA COMPARACION DE SALARIOS.xlsx": [],
+        "4 CEDULA COMPARACION DE SALARIOS DEPOSITOS.xlsx": [],
+        "5 CEDULA COMPARATIVA RETENCIONES CON PAGOS.xlsx": [],
+        "6 CEDULA PAGOS INUSUALES.xlsx": [],
+        "7 CEDULA COMPARATIVA IMPUESTOS CON PAGOS.xlsx": [],
+        "8 CEDULA ANALISIS DE INGRESOS.xlsx": []
+    },
+    "7 FINALIZACION": {
+        "1 Proceso de emisión de informes financieros": {
+            "1 PROCESO DE REVISION DE INFORMES FINANCIEROS.docx": []
+        },
+        "2 Hechos Posteriores": {
+            "1 Oficio a Gerencia Eventos Subsecuentes.docx": [],
+            "2 Respuesta de Gerencia.docx": [],
+            "3 LECTURA DE ACTAS.docx": []
+        },
+        "3 ANALISIS DE AJUSTES": {
+            "1 ANALISIS Y PROPUESTA DE AJUSTES.docx": []
+        },
+        "4 HALLAZGOS": {
+            "1 ANALISIS DE EVIDENCIAS.docx": [],
+            "2 REVISION DE HALLAZGOS.docx": [],
+            "3 HALLAZGOS FINALES.xlsx": []
+        },
+        "5 Comunicaciones a la gerencia": {
+            "1 DICTAMENES": {
+                "1 Parrafos dictamenes.xlsx": [],
+                "2 Dictamen de Auditoría con una Opinión Limpia.docx": [],
+                "3 Dictamen sobre cuentas anuales consolidadas.docx": [],
+                "4 Dictamen de Auditoría con Salvedades cuando Existe una Incertidumbre Material.docx": [],
+                "5 Dictamen de Auditoría con disposiciones especiales.docx": [],
+                "6 Dictamen de auditoría con salvedad.docx": [],
+                "7 Dictamen de Auditoría por no Determinar la Estimación de Cuentas por Cobrar en Litigio.docx": []
+            },
+            "2 INFORME DE AUDITORIA FINANCIERA.docx": [],
+            "3 REUNIONES CON EL CLIENTE.docx": [],
+            "4 CARTA DE REPRESENTACION.docx": [],
+            "5 Revelaciones de Estados Financieros.docx": []
+        },
+        "6 CHECKLIST DE CIERRE DE AUDITORIA.docx": []
+    }
+}

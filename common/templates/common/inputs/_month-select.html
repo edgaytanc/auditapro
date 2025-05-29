@@ -1,0 +1,4 @@
+<select class="form-select" aria-label="Mes" name="month" id="month-input">
+  <option selected>Seleccione un mes</option>
+  {% for month in months %}<option value="{{ month.id }}">{{ month.name }}</option>{% endfor %}
+</select>

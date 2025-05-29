@@ -1,0 +1,18 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+  Audita
+{% endblock title %}
+{% block page_title %}
+  Inicio
+{% endblock page_title %}
+{% block main_content %}
+  <div class="card" style="border-radius: 15px">
+    <div class="card-body p-5">
+      <h2 class="text-uppercase text-center mb-5">Ingresa a tu perfil</h2>
+      <div class="row gap-3 justify-content-evenly">
+        <a href="{% url 'user' %}" class="fs-5">Ver Perfil</a>
+      </div>
+    </div>
+  </div>
+{% endblock main_content %}

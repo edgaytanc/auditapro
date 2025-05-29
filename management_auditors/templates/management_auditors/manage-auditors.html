@@ -1,0 +1,80 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+    Gestionar Auditores
+{% endblock title %}
+{% block styles %}
+    <style>
+    @media (min-width: 576px) { 
+        .user-cards-container {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (min-width: 768px) {  
+        .user-cards-container {
+            grid-template-columns: repeat(2, 1fr);
+        }       
+    }
+
+    @media (min-width: 992px) {  
+        .user-cards-container {
+            grid-template-columns: repeat(3, 1fr);
+        }       
+    }
+
+    </style>
+{% endblock styles %}
+{% block page_title %}
+    Gestinar Auditores
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_header_content %}
+    <button class="btn btn-primary">Añadir Usuario</button>
+{% endblock main_header_content %}
+{% block main_content %}
+    <section class="row w-100">
+        <ul class="user-cards-container gap-3 mx-auto">
+            {% for user in users_to_manage %}
+                {% if user.first_name %}
+                    <li class="card shadow-sm mb-4" style="border-radius: 0.75rem;">
+                        <div class="card-body d-flex flex-column">
+                            <span class="position-relative d-flex overflow-hidden rounded-circle mb-4"
+                                  style="width: 3rem;
+                                         height: 3rem">
+
+                                {% load static %}
+
+                                <img class="img-fluid rounded-circle"
+                                     height="200"
+                                     width="200"
+                                     alt="User Avatar"
+                                     src="{% static 'images/placeholder-user.jpg' %}" />
+                            </span>
+                            <div class="text-start d-flex flex-column gap-2">
+                                <div class="h5 font-weight-medium">{{ user.get_full_name }}</div>
+                                <div class="text-muted">
+                                    <strong>Usuario:</strong>{{ user.username }}
+                                </div>
+                                <div class="text-muted">
+                                    <strong>Correo:</strong>{{ user.email }}
+                                </div>
+                                <div class="text-muted">
+                                    <strong>Rol:</strong>{{ user.role }}
+                                </div>
+                            </div>
+                            <div class="mt-3 d-flex justify-content-end gap-2">
+                                <a href="{% url 'manage_auditor' user.id %}">
+                                    <button class="btn btn-secondary">Gestionar</button>
+                                </a>
+                                <button class="btn btn-outline-primary">Notify</button>
+                            </div>
+                        </div>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </section>
+{% endblock main_content %}

@@ -1,0 +1,70 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+    Auditorias Asignadas
+{% endblock title %}
+{% block page_title %}
+    Gestionar Auditor
+{% endblock page_title %}
+{% block page_subtitle %}
+{% endblock page_subtitle %}
+{% block main_content %}
+    <section class="container-fluid">
+        <header class="row mt-4">
+            <div class="col-12 col-md-6">
+                <div class="d-flex flex-column p-4">
+                    <h3 class="display-6">Asignar Auditorias</h3>
+                    <p class="text-muted">Seleccione una o más auditorías para asignarle al auditor.</p>
+                </div>
+            </div>
+        </header>
+        <article class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form action="{% url 'assign_audit' user_to_manage.id %}"
+                              id="audits-value-form"
+                              method="post">
+                            {% csrf_token %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" style="width: 32px;">
+                                                <input type="checkbox" id="select-all" class="form-check-input" />
+                                            </th>
+                                            <th scope="col">Título</th>
+                                            <th scope="col">Compañía</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for audit in audits %}
+                                            <tr>
+                                                <td>
+                                                    <input type="checkbox"
+                                                           id="audit_{{ audit.id }}"
+                                                           name="audits_ids"
+                                                           value="{{ audit.id }}"
+                                                           data-title="{{ audit.title }}"
+                                                           class="form-check-input" />
+                                                </td>
+                                                <td class="font-medium">{{ audit.title }}</td>
+                                                <td>{{ audit.company }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="w-100 text-end d-flex flex-column flex-md-row gap-3 justify-content-between align-items-center">
+                                <div class="text-start">
+                                    <strong>Auditor:</strong>{{ user_to_manage.get_full_name }} - {{ user_to_manage.role }}
+                                </div>
+                                <button class="btn btn-primary btn-md" type="submit">Asignar Auditorias</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </article>
+    </section>
+{% endblock main_content %}

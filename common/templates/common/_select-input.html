@@ -1,0 +1,29 @@
+<select id="{{ select_id }}" name="{{ select_id }}" multiple="true" class="form-control w-100 h-100" required>
+    {% for select_option in select_options %}
+        <option value="{{ select_option.option_value }}">{{ select_option.text_to_show1 }} - {{ select_option.text_to_show2 }}</option>
+    {% endfor %}
+</select>
+
+{% block extra_scripts %}
+{% if parent_modal %} 
+<script>
+    $(document).ready(() => {
+        $("#{{ select_id }}").select2({
+            placeholder: "{{ select_placeholder }}",
+            allowClear: true,
+            dropdownParent: $('#{{parent_modal}}'),
+
+        });
+    });
+</script>
+{% else %}
+<script>
+    $(document).ready(() => {
+        $("#{{ select_id }}").select2({
+            placeholder: "{{ select_placeholder }}",
+            allowClear: true,
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

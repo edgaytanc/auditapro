@@ -1,0 +1,21 @@
+{
+  "rules": {
+    "attributeQuotes": "double"
+  },
+  "ignore": "H014,H015,H021,D018",
+  "blank_line_after_tag": "load,extends,include",
+  "blank_line_before_tag": "load,extends,include",
+  "close_void_tags": true,
+  "custom_blocks": "toc,example",
+  "exclude": ".venv,venv,.tox,.eggs,env,.env",
+  "extension": "html",
+  "format_attribute_template_tags": true,
+  "css": {
+    "indent_size": 5
+  },
+  "js": {
+    "indent_size": 5
+  },
+  "use_gitignore": true,
+  "profile": "html"
+}

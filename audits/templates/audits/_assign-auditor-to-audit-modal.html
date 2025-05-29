@@ -1,0 +1,37 @@
+<div class="modal fade"
+     id="{{ modal_id }}"
+     tabindex="-1"
+     aria-labelledby="{{ modal_label }}"
+     aria-hidden="true">
+    <div class="modal-dialog position-relative">
+        <div class="modal-content position-relative">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="{{ modal_label_id }}">Modal title</h1>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+            <div class="modal-body position-relative">
+                <form class="position-relative"
+                      id="{{ modal_id }}_form"
+                      action="{% url 'manage_audit_assign_audit' audit_id %}"
+                      method="post">
+                    {% csrf_token %}
+                    <div class="mb-3 d-flex flex-column w-100">
+                        <label for="recipient-name" class="col-form-label">Auditores para asignar</label>
+                        {% with select_id=select_id %}
+
+                            {% include "common/_select-input.html" with select_id=select_id text_to_show1="get_full_name" text_to_show2="role" select_options=auditors_options select_placeholder="Seleccione un Auditor para asignar la Auditoría" option_value="id" parent_modal=modal_id %}
+
+                        {% endwith %}
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary" form="{{ modal_id }}_form">Asignar Auditoría</button>
+            </div>
+        </div>
+    </div>
+</div>

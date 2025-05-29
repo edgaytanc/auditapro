@@ -1,0 +1,55 @@
+{
+  "entidad": {
+    "placeholders": [
+      "[IDENTIDAD]",
+      "[NOMBRE_CLIENTE]"
+    ],
+    "default": "Sin identidad",
+    "formatos": {
+      "con_espacio": {
+        "placeholders": [
+          "Entidad XXXXXXX",
+          "Entidad tesla",
+          "ENTIDAD XXXXXXXXXXXXXXXXXXXXX"
+        ],
+        "template": "Entidad {}"
+      },
+      "con_dos_puntos": {
+        "placeholders": [
+          "Entidad: XXXXXXX"
+        ],
+        "template": "Entidad: {}"
+      }
+    }
+  },
+  "fecha_rango": {
+    "placeholders": [
+      "Del 01 de Enero al 31 de Diciembre de 2024",
+      "Del 01 de Enero de 2023 al 31 de Diciembre de 2023",
+      "Del 01 de Enero al 31 de Diciembre de 2023",
+      "[FECHA_RANGO]"
+    ],
+    "template": "Del {} al {}",
+    "patrones": [
+      "Del \\d{2} de [A-Za-zé]+ al \\d{2} de [A-Za-zé]+ de \\d{4}",
+      "Del \\d{2} de [A-Za-zé]+ de \\d{4} al \\d{2} de [A-Za-zé]+ de \\d{4}",
+      "Del 01 de Enero de 2023 al 31 de Diciembre de 2023",
+      "Del 01 de Enero al 31 de Diciembre de 2023"
+    ]
+  },
+  "titulo_auditoria": {
+    "placeholder": "[TITULO_AUDITORIA]",
+    "default": "Sin título"
+  },
+  "tipo_auditoria": {
+    "placeholder": "[TIPO_AUDITORIA]",
+    "values": {
+      "F": "Financiera",
+      "I": "Interna"
+    }
+  },
+  "auditor": {
+    "placeholder": "[AUDITOR]",
+    "default": "Auditor Principal"
+  }
+}
