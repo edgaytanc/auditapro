@@ -1,3 +1,0 @@
-Superuser username='admin',
-Superuser email='admin@auditapro.com',
-Superuser password='Admin123!',
