@@ -10,6 +10,21 @@ def breadcrumbs_processor(req):
     # Inicializamos la lista de breadcrumbs con la raíz (Home)
     breadcrumbs = [("Inicio", "/")]
 
+    # Caso especial para el dashboard de superadmin
+    if req.path.strip("/") == "superadmin/dashboard":
+        return {"breadcrumbs": [
+            ("Inicio", "/"),
+            ("Dashboard", "/superadmin/dashboard"),
+        ]}
+    
+    # Caso especial para las páginas de usuarios cuando el usuario es superadmin
+    if req.path.startswith("/superadmin/users") and hasattr(req, 'user') and req.user.is_authenticated and req.user.role.name == "superadmin":
+        return {"breadcrumbs": [
+            ("Inicio", "/"),
+            ("Dashboard", "/superadmin/dashboard"),
+            ("Usuarios", req.path),
+        ]}
+
     # Obtenemos la URL actual y la dividimos
     path = req.path.strip("/").split("/")
 
@@ -31,6 +46,8 @@ def breadcrumbs_processor(req):
         "marcas-de-auditoria": "Marcas de Auditoría",
         "tipos-de-monedas": "Tipos de Moneda",
         "actividades": "Actividades",
+        "superadmin": "Panel Administrativo",
+        "users": "Usuarios",
     }
 
     # Construimos los breadcrumbs dinámicamente basados en la URL

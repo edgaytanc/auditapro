@@ -166,6 +166,9 @@ def signup_page(req):
 
 @login_required
 def user_page(req):
+    # Verificar si el usuario es superAdmin para redirigirlo a su dashboard específico
+    if req.user.role and req.user.role.name == 'superadmin':
+        return redirect('superadmin_dashboard')
     data = {
         "user_fields": USER_CLIENT_FIELDS,
     }
@@ -174,4 +177,7 @@ def user_page(req):
 
 @login_required
 def dashboard(req):
+    # Verificar si el usuario es superAdmin para redirigirlo a su dashboard específico
+    if req.user.role and req.user.role.name == 'superadmin':
+        return redirect('superadmin_dashboard')
     return render(req, "users/dashboard.html", {})

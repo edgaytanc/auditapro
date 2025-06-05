@@ -1,0 +1,118 @@
+{% extends "common/system-base.html" %}
+
+{% block title %}
+Crear Usuario
+{% endblock title %}
+
+{% block main_content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col d-flex align-items-center gap-3">
+            <span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                </svg>
+            </span>
+            <h1 class="fs-3 fw-semibold m-0">Crear Usuario</h1>
+        </div>
+        <div class="col-auto d-flex align-items-center">
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Volver</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h3 class="card-title fs-5 fw-semibold">Información del Usuario</h3>
+            <p class="card-text">Complete los datos para crear un nuevo usuario.</p>
+            
+            <form method="post" action="{% url 'create_user' %}">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="username" class="form-label">Nombre de Usuario</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="first_name" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="first_name" name="first_name" required>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="last_name" class="form-label">Apellido</label>
+                        <input type="text" class="form-control" id="last_name" name="last_name" required>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="password" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="confirm_password" class="form-label">Confirmar Contraseña</label>
+                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="role" class="form-label">Tipo de Usuario</label>
+                        <select class="form-select" id="role" name="role" required>
+                            <option value="">Seleccione un tipo</option>
+                            <option value="audit_manager">Administrador</option>
+                            <option value="auditor">Auditor</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="modalidad" class="form-label">Modalidad</label>
+                        <select class="form-select" id="modalidad" name="modalidad" required>
+                            <option value="">Seleccione una modalidad</option>
+                            <option value="I">Individual</option>
+                            <option value="G">Grupal</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label for="plan_type" class="form-label">Plan</label>
+                        <select class="form-select" id="plan_type" name="plan_type" required>
+                            <option value="">Seleccione un plan</option>
+                            <option value="mensual">Mensual (M)</option>
+                            <option value="anual">Anual (A)</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mt-4 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Validación de contraseñas
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        
+        function validatePassword() {
+            if (password.value != confirmPassword.value) {
+                confirmPassword.setCustomValidity('Las contraseñas no coinciden');
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
+        }
+        
+        password.addEventListener('change', validatePassword);
+        confirmPassword.addEventListener('keyup', validatePassword);
+    });
+</script>
+{% endblock extra_scripts %}
+{% endblock main_content %}

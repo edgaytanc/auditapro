@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "management_auditors",
     "tools",
     "auditoria",
+    "user_management",
     "django_tables2",
 ]
 
