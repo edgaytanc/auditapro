@@ -83,7 +83,7 @@ class CustomUserAdmin(UserAdmin):
     def display_assigned_audits(self, obj):
         audits = Audit.objects.filter(assigned_users=obj)
         if audits:
-            return "\n".join([f"{a.title} - {a.company}" for a in audits])
+            return "\n".join([f"{a.title} - {a.identidad}" for a in audits])
         else:
             return "No hay auditorias asignadas."
 

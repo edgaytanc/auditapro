@@ -89,8 +89,13 @@ def create_audit(req):
     audit_identidad = req.POST.get("audit_identidad")
     audit_fecha_inicio = req.POST.get("audit_fechaInit")
     audit_fecha_final = req.POST.get("audit_fechaEnd")
-    audit_assigned_users_ids = req.POST.getlist("audit_assigned_users_ids")
     audit_financial = 'audit_financial' in req.POST
+    
+    # Si el usuario es de modalidad Individual, asignar la auditoría automáticamente a él mismo
+    if req.user.modalidad == 'I':
+        audit_assigned_users_ids = [str(req.user.id)]
+    else:
+        audit_assigned_users_ids = req.POST.getlist("audit_assigned_users_ids")
 
     try:
         create_audit_func(
@@ -294,6 +299,9 @@ def manage_audit_page(req, audit_id):
         return redirect("assigned_audits")
 
     data["audit_to_manage"] = audit_to_manage
+    
+    # Pasar la modalidad del usuario a la plantilla
+    data["user_modalidad"] = req.user.modalidad
 
     users_that_can_be_assigned = [
         {
