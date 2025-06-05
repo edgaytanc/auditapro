@@ -42,9 +42,6 @@ RUN pip uninstall -y weasyprint && pip install weasyprint==52.5
 # Instalar Django debug toolbar para desarrollo
 RUN pip install --no-cache-dir django-debug-toolbar
 
-# Copiar el proyecto
-COPY . /app/
-
 # Crear directorio de logs
 RUN mkdir -p logs
 
@@ -52,12 +49,8 @@ RUN mkdir -p logs
 RUN mkdir -p db
 VOLUME /app/db
 
+# Copiar el proyecto
+COPY . /app/
+
 # Puerto de exposición
 EXPOSE 8000
-
-# Script de inicio para ejecutar migraciones y luego iniciar el servidor
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
-# Comando de inicio con script que ejecuta migraciones primero
-CMD ["/app/start.sh"]

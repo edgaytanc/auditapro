@@ -71,6 +71,13 @@ def get_is_active_route(route: str, req: HttpRequest):
 
 def aside_navbar_processor(req: HttpRequest):
 
+    # Verificar si el usuario es administrador en modalidad grupal
+    is_group_admin = False
+    if req.user.is_authenticated:
+        is_group_admin = (req.user.modalidad == 'G' and 
+                          req.user.role and 
+                          req.user.role.name == "audit_manager")
+
     nav_bar_links: List[NavBarLink] = [
         {
             "active": get_is_active_route("home", req),
@@ -86,14 +93,20 @@ def aside_navbar_processor(req: HttpRequest):
             "type": "anchor",
             "url": "dashboard",
         },
-        {
+    ]
+    
+    # Solo añadir el enlace de gestión de auditores si el usuario es administrador en modalidad grupal
+    if is_group_admin:
+        nav_bar_links.append({
             "active": get_is_active_route("manage_auditors", req),
             "icon": """<svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><path d="M402 168c-2.93 40.67-33.1 72-66 72s-63.12-31.32-66-72c-3-42.31 26.37-72 66-72s69 30.46 66 72z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path d="M336 304c-65.17 0-127.84 32.37-143.54 95.41-2.08 8.34 3.15 16.59 11.72 16.59h263.65c8.57 0 13.77-8.25 11.72-16.59C463.85 335.36 401.18 304 336 304z" fill="none" stroke="currentColor" stroke-miterlimit="10" stroke-width="32"/><path d="M200 185.94c-2.34 32.48-26.72 58.06-53 58.06s-50.7-25.57-53-58.06C91.61 152.15 115.34 128 147 128s55.39 24.77 53 57.94z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path d="M206 306c-18.05-8.27-37.93-11.45-59-11.45-52 0-102.1 25.85-114.65 76.2-1.65 6.66 2.53 13.25 9.37 13.25H154" fill="none" stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="32"/></svg>""",
             "name": "Gestionar Auditores",
             "type": "anchor",
             "url": "manage_auditors",
-            "hide_to": ["supervisor", "auditor"],
-        },
+        })
+    
+    # Continuar con el resto de enlaces
+    nav_bar_links.extend([
         {
             "active": get_is_active_route("tools", req),
             "icon": """
@@ -130,7 +143,7 @@ def aside_navbar_processor(req: HttpRequest):
         },
         {
             "active": get_is_active_route("assigned_audits", req),
-            "icon": """<svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><path d="M416 221.25V416a48 48 0 01-48 48H144a48 48 0 01-48-48V96a48 48 0 0148-48h98.75a32 32 0 0122.62 9.37l141.26 141.26a32 32 0 019.37 22.62z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32"/><path d="M256 56v120a32 32 0 0032 32h120M176 288h160M176 368h160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>""",
+            "icon": """<svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><path d="M416 221.25V416a48 48 0 01-48 48H144a48 48 0 01-48-48V96a48 48 0 0148-48h98.75a32 32 0 0122.62 9.37l141.26 141.26a32 32 0 019.37 22.62z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32"/><path d="M256 56v120a28.34 28.34 0 0028 28h120M176 288h160M176 368h160" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>""",
             "name": "Proyectos Auditoría",
             "type": "anchor",
             "url": "assigned_audits",
@@ -158,7 +171,7 @@ def aside_navbar_processor(req: HttpRequest):
         },
         {
             "active": get_is_active_route("archivo_permanente", req),
-            "icon": """<svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><path d="M336 264.13V436c0 24.3-19.05 44-42.95 44H107c-23.95 0-43-19.7-43-44V172a44.26 44.26 0 0144-44h94.12a24.55 24.55 0 0117.49 7.36l109.15 111a25.4 25.4 0 017.24 17.77z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32"/><path d="M200 128v108a28.34 28.34 0 0028 28h108" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path d="M176 128V76a44.26 44.26 0 0144-44h94a24.83 24.83 0 0117.61 7.36l109.15 111A25.09 25.09 0 01448 168v172c0 24.3-19.05 44-42.95 44H344" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32"/><path d="M312 32v108a28.34 28.34 0 0028 28h108" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>""",
+            "icon": """<svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><path d="M336 264.13V436c0 24.3-19.05 44-42.95 44H107c-23.95 0-43-19.7-43-44V172a44.26 44.26 0 0144-44h94.12a32 32 0 0122.62 9.37l109.15 111a25.4 25.4 0 017.24 17.77z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32"/><path d="M200 128v108a28.34 28.34 0 0028 28h108" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path d="M176 128V76a44.26 44.26 0 0144-44h94a24.83 24.83 0 0117.61 7.36l109.15 111A25.09 25.09 0 01448 168v172c0 24.3-19.05 44-42.95 44H344" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="32"/><path d="M312 32v108a28.34 28.34 0 0028 28h108" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/></svg>""",
             "name": "Archivo Permanente",
             "type": "anchor",
             "url": "archivo_permanente",
@@ -184,7 +197,7 @@ def aside_navbar_processor(req: HttpRequest):
                 },
             ],
         },
-    ]
+    ])
 
     return {"aside_navbar_links": nav_bar_links}
 

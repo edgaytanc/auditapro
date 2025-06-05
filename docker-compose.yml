@@ -2,7 +2,7 @@ services:
   auditapro:
     build: .
     container_name: auditapro_local
-    restart: always
+    restart: unless-stopped
 
     # Variables de entorno para desarrollo
     env_file:
@@ -13,6 +13,15 @@ services:
       - ./:/app
       - ./db:/app/db
       - ./logs:/app/logs
+
+    # Comando directo en lugar de usar start.sh
+    command: >
+      bash -c "
+        python manage.py migrate &&
+        python manage.py collectstatic --no-input --clear &&
+        python manage.py shell -c \"from django.contrib.auth import get_user_model; User = get_user_model(); print('Superusuario ya existe') if User.objects.filter(is_superuser=True).exists() else User.objects.create_superuser('admin', 'admin@example.com', 'Admin123!')\" &&
+        python manage.py runserver --insecure 0.0.0.0:8000
+      "
 
     # Exponer puerto directamente para desarrollo local
     ports:

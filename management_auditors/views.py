@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from audits.decorators import audit_manager_required
+from audits.decorators import audit_manager_required, group_admin_required
 from django.contrib.auth.decorators import login_required
 from audits.models import Audit
 from django.contrib.auth import get_user_model
@@ -13,9 +13,10 @@ User = get_user_model()
 
 
 @login_required
-@audit_manager_required
+@group_admin_required
 def manage_auditors_page(req):
-    users_to_manage = User.objects.exclude(username=req.user.username)
+    # Obtener solo los auditores asociados a este administrador
+    users_to_manage = User.objects.filter(administrador=req.user)
     return render(
         req,
         "management_auditors/manage-auditors.html",
