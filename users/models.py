@@ -61,6 +61,9 @@ class User(AbstractUser):
         blank=True,
     )
 
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
     def __str__(self) -> str:
         return f"{self.username}"
 
@@ -82,3 +85,31 @@ class User(AbstractUser):
             return User.objects.none()
         
         return self.auditores.all()
+
+    def deactivate_user(self, deactivation_date=None):
+        """
+        Da de baja a un usuario y a sus auditores asociados si es un administrador en modalidad grupal.
+        
+        Args:
+            deactivation_date: Fecha y hora de la baja. Si es None, se usa la fecha y hora actual.
+        """
+        from django.utils import timezone
+        
+        if deactivation_date is None:
+            deactivation_date = timezone.now()
+        
+        # Marcar como eliminado
+        self.is_deleted = True
+        self.deleted_at = deactivation_date
+        self.save()
+        
+        # Si es un administrador en modalidad grupal, dar de baja a todos sus auditores
+        if self.is_admin() and self.modalidad == 'G':
+            auditores = self.get_auditores()
+            for auditor in auditores:
+                if not auditor.is_deleted:  # Evitar procesamiento redundante
+                    auditor.is_deleted = True
+                    auditor.deleted_at = deactivation_date
+                    auditor.save()
+        
+        return True

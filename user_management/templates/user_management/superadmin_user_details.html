@@ -161,6 +161,36 @@ Detalles de Usuario - {{ user_to_view.get_full_name }}
                     
                     <div class="d-grid gap-2">
                         <a href="{% url 'edit_user' user_to_view.id %}" class="btn btn-outline-primary">Editar Usuario</a>
+                        
+                        {% if user_to_view.is_deleted %}
+                            <!-- Mostrar botón de reactivar si el usuario está dado de baja -->
+                            <a href="{% url 'reactivate_user' user_to_view.id %}" class="btn btn-success mt-2">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-1">
+                                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                                </svg>
+                                Reactivar Usuario
+                            </a>
+                            {% if user_to_view.deleted_at %}
+                                <div class="alert alert-warning mt-2">
+                                    <small>Usuario dado de baja el {{ user_to_view.deleted_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <!-- No mostrar botón de dar de baja para auditores en modalidad grupal con administrador -->
+                            {% if not user_to_view.role.name == "auditor" or not user_to_view.modalidad == 'G' or not user_to_view.administrador %}
+                                <a href="{% url 'deactivate_user' user_to_view.id %}" class="btn btn-danger mt-2" 
+                                   onclick="return confirm('¿Está seguro que desea dar de baja a este usuario?{% if user_to_view.is_admin and user_to_view.modalidad == "G" %}\n\nATENCIÓN: También se darán de baja todos los auditores asociados a este administrador.{% endif %}')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-1">
+                                        <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
+                                    </svg>
+                                    Dar de Baja
+                                </a>
+                            {% else %}
+                                <div class="alert alert-info mt-2">
+                                    <small>Este auditor solo puede ser dado de baja a través de su administrador: {{ user_to_view.administrador.username }}</small>
+                                </div>
+                            {% endif %}
+                        {% endif %}
                     </div>
                 </div>
             </div>

@@ -196,6 +196,70 @@ def edit_user(request, user_id):
 
 
 @login_required
+@admin_or_superadmin_required
+def deactivate_user(request, user_id):
+    """
+    Vista para dar de baja a un usuario.
+    Si el usuario es un administrador en modalidad grupal, también se darán de baja todos sus auditores asociados.
+    """
+    user_to_deactivate = get_object_or_404(User, id=user_id)
+    
+    # Verificar si el usuario ya está dado de baja
+    if user_to_deactivate.is_deleted:
+        messages.warning(request, f"El usuario {user_to_deactivate.username} ya está dado de baja.")
+        return redirect('user_details', user_id=user_id)
+    
+    # Verificar si es un auditor en modalidad grupal (solo se pueden dar de baja a través de su administrador)
+    if user_to_deactivate.role.name == "auditor" and user_to_deactivate.modalidad == 'G' and user_to_deactivate.administrador:
+        messages.error(
+            request, 
+            f"No se puede dar de baja directamente a un auditor en modalidad grupal. "
+            f"Debe dar de baja al administrador {user_to_deactivate.administrador.username}."
+        )
+        return redirect('user_details', user_id=user_id)
+    
+    # Proceder con la baja
+    user_to_deactivate.deactivate_user()
+    
+    # Mensaje de éxito con información adicional si se dieron de baja auditores asociados
+    if user_to_deactivate.is_admin() and user_to_deactivate.modalidad == 'G':
+        auditores_count = user_to_deactivate.auditores.filter(is_deleted=True).count()
+        if auditores_count > 0:
+            messages.success(
+                request, 
+                f"Usuario {user_to_deactivate.username} y {auditores_count} auditores asociados dados de baja exitosamente."
+            )
+        else:
+            messages.success(request, f"Usuario {user_to_deactivate.username} dado de baja exitosamente.")
+    else:
+        messages.success(request, f"Usuario {user_to_deactivate.username} dado de baja exitosamente.")
+    
+    return redirect('user_list')
+
+
+@login_required
+@admin_or_superadmin_required
+def reactivate_user(request, user_id):
+    """
+    Vista para reactivar a un usuario que ha sido dado de baja.
+    """
+    user_to_reactivate = get_object_or_404(User, id=user_id)
+    
+    # Verificar si el usuario ya está activo
+    if not user_to_reactivate.is_deleted:
+        messages.warning(request, f"El usuario {user_to_reactivate.username} ya está activo.")
+        return redirect('user_details', user_id=user_id)
+    
+    # Reactivar usuario
+    user_to_reactivate.is_deleted = False
+    user_to_reactivate.deleted_at = None
+    user_to_reactivate.save()
+    
+    messages.success(request, f"Usuario {user_to_reactivate.username} reactivado exitosamente.")
+    return redirect('user_details', user_id=user_id)
+
+
+@login_required
 def superadmin_dashboard(request):
     """
     Vista de dashboard para usuarios con rol superAdmin.
@@ -209,9 +273,11 @@ def superadmin_dashboard(request):
     total_users = User.objects.count()
     admin_users = User.objects.filter(role__name="audit_manager").count()
     auditor_users = User.objects.filter(role__name="auditor").count()
+    superadmin_users = User.objects.filter(role__name="superadmin").count()
     
     return render(request, 'user_management/superadmin_dashboard.html', {
         'total_users': total_users,
         'admin_users': admin_users,
         'auditor_users': auditor_users,
+        'superadmin_users': superadmin_users,
     })
