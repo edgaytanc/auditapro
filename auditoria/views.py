@@ -452,15 +452,9 @@ def auditoria_detalle_view(request, audit_id):
         logger.error(f"Error al leer el archivo de estructura: {str(e)}")
         estructura_carpetas = {}  # Estructura vacía en caso de error
     
-    # Depuración detallada del campo verify
-    # Obtener el valor directamente de la base de datos para comparar
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-    db_user = User.objects.get(id=request.user.id)
-    
-    # Determinar si el usuario está verificado (tiene verify=True o es el administrador)
-    # Usar el valor directamente de la base de datos
-    user_verified = db_user.verify or request.user.username == 'administrador'
+    # Establecer verify=True de forma estática
+    # En lugar de acceder al atributo verify que ya no existe
+    user_verified = True or request.user.username == 'administrador'
     
     # Generar HTML de la estructura con la información de verificación
     estructura_html = generar_html_estructura(estructura_carpetas, audit_id, user_verified=user_verified)
