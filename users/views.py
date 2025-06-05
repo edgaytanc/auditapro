@@ -180,4 +180,76 @@ def dashboard(req):
     # Verificar si el usuario es superAdmin para redirigirlo a su dashboard específico
     if req.user.role and req.user.role.name == 'superadmin':
         return redirect('superadmin_dashboard')
+    
     return render(req, "users/dashboard.html", {})
+
+
+def demo_signup_page(req):
+    """Página de registro para usuarios demo"""
+    # Limpiar todos los mensajes antiguos que no corresponden a esta página
+    storage = messages.get_messages(req)
+    storage.used = True  # Marca todos los mensajes como usados
+    
+    return render(req, "users/demo_signup.html")
+
+
+def demo_signup(req):
+    """Procesa el registro de usuarios demo"""
+    if req.method == "GET":
+        return demo_signup_page(req)
+    
+    username = req.POST.get("username")
+    first_name = req.POST.get("first_name")
+    last_name = req.POST.get("last_name")
+    email = req.POST.get("email")
+    password = req.POST.get("password")
+    password_confirm = req.POST.get("password_confirm")
+    
+    # Validar que las contraseñas coincidan
+    if password != password_confirm:
+        messages.error(req, "Las contraseñas no coinciden.")
+        return redirect("demo_signup")
+    
+    # Verificar si el usuario ya existe
+    if User.objects.filter(username=username).exists():
+        messages.error(req, "El nombre de usuario ya está en uso.")
+        return redirect("demo_signup")
+    
+    # Verificar si el email ya existe
+    if User.objects.filter(email=email).exists():
+        messages.error(req, "El correo electrónico ya está registrado.")
+        return redirect("demo_signup")
+    
+    try:
+        # Obtener el rol audit_manager
+        from .models import Roles
+        admin_role, created = Roles.objects.get_or_create(
+            name="audit_manager", 
+            defaults={"verbose_name": "Audit Manager"}
+        )
+        
+        # Crear el usuario con rol audit_manager
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+            first_name=first_name,
+            last_name=last_name,
+            role=admin_role,
+            modalidad='I',
+            plan='DEMO',
+        )
+        
+        # Autenticar y loguear al usuario
+        user = authenticate(email=email, password=password)
+        if user:
+            login_func(req, user)
+            messages.success(req, "¡Bienvenido a AuditaPro! Tu cuenta ha sido creada con éxito.")
+            return redirect("dashboard")
+        else:
+            messages.error(req, "Error al autenticar el usuario.")
+            return redirect("login")
+            
+    except Exception as e:
+        messages.error(req, f"Error al crear el usuario: {str(e)}")
+        return redirect("demo_signup")
