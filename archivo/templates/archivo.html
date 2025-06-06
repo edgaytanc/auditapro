@@ -10,9 +10,8 @@
 {% endblock page_subtitle %}
 {% block main_header_content %}
   <p class="w-100">
-    <b>Instrucción:</b> Debes hacer clic en el nombre del archivo para abrirlo, visualizarlo y trabajar en la
-    plantilla, hacer cambios, guardarlo, descargarlo en Excel o PDF, enviar el archivo por correo y hacer
-    videollamadas.
+    <b>Instrucción:</b> Haz clic en el botón "Descargar" para obtener el documento correspondiente.
+    Los archivos se descargarán en formato DOCX y podrás editarlos en tu aplicación de procesamiento de texto preferida.
   </p>
 {% endblock main_header_content %}
 
@@ -20,69 +19,20 @@
 
 {% block main_content %}
   <div class="row g-3">
+    {% for documento in documentos %}
     <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <button class="loadButton btn btn-primary w-100"
-                  data-url="{{ informe_general_url }}">1 Información General</button>
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">{{ documento.nombre }}</h5>
+          <div class="mt-auto">
+            <a href="{% url 'descargar_archivo' documento.archivo %}" class="btn btn-primary w-100">
+              <i class="bi bi-download me-2"></i>Descargar
+            </a>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <button class="loadButton btn btn-primary w-100"
-                  data-url="{{ estructura_organizacional_url }}">2 Estructura Organizacional</button>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <button class="loadButton btn btn-primary w-100"
-                  data-url="{{ leyes_regulaciones_url }}">3 Leyes y Regulaciones</button>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <button class="loadButton btn btn-primary w-100"
-                  data-url="{{ planificacion_operaciones_url }}">4 Planificación de Operaciones</button>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <button class="loadButton btn btn-primary w-100"
-                  data-url="{{ informacion_administrativa_url }}">5 Información Administrativa</button>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card shadow-sm">
-        <div class="card-body">
-          <button class="loadButton btn btn-primary w-100"
-                  data-url="{{ informacion_contable_url }}">
-            6 Información Contable, Presupuestaria y Financiera
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Contenedor de la hoja de trabajo -->
-  <div class="col mt-4 flex-column d-none w-100" id="spreadsheetContainer">
-    <iframe class="border rounded shadow-sm"
-            sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups-to-escape-sandbox allow-presentation allow-top-navigation allow-storage-access-by-user-activation"
-            src=""
-            width="100%"
-            height="1000"
-            id="spreadsheetIframe"></iframe>
-    <a id="directLink"
-       href=""
-       target="_blank"
-       class="btn btn-primary mt-3 mr-auto">Abrir en nueva pestaña</a>
+    {% endfor %}
   </div>
 {% endblock main_content %}
 {% block extra_scripts %}
