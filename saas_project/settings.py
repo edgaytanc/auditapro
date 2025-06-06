@@ -55,6 +55,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "users.middleware.UserDeactivationMiddleware",
     "users.middleware.DemoUserAccessMiddleware",
+    "users.middleware.DemoUserExpirationMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 

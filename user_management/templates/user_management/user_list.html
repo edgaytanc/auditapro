@@ -36,6 +36,7 @@ Gestión de Usuarios
                             <th>Tipo de Usuario</th>
                             <th>Modalidad</th>
                             <th>Plan</th>
+                            <th>Estado</th>
                             <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
@@ -60,6 +61,13 @@ Gestión de Usuarios
                                 Anual
                                 {% else %}
                                 {{ user.plan }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_deleted %}
+                                <span class="badge bg-danger">Dado de baja</span>
+                                {% else %}
+                                <span class="badge bg-success">Activo</span>
                                 {% endif %}
                             </td>
                             <td class="text-end">
