@@ -4,7 +4,7 @@ from django.contrib.auth import logout
 from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Q
-from django.contrib.auth.models import User
+from users.models import User
 import logging
 
 logger = logging.getLogger(__name__)

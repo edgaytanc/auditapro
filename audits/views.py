@@ -151,7 +151,17 @@ def delete_audit(req, audit_id):
 @audit_manager_required
 def create_audit_page(req):
     data = {}
-    users_to_assign_audits = User.objects.exclude(username=req.user.username)
+    
+    # Verificar si el usuario es audit_manager y tiene modalidad grupal
+    is_group_audit_manager = (req.user.role.name == "audit_manager" and req.user.modalidad == 'G')
+    
+    # Filtrar usuarios según el rol y modalidad
+    if is_group_audit_manager:
+        # Para audit_manager grupal, mostrar solo los auditores asignados a él
+        users_to_assign_audits = User.objects.filter(administrador=req.user).exclude(username=req.user.username)
+    else:
+        # Para otros casos, mostrar todos los usuarios excepto el actual
+        users_to_assign_audits = User.objects.exclude(username=req.user.username)
 
     select_options = [
         {
@@ -164,6 +174,7 @@ def create_audit_page(req):
 
     data["users_to_asiggn_audits"] = users_to_assign_audits
     data["select_options"] = select_options
+    data["show_assignment"] = is_group_audit_manager
 
     return render(
         req,
