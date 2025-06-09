@@ -452,9 +452,8 @@ def auditoria_detalle_view(request, audit_id):
         logger.error(f"Error al leer el archivo de estructura: {str(e)}")
         estructura_carpetas = {}  # Estructura vacía en caso de error
     
-    # Establecer verify=True de forma estática
-    # En lugar de acceder al atributo verify que ya no existe
-    user_verified = True or request.user.username == 'administrador'
+    # Usuario verificado si es administrador o tiene plan Mensual o Anual
+    user_verified = request.user.username == 'administrador' or (hasattr(request.user, 'plan') and request.user.plan in ['M', 'A'])
     
     # Generar HTML de la estructura con la información de verificación
     estructura_html = generar_html_estructura(estructura_carpetas, audit_id, user_verified=user_verified)
