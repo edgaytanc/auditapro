@@ -1,12 +1,26 @@
+from django.http import Http404, HttpRequest, HttpResponse, FileResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.decorators import login_required
+from django.conf import settings
+import os
+
 from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
-from weasyprint import HTML
+from django.contrib.auth import get_user_model
+from django.db.models import Q
+
+User = get_user_model()
+
+from django.contrib import messages
+from django.template.loader import get_template
+from audits.types import Audit as AuditType
 from audits.decorators import audit_manager_required, selected_audit_required
 from audits.utils import get_assigned_audits, get_selected_audit
 from tools.constants import AUDIT_TIME_SUMMARY_TOOLS, REPORT_ERROR_INSTANCES
 from tools.utils import get_table, get_table_to_pdf
 from users.decorators import superuser_required
+from weasyprint import HTML
 from .tables import (
     ActivitiesTable,
     AuditMarksTable,
@@ -56,18 +70,49 @@ from .services import (
     update_activity as update_activity_func,
     delete_activity as delete_activity_func,
 )
-from django.contrib import messages
-from django.template.loader import get_template
-from audits.types import Audit as AuditType
-from django.contrib.auth import get_user_model
-from django.db.models import Q
-
-User = get_user_model()
 
 
 @login_required
 def tools_page(req: HttpRequest):
-    return render(req, "tools/tools.html")
+    # Crear un diccionario con los nombres de los archivos para la plantilla
+    context = {
+        'documentos': [
+            {'id': '1', 'nombre': '1 Resumen de Tiempo', 'archivo': '1  Resumen de Tiempo.xlsx'},
+            {'id': '2', 'nombre': '2 Estado Papales de Trabajo', 'archivo': '2 Estado Papales de Trabajo.xlsx'},
+            {'id': '3', 'nombre': '3 Cronograma de Actividades', 'archivo': '3 Cronograma de Actividades.xlsx'},
+            {'id': '4', 'nombre': '4 Referencias Cruzadas Nías', 'archivo': '4 Referencias Cruzadas Nías.xlsx'},
+            {'id': '5', 'nombre': '5 Matriz de Riesgos Vinculada', 'archivo': '5 Matriz de Riesgos Vinculada.xlsx'},
+            {'id': '6', 'nombre': '6 Planificación', 'archivo': '6 Planificación.xlsx'},
+            {'id': '7', 'nombre': '7 Evaluación de Procesos', 'archivo': '7 Evaluación de Procesos.xlsx'},
+            {'id': '8', 'nombre': '8 Pruebas Sustantivas', 'archivo': '8 Pruebas Sustantivas.xlsx'},
+            {'id': '9', 'nombre': '9 Finalización', 'archivo': '9  Finalización.xlsx'},
+            {'id': '10', 'nombre': '10 Marcas de Auditoría', 'archivo': '10 Marcas_de_Auditoría.xlsx'},
+        ]
+    }
+    return render(req, "tools/tools.html", context)
+
+
+@login_required
+def descargar_herramienta(req: HttpRequest, nombre_archivo):
+    # Construir la ruta completa al archivo
+    ruta_archivo = os.path.join(
+        settings.BASE_DIR, 
+        'static', 
+        'template-modulo-herramienta',
+        'MODULO HERRAMIENTAS',
+        nombre_archivo
+    )
+    
+    # Verificar si el archivo existe
+    if os.path.exists(ruta_archivo):
+        # Abrir el archivo en modo binario y devolverlo como respuesta
+        archivo = open(ruta_archivo, 'rb')
+        response = FileResponse(archivo)
+        response['Content-Disposition'] = f'attachment; filename="{nombre_archivo}"'
+        return response
+    else:
+        # Si el archivo no existe, devolver un error 404
+        raise Http404("El archivo solicitado no existe.")
 
 
 @login_required

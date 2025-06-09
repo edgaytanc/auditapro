@@ -90,6 +90,7 @@ Gestionar Auditoría
             <div class="card shadow-sm mt-4">
                 <div class="card-body">
                     {% if audit_to_manage.assigned_users.all %}
+                    {% if user_modalidad == 'G' %}
                     <h3 class="card-title fs-5 fw-semibold">Auditores Asignados</h3>
                     <p class="card-text">Gestione los Auditores y supervisores asignados para esta auditoría.</p>
                     <div class="table-responsive">
@@ -124,20 +125,12 @@ Gestionar Auditoría
                             </tbody>
                         </table>
                     </div>
+                    {% endif %}
                     {% else %}
+                    {% if user_modalidad == 'G' %}
                     <h5 class="text-center">No hay Auditores asignados para esta Auditoría</h5>
                     {% endif %}
-                    <div class="text-center mt-3">
-                        <button type="button" data-bs-toggle="modal" data-bs-target="#assign_audit_to_auditor_modal"
-                            class="btn btn-outline-primary btn-sm">Añadir Auditor</button>
-                        {% with modal_id="assign_audit_to_auditor_modal" %}
-
-                        {% include "audits/_assign-auditor-to-audit-modal.html" with modal_id=modal_id
-                        modal_label_id="assign_audit_to_auditor_modal_label" select_id="user_ids"
-                        auditors_options=users_that_can_be_assigned audit_id=audit_to_manage.id %}
-
-                        {% endwith %}
-                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

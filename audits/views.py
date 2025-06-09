@@ -89,8 +89,13 @@ def create_audit(req):
     audit_identidad = req.POST.get("audit_identidad")
     audit_fecha_inicio = req.POST.get("audit_fechaInit")
     audit_fecha_final = req.POST.get("audit_fechaEnd")
-    audit_assigned_users_ids = req.POST.getlist("audit_assigned_users_ids")
     audit_financial = 'audit_financial' in req.POST
+    
+    # Si el usuario es de modalidad Individual, asignar la auditoría automáticamente a él mismo
+    if req.user.modalidad == 'I':
+        audit_assigned_users_ids = [str(req.user.id)]
+    else:
+        audit_assigned_users_ids = req.POST.getlist("audit_assigned_users_ids")
 
     try:
         create_audit_func(
@@ -146,7 +151,17 @@ def delete_audit(req, audit_id):
 @audit_manager_required
 def create_audit_page(req):
     data = {}
-    users_to_assign_audits = User.objects.exclude(username=req.user.username)
+    
+    # Verificar si el usuario es audit_manager y tiene modalidad grupal
+    is_group_audit_manager = (req.user.role.name == "audit_manager" and req.user.modalidad == 'G')
+    
+    # Filtrar usuarios según el rol y modalidad
+    if is_group_audit_manager:
+        # Para audit_manager grupal, mostrar solo los auditores asignados a él
+        users_to_assign_audits = User.objects.filter(administrador=req.user).exclude(username=req.user.username)
+    else:
+        # Para otros casos, mostrar todos los usuarios excepto el actual
+        users_to_assign_audits = User.objects.exclude(username=req.user.username)
 
     select_options = [
         {
@@ -159,6 +174,7 @@ def create_audit_page(req):
 
     data["users_to_asiggn_audits"] = users_to_assign_audits
     data["select_options"] = select_options
+    data["show_assignment"] = is_group_audit_manager
 
     return render(
         req,
@@ -294,6 +310,9 @@ def manage_audit_page(req, audit_id):
         return redirect("assigned_audits")
 
     data["audit_to_manage"] = audit_to_manage
+    
+    # Pasar la modalidad del usuario a la plantilla
+    data["user_modalidad"] = req.user.modalidad
 
     users_that_can_be_assigned = [
         {

@@ -40,15 +40,15 @@ RUN pip install --no-cache-dir tinycss2 cssselect2 cffi
 # Solución alternativa para WeasyPrint
 RUN pip uninstall -y weasyprint && pip install weasyprint==52.5
 
-# Copiar el proyecto
-COPY . /app/
-
 # Crear directorio de logs
 RUN mkdir -p logs
 
 # Crear directorio para la base de datos SQLite
 RUN mkdir -p db
 VOLUME /app/db
+
+# Copiar el proyecto
+COPY . /app/
 
 # Puerto de exposición
 EXPOSE 8000

@@ -1,0 +1,154 @@
+{% extends "user_management/superadmin-base.html" %}
+
+{% block title %}
+Lista de Usuarios
+{% endblock title %}
+
+{% block main_content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col d-flex align-items-center gap-3">
+            <span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                </svg>
+            </span>
+            <h1 class="fs-3 fw-semibold m-0">Lista de Usuarios</h1>
+        </div>
+        <div class="col-auto d-flex align-items-center">
+            <a href="{% url 'create_user' %}" class="btn btn-primary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-1">
+                    <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
+                </svg>
+                Crear Usuario
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h3 class="card-title fs-5 fw-semibold">Filtrar Usuarios</h3>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre, usuario o email...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h3 class="card-title fs-5 fw-semibold">Usuarios del Sistema</h3>
+            <p class="card-text">Listado completo de usuarios registrados en el sistema.</p>
+            
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Nombre</th>
+                            <th>Email</th>
+                            <th>Tipo de Usuario</th>
+                            <th>Modalidad</th>
+                            <th>Plan</th>
+                            <th>Estado</th>
+                            <th class="text-end">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.get_full_name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.role.verbose_name }}</td>
+                            <td>
+                                {% if user.modalidad == 'I' %}
+                                Individual
+                                {% else %}
+                                Grupal
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.plan == 'M' %}
+                                Mensual
+                                {% elif user.plan == 'A' %}
+                                Anual
+                                {% else %}
+                                {{ user.plan }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_deleted %}
+                                <span class="badge bg-danger">Dado de baja</span>
+                                {% else %}
+                                <span class="badge bg-success">Activo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'user_details' user.id %}" class="btn btn-outline-secondary btn-sm">Ver Detalles</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <p class="mb-0">No hay usuarios registrados en el sistema.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{% url 'superadmin_dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+        const table = document.getElementById('usersTable');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        // Función para filtrar la tabla
+        function filterTable() {
+            const filter = searchInput.value.toLowerCase();
+            
+            for (let i = 0; i < rows.length; i++) {
+                const username = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
+                const fullName = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
+                const email = rows[i].getElementsByTagName('td')[2].textContent.toLowerCase();
+                
+                if (username.includes(filter) || fullName.includes(filter) || email.includes(filter)) {
+                    rows[i].style.display = '';
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+        
+        // Eventos
+        searchInput.addEventListener('keyup', filterTable);
+        
+        clearSearch.addEventListener('click', function() {
+            searchInput.value = '';
+            filterTable();
+        });
+    });
+</script>
+{% endblock extra_js %}
+{% endblock main_content %}

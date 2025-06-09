@@ -1,0 +1,200 @@
+{% extends "user_management/superadmin-base.html" %}
+
+{% block title %}
+Detalles de Usuario - {{ user_to_view.get_full_name }}
+{% endblock title %}
+
+{% block main_content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col d-flex align-items-center gap-3">
+            <span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                </svg>
+            </span>
+            <h1 class="fs-3 fw-semibold m-0">Detalles de Usuario</h1>
+        </div>
+        <div class="col-auto d-flex align-items-center gap-2">
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Volver a la Lista</a>
+            <a href="{% url 'superadmin_dashboard' %}" class="btn btn-outline-primary">Ir al Dashboard</a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title fs-5 fw-semibold">Información del Usuario</h3>
+                    <p class="card-text">Detalles completos del usuario.</p>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-semibold">Nombre de Usuario:</div>
+                        <div class="col-md-8">{{ user_to_view.username }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-semibold">Nombre Completo:</div>
+                        <div class="col-md-8">{{ user_to_view.get_full_name }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-semibold">Correo Electrónico:</div>
+                        <div class="col-md-8">{{ user_to_view.email }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-semibold">Tipo de Usuario:</div>
+                        <div class="col-md-8">{{ user_to_view.role.verbose_name }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-semibold">Modalidad:</div>
+                        <div class="col-md-8">
+                            {% if user_to_view.modalidad == 'I' %}
+                            Individual
+                            {% else %}
+                            Grupal
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-semibold">Plan:</div>
+                        <div class="col-md-8">
+                            {% if user_to_view.plan == 'M' %}
+                            Mensual
+                            {% elif user_to_view.plan == 'A' %}
+                            Anual
+                            {% else %}
+                            {{ user_to_view.plan }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-semibold">Fecha de Registro:</div>
+                        <div class="col-md-8">{{ user_to_view.date_joined|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4 fw-semibold">Último Acceso:</div>
+                        <div class="col-md-8">
+                            {% if user_to_view.last_login %}
+                            {{ user_to_view.last_login|date:"d/m/Y H:i" }}
+                            {% else %}
+                            Nunca ha iniciado sesión
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% if assigned_to_admin %}
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h3 class="card-title fs-5 fw-semibold">Administrador Asignado</h3>
+                    <p class="card-text">Este auditor está asignado al siguiente administrador:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Correo Electrónico</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ assigned_to_admin.get_full_name }}</td>
+                                    <td>{{ assigned_to_admin.email }}</td>
+                                    <td class="text-end">
+                                        <a href="{% url 'user_details' assigned_to_admin.id %}" class="btn btn-outline-secondary btn-sm">Ver Detalles</a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if assigned_auditors %}
+            <div class="card shadow-sm mt-4">
+                <div class="card-body">
+                    <h3 class="card-title fs-5 fw-semibold">Auditores Asignados</h3>
+                    <p class="card-text">Este administrador tiene los siguientes auditores asignados:</p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Correo Electrónico</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for auditor in assigned_auditors %}
+                                <tr>
+                                    <td>{{ auditor.get_full_name }}</td>
+                                    <td>{{ auditor.email }}</td>
+                                    <td class="text-end">
+                                        <a href="{% url 'user_details' auditor.id %}" class="btn btn-outline-secondary btn-sm">Ver Detalles</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title fs-5 fw-semibold">Acciones</h3>
+                    <p class="card-text">Acciones disponibles para este usuario.</p>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'edit_user' user_to_view.id %}" class="btn btn-outline-primary">Editar Usuario</a>
+                        
+                        {% if user_to_view.is_deleted %}
+                            <!-- Mostrar botón de reactivar si el usuario está dado de baja -->
+                            <a href="{% url 'reactivate_user' user_to_view.id %}" class="btn btn-success mt-2">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-1">
+                                    <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="currentColor"/>
+                                </svg>
+                                Reactivar Usuario
+                            </a>
+                            {% if user_to_view.deleted_at %}
+                                <div class="alert alert-warning mt-2">
+                                    <small>Usuario dado de baja el {{ user_to_view.deleted_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <!-- No mostrar botón de dar de baja para auditores en modalidad grupal con administrador -->
+                            {% if not user_to_view.role.name == "auditor" or not user_to_view.modalidad == 'G' or not user_to_view.administrador %}
+                                <a href="{% url 'deactivate_user' user_to_view.id %}" class="btn btn-danger mt-2" 
+                                   onclick="return confirm('¿Está seguro que desea dar de baja a este usuario?{% if user_to_view.is_admin and user_to_view.modalidad == "G" %}\n\nATENCIÓN: También se darán de baja todos los auditores asociados a este administrador.{% endif %}')">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-1">
+                                        <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
+                                    </svg>
+                                    Dar de Baja
+                                </a>
+                            {% else %}
+                                <div class="alert alert-info mt-2">
+                                    <small>Este auditor solo puede ser dado de baja a través de su administrador: {{ user_to_view.administrador.username }}</small>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock main_content %}

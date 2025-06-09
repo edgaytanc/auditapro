@@ -21,6 +21,27 @@ def audit_manager_required(view_func):
     return wrapper
 
 
+def group_admin_required(view_func):
+    """
+    Decorador que verifica que el usuario sea un administrador (audit_manager) 
+    Y tenga modalidad grupal ('G').
+    """
+    def check_group_admin(user) -> bool:
+        return user.is_authenticated and (
+            (user.is_staff or user.role.name == "audit_manager") and 
+            user.modalidad == 'G'
+        )
+
+    @wraps(view_func)
+    def wrapper(req, *args, **kwargs):
+        if check_group_admin(req.user):
+            return view_func(req, *args, **kwargs)
+        else:
+            raise Http404
+
+    return wrapper
+
+
 def selected_audit_required(view_func_or_param: Optional[Callable] = None):
     def decorator(view_func: Callable, redirect_url=None):
         def check_selected_audit(req: HttpRequest):
