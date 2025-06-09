@@ -114,6 +114,7 @@ def login_user_service(req: HttpRequest, email: str, password: str):
             raise InvalidLoginFields()
 
         login(req, user)
+        return user
     except Exception as e:
         raise e
 

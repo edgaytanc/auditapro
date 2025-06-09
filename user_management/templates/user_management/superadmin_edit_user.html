@@ -1,0 +1,103 @@
+{% extends "user_management/superadmin-base.html" %}
+
+{% block title %}
+Editar Usuario
+{% endblock title %}
+
+{% block main_content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col d-flex align-items-center gap-3">
+            <span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                </svg>
+            </span>
+            <h1 class="fs-3 fw-semibold m-0">Editar Usuario</h1>
+        </div>
+        <div class="col-auto d-flex align-items-center">
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-1">
+                    <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Volver a la Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h3 class="card-title fs-5 fw-semibold">Información del Usuario</h3>
+            <p class="card-text">Modifique los datos del usuario según sea necesario.</p>
+            
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="username" class="form-label">Nombre de Usuario</label>
+                            <input type="text" class="form-control" id="username" name="username" value="{{ user_to_edit.username }}" readonly>
+                            <small class="text-muted">El nombre de usuario no se puede modificar.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="email" class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user_to_edit.email }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="first_name" class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user_to_edit.first_name }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="last_name" class="form-label">Apellido</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user_to_edit.last_name }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="password" class="form-label">Nueva Contraseña</label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Dejar en blanco para mantener la actual">
+                            <small class="text-muted">Dejar en blanco si no desea cambiar la contraseña.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="modalidad" class="form-label">Modalidad</label>
+                            <select class="form-select" id="modalidad" name="modalidad" required>
+                                <option value="I" {% if user_to_edit.modalidad == 'I' %}selected{% endif %}>Individual</option>
+                                <option value="G" {% if user_to_edit.modalidad == 'G' %}selected{% endif %}>Grupal</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="plan_type" class="form-label">Plan</label>
+                            <select class="form-select" id="plan_type" name="plan_type" required>
+                                <option value="mensual" {% if user_to_edit.plan == 'M' %}selected{% endif %}>Mensual</option>
+                                <option value="anual" {% if user_to_edit.plan == 'A' %}selected{% endif %}>Anual</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <a href="{% url 'user_list' %}" class="btn btn-outline-secondary ms-2">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock main_content %}

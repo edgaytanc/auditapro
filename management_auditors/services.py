@@ -12,13 +12,21 @@ def get_user_to_manage(audit_manage_id: int, user_to_manage_id: int):
         if not user_to_manage_id:
             raise UserDoNotExits()
 
-        user_to_manage = User.objects.get(id=user_to_manage_id)
+        # Obtener el administrador
+        admin_user = User.objects.get(id=audit_manage_id)
+        
+        # Verificar que el administrador sea de modalidad grupal
+        if admin_user.modalidad != 'G' or not admin_user.role or admin_user.role.name != "audit_manager":
+            raise AuditManagerDoNotExits("El usuario no tiene permisos para gestionar auditores")
+
+        # Obtener el usuario a gestionar y verificar que esté asociado al administrador
+        user_to_manage = User.objects.get(id=user_to_manage_id, administrador=admin_user)
 
         if not user_to_manage:
             raise UserDoNotExits()
 
         return user_to_manage
     except User.DoesNotExist:
-        raise UserDoNotExits()
+        raise UserDoNotExits("El usuario no existe o no está asociado a este administrador")
     except Exception as e:
         raise e

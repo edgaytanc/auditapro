@@ -8,6 +8,11 @@ urlpatterns = [
         name="tools",
     ),
     path(
+        "descargar/<str:nombre_archivo>/",
+        views.descargar_herramienta,
+        name="descargar_herramienta",
+    ),
+    path(
         "resumen-tiempo/",
         views.audit_time_summary_index,
         name="audit_time_summary_index",

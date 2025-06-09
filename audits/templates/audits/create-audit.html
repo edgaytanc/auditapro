@@ -68,6 +68,8 @@
             </div>
           </div>
         </div>
+        
+        {% if show_assignment %}
         <div class="col-12">
           <div class="mb-3">
             <label class="form-label">Asignar a</label>
@@ -76,6 +78,8 @@
             {% endwith %}
           </div>
         </div>
+        {% endif %}
+        
         <div class="col-12 d-flex justify-content-end">
           <button type="submit" class="btn btn-primary">Crear auditoria</button>
         </div>

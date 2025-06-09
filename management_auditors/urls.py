@@ -8,6 +8,11 @@ urlpatterns = [
         name="manage_auditors",
     ),
     path(
+        "add/",
+        views.add_auditor,
+        name="add_auditor",
+    ),
+    path(
         "<int:user_id>/",
         views.manage_auditor_page,
         name="manage_auditor",

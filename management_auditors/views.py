@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from audits.decorators import audit_manager_required
+from audits.decorators import audit_manager_required, group_admin_required
 from django.contrib.auth.decorators import login_required
 from audits.models import Audit
 from django.contrib.auth import get_user_model
@@ -8,30 +8,65 @@ from django.contrib import messages
 from .const import MANAGEMENT_AUDITORS_ERROR_INSTANCES
 from .services import get_user_to_manage
 from django.http import Http404
+from .forms import AuditorCreationForm
 
 User = get_user_model()
 
 
 @login_required
-@audit_manager_required
+@group_admin_required
 def manage_auditors_page(req):
-    users_to_manage = User.objects.exclude(username=req.user.username)
+    # Obtener solo los auditores asociados a este administrador
+    users_to_manage = User.objects.filter(administrador=req.user)
+    
+    # Verificar si el administrador ya alcanzó el límite de 3 usuarios
+    can_add_more_users = users_to_manage.count() < 3
+    
     return render(
         req,
         "management_auditors/manage-auditors.html",
-        {"users_to_manage": users_to_manage},
+        {
+            "users_to_manage": users_to_manage,
+            "can_add_more_users": can_add_more_users,
+            "user_count": users_to_manage.count(),
+            "max_users": 3
+        },
     )
+
+
+@login_required
+@group_admin_required
+def add_auditor(req):
+    # Verificar si el administrador ya alcanzó el límite de 3 usuarios
+    current_auditors_count = User.objects.filter(administrador=req.user).count()
+    if current_auditors_count >= 3:
+        messages.error(req, "No puedes añadir más usuarios. Has alcanzado el límite de 3 usuarios.")
+        return redirect('manage_auditors')
+    
+    if req.method == 'POST':
+        form = AuditorCreationForm(req.POST)
+        if form.is_valid():
+            # Guardar el usuario con el administrador actual
+            form.save(admin_user=req.user)
+            messages.success(req, "Usuario auditor creado exitosamente.")
+            return redirect('manage_auditors')
+    else:
+        form = AuditorCreationForm()
+    
+    return render(req, 'management_auditors/add_auditor.html', {'form': form})
 
 
 @login_required
 @audit_manager_required
 def manage_auditor_page(req, user_id):
     data = {}
-    audits = Audit.objects.filter(audit_manager=req.user)
-    data["audits"] = audits
     try:
         user_to_manage = get_user_to_manage(req.user.id, user_id)
-
+        
+        # Obtener solo las auditorías asignadas a este auditor específico
+        audits = Audit.objects.filter(assigned_users=user_to_manage)
+        
+        data["audits"] = audits
         data["user_to_manage"] = user_to_manage
 
         return render(req, "management_auditors/manage-auditor.html", data)

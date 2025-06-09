@@ -1,0 +1,108 @@
+{% extends "user_management/superadmin-base.html" %}
+
+{% block title %}
+Panel de Control
+{% endblock title %}
+
+{% block main_content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="fs-3 fw-semibold">Panel de Control</h1>
+        </div>
+    </div>
+
+    <!-- Texto informativo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h3 class="fs-5 fw-semibold mb-3">Información del Panel Administrativo</h3>
+                    <p>Bienvenido al panel de administración de AuditaPro. Desde aquí puede gestionar los usuarios del sistema, crear nuevas cuentas y supervisar la actividad.</p>
+                    <p>El sistema está funcionando correctamente y todos los servicios están operativos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas simples -->
+    <div class="row g-4 mb-4">
+        <!-- Total Usuarios -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-primary">
+                            <path d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h3 class="fs-5 fw-semibold">Total Usuarios</h3>
+                    <div class="fs-2 fw-bold mb-3">{{ total_users }}</div>
+                    <a href="{% url 'user_list' %}" class="btn btn-primary">Ver Listado de Usuarios</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Administradores -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-success">
+                            <path d="M12 2L4 5V11.09C4 16.14 7.41 20.85 12 22C16.59 20.85 20 16.14 20 11.09V5L12 2ZM18 11.09C18 15.09 15.45 18.79 12 19.92C8.55 18.79 6 15.1 6 11.09V6.39L12 4.14L18 6.39V11.09Z" fill="currentColor"/>
+                            <path d="M11 14H13V16H11V14ZM11 8H13V12H11V8Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h3 class="fs-5 fw-semibold">Administradores</h3>
+                    <div class="fs-2 fw-bold mb-3">{{ admin_users }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Auditores -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-info">
+                            <path d="M20 6H12L10 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6ZM20 18H4V6H9.17L11.17 8H20V18Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h3 class="fs-5 fw-semibold">Auditores</h3>
+                    <div class="fs-2 fw-bold mb-3">{{ auditor_users }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Segunda fila para Superusuarios -->
+    <div class="row g-4 mb-4 mt-2">
+        <!-- Superusuarios -->
+        <div class="col-md-4 mx-auto">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="text-warning">
+                            <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM12 11.99H19C18.47 16.11 15.72 19.78 12 20.93V12H5V6.3L12 3.19V11.99Z" fill="currentColor"/>
+                        </svg>
+                    </div>
+                    <h3 class="fs-5 fw-semibold">Superusuarios</h3>
+                    <div class="fs-2 fw-bold mb-3">{{ superadmin_users }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Botón de crear usuario -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <a href="{% url 'create_user' %}" class="btn btn-success btn-lg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                    <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="currentColor"/>
+                </svg>
+                Crear Usuario
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock main_content %}

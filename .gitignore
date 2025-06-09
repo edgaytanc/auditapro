@@ -49,6 +49,7 @@ coverage.xml
 .pytest_cache/
 cover/
 
+nota.txt
 # Translations
 *.mo
 *.pot
