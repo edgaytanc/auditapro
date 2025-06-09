@@ -15,7 +15,6 @@ def audit_to_dict(audit) -> AuditType:
         "fechaInit": audit.fechaInit.isoformat(),
         "fechaEnd": audit.fechaEnd.isoformat(),
         "tipoAuditoria": audit.tipoAuditoria,
-        "company": audit.company if hasattr(audit, 'company') else None,
         "created_at": audit.created_at.isoformat(),
         "updated_at": audit.updated_at.isoformat() if audit.updated_at else None,
         "audit_manager": user_to_dict(audit.audit_manager),
