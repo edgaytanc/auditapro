@@ -114,3 +114,28 @@ class User(AbstractUser):
                     auditor.save()
         
         return True
+    
+    def reactivate_user(self):
+        """
+        Reactiva a un usuario y a sus auditores asociados si es un administrador en modalidad grupal.
+        
+        Returns:
+            int: Número de auditores reactivados
+        """
+        # Marcar como activo
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
+        
+        # Si es un administrador en modalidad grupal, reactivar a todos sus auditores
+        auditores_reactivados = 0
+        if self.is_admin() and self.modalidad == 'G':
+            auditores = self.get_auditores()
+            for auditor in auditores:
+                if auditor.is_deleted:  # Solo reactivar auditores inactivos
+                    auditor.is_deleted = False
+                    auditor.deleted_at = None
+                    auditor.save()
+                    auditores_reactivados += 1
+        
+        return auditores_reactivados

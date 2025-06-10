@@ -316,12 +316,18 @@ def reactivate_user(request, user_id):
         messages.warning(request, f"El usuario {user_to_reactivate.username} ya está activo.")
         return redirect('user_details', user_id=user_id)
     
-    # Reactivar usuario
-    user_to_reactivate.is_deleted = False
-    user_to_reactivate.deleted_at = None
-    user_to_reactivate.save()
+    # Reactivar usuario y sus auditores asociados si corresponde
+    auditores_reactivados = user_to_reactivate.reactivate_user()
     
-    messages.success(request, f"Usuario {user_to_reactivate.username} reactivado exitosamente.")
+    # Mostrar mensaje apropiado según el resultado
+    if user_to_reactivate.is_admin() and user_to_reactivate.modalidad == 'G' and auditores_reactivados > 0:
+        messages.success(
+            request, 
+            f"Usuario {user_to_reactivate.username} y {auditores_reactivados} auditores asociados reactivados exitosamente."
+        )
+    else:
+        messages.success(request, f"Usuario {user_to_reactivate.username} reactivado exitosamente.")
+    
     return redirect('user_details', user_id=user_id)
 
 
