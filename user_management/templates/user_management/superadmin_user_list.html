@@ -49,12 +49,11 @@ Lista de Usuarios
             <p class="card-text">Listado completo de usuarios registrados en el sistema.</p>
             
             {% if users %}
-            <div class="table-responsive">
+            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
                 <table class="table table-hover" id="usersTable">
                     <thead>
                         <tr>
                             <th>Usuario</th>
-                            <th>Nombre</th>
                             <th>Email</th>
                             <th>Tipo de Usuario</th>
                             <th>Modalidad</th>
@@ -67,7 +66,6 @@ Lista de Usuarios
                         {% for user in users %}
                         <tr>
                             <td>{{ user.username }}</td>
-                            <td>{{ user.get_full_name }}</td>
                             <td>{{ user.email }}</td>
                             <td>{{ user.role.verbose_name }}</td>
                             <td>
@@ -136,10 +134,9 @@ Lista de Usuarios
             
             for (let i = 0; i < rows.length; i++) {
                 const username = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
-                const fullName = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
-                const email = rows[i].getElementsByTagName('td')[2].textContent.toLowerCase();
+                const email = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
                 
-                if (username.includes(filter) || fullName.includes(filter) || email.includes(filter)) {
+                if (username.includes(filter) || email.includes(filter)) {
                     rows[i].style.display = '';
                 } else {
                     rows[i].style.display = 'none';

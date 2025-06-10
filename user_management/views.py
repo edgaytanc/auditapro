@@ -91,11 +91,11 @@ class UserCreationForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     modalidad = forms.ChoiceField(
-        choices=[('I', 'Individual'), ('G', 'Grupal')],
+        choices=[('I', 'Individual'), ('G', 'Grupal'), ('S', 'Superadmin')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     plan = forms.ChoiceField(
-        choices=[('M', 'Mensual'), ('A', 'Anual'), ('D', 'Demo')],
+        choices=[('M', 'Mensual'), ('A', 'Anual'), ('D', 'Demo'), ('NT', 'No Tiene')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     

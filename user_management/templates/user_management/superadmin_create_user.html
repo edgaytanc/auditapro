@@ -155,10 +155,32 @@ Crear Usuario
         // Obtener referencia al select de plan
         const planSelect = document.getElementById('{{ form.plan.id_for_label }}');
         
+        // Obtener referencia al select de modalidad
+        const modalidadSelect = document.getElementById('{{ form.modalidad.id_for_label }}');
+        
         // Obtener referencias a los divs que contienen los campos de modalidad, plan y rol
         const modalidadDiv = document.querySelector('label[for="{{ form.modalidad.id_for_label }}"]').closest('.col-md-6');
         const planDiv = document.querySelector('label[for="{{ form.plan.id_for_label }}"]').closest('.col-md-6');
         const roleDiv = document.querySelector('label[for="{{ form.role.id_for_label }}"]').closest('.col-md-6');
+        
+        // Ocultar las opciones de Superadmin y No Tiene
+        function hideSpecialOptions() {
+            // Ocultar la opción 'S' (Superadmin) en el select de modalidad
+            for (let i = 0; i < modalidadSelect.options.length; i++) {
+                if (modalidadSelect.options[i].value === 'S') {
+                    modalidadSelect.options[i].style.display = 'none';
+                    break;
+                }
+            }
+            
+            // Ocultar la opción 'NT' (No Tiene) en el select de plan
+            for (let i = 0; i < planSelect.options.length; i++) {
+                if (planSelect.options[i].value === 'NT') {
+                    planSelect.options[i].style.display = 'none';
+                    break;
+                }
+            }
+        }
         
         // Función para manejar el cambio de rol
         function handleRoleChange() {
@@ -233,6 +255,9 @@ Crear Usuario
                 }
             }
         }
+        
+        // Ocultar las opciones especiales al cargar la página
+        hideSpecialOptions();
         
         // Ejecutar las funciones al cargar la página
         handleRoleChange();
