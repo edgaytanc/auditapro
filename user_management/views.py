@@ -91,22 +91,35 @@ class UserCreationForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     modalidad = forms.ChoiceField(
-        choices=[('I', 'Individual'), ('G', 'Grupal'), ('S', 'Superadmin')],
+        choices=[('I', 'Individual'), ('G', 'Grupal')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     plan = forms.ChoiceField(
-        choices=[('M', 'Mensual'), ('A', 'Anual'), ('D', 'Demo'), ('NT', 'No Tiene')],
+        choices=[('M', 'Mensual'), ('A', 'Anual'), ('D', 'Demo')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     
     def clean(self):
         cleaned_data = super().clean()
         role = cleaned_data.get('role')
+        plan = cleaned_data.get('plan')
         
         # Si el rol es superadmin, asignar valores específicos
         if role and role.name == 'superadmin':
             cleaned_data['modalidad'] = 'S'
             cleaned_data['plan'] = 'NT'
+            logger.info(f"Asignando valores para superadmin: modalidad=S, plan=NT")
+        
+        # Si el plan es Demo, asignar modalidad Individual y rol audit_manager
+        elif plan == 'D':
+            cleaned_data['modalidad'] = 'I'
+            # Buscar y asignar el rol audit_manager
+            audit_manager_role = Roles.objects.filter(name='audit_manager').first()
+            if audit_manager_role:
+                cleaned_data['role'] = audit_manager_role
+                logger.info(f"Plan Demo seleccionado: asignando modalidad=I (Individual), rol=audit_manager")
+            else:
+                logger.error("No se encontró el rol audit_manager en la base de datos")
             
         return cleaned_data
 
