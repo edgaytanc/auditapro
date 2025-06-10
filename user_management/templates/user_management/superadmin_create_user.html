@@ -145,3 +145,55 @@ Crear Usuario
     </div>
 </div>
 {% endblock main_content %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obtener referencia al select de rol
+        const roleSelect = document.getElementById('{{ form.role.id_for_label }}');
+        
+        // Obtener referencias a los divs que contienen los campos de modalidad y plan
+        const modalidadDiv = document.querySelector('label[for="{{ form.modalidad.id_for_label }}"]').closest('.col-md-6');
+        const planDiv = document.querySelector('label[for="{{ form.plan.id_for_label }}"]').closest('.col-md-6');
+        
+        // Función para manejar el cambio de rol
+        function handleRoleChange() {
+            // Verificar si el rol seleccionado es "superadmin"
+            const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+            const selectedValue = selectedOption.value;
+            const selectedText = selectedOption.text;
+            
+            console.log('Rol seleccionado:', selectedValue, selectedText);
+            
+            // Obtener el objeto option seleccionado y verificar si contiene "superadmin" en su texto
+            const isSuperadmin = selectedText.toLowerCase().includes('super') || 
+                               selectedText.toLowerCase().includes('administrador') ||
+                               selectedOption.getAttribute('data-name') === 'superadmin';
+            
+            console.log('¿Es superadmin?:', isSuperadmin);
+            
+            if (isSuperadmin) {
+                // Ocultar los campos de modalidad y plan
+                modalidadDiv.style.display = 'none';
+                planDiv.style.display = 'none';
+                
+                // Asignar valores por defecto para superadmin
+                document.getElementById('{{ form.modalidad.id_for_label }}').value = 'S';
+                document.getElementById('{{ form.plan.id_for_label }}').value = 'NT';
+                
+                console.log('Valores asignados: modalidad=S, plan=NT');
+            } else {
+                // Mostrar los campos de modalidad y plan
+                modalidadDiv.style.display = 'block';
+                planDiv.style.display = 'block';
+            }
+        }
+        
+        // Ejecutar la función al cargar la página
+        handleRoleChange();
+        
+        // Agregar evento para detectar cambios en el select de rol
+        roleSelect.addEventListener('change', handleRoleChange);
+    });
+</script>
+{% endblock extra_js %}

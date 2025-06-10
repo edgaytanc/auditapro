@@ -21,6 +21,7 @@ class User(AbstractUser):
     MODALIDAD_CHOICES = [
         ('I', 'Modalidad Individual'),
         ('G', 'Modalidad Grupal'),
+        ('S', 'Superadmin'),  
     ]
     
     first_name = models.CharField(max_length=30)
@@ -33,14 +34,14 @@ class User(AbstractUser):
         max_length=1,
         choices=MODALIDAD_CHOICES,
         default='I',
-        help_text="Indica si el usuario pertenece a modalidad individual (I) o grupal (G)"
+        help_text="Indica si el usuario pertenece a modalidad individual (I), grupal (G) o es superadmin (S)"
     )
     
     # Campo para identificar el plan específico (letra)
     plan = models.CharField(
-        max_length=1,
+        max_length=2,  
         default='M',
-        help_text="Letra que identifica el plan específico (M: mensual, etc.)"
+        help_text="Letra que identifica el plan específico (M: mensual, NT: no tiene plan, etc.)"
     )
     
     # Relación con el administrador (para usuarios en modalidad grupal)
