@@ -46,14 +46,14 @@ class NotifierDoNotExits(Exception):
 class AuditorInvalidNotifierError(ValueError):
     def __init__(self):
         super().__init__(
-            "Los Auditores únicamente pueden notificar a los Supervisores."
+            "Los Auditores únicamente pueden notificar a los Jefes de Auditoría."
         )
 
 
 class SupervisorInvalidNotifierError(ValueError):
     def __init__(self):
         super().__init__(
-            "Los Supervisores solo pueden notificar a los Auditores o Jefes de Auditoria."
+            "Los Jefes de Auditoría solo pueden notificar a los Auditores."
         )
 
 

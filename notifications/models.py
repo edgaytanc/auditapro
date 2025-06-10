@@ -50,22 +50,22 @@ class NotificationStatus(models.Model):
     def save(self, *args, **kwargs):
         if (
             self.user not in self.notification.audit.assigned_users.all()
+            and self.user.role.name == "auditor"
             or self.user.role.name == "audit_manager"
             and self.user.id != self.notification.audit.audit_manager.id
         ):
             raise AuditNotAssignantToUser(self.user.get_full_name())
+        
+        # Validar que la comunicación sea solo entre audit_manager y auditor
         if (
-            self.notification.notifier.role == "auditor"
-            and self.user.role.name != "supervisor"
+            self.notification.notifier.role.name == "auditor"
+            and self.user.role.name != "audit_manager"
         ):
             raise AuditorInvalidNotifierError()
         elif (
-            self.notification.notifier.role == "supervisor"
-            and self.user.role.name
-            not in [
-                "audit_manager",
-                "auditor",
-            ]
+            self.notification.notifier.role.name == "audit_manager"
+            and self.user.role.name != "auditor"
         ):
             raise SupervisorInvalidNotifierError()
+            
         super().save(*args, **kwargs)

@@ -104,42 +104,34 @@ def notifications_page(req):
 def create_notification_page(req):
     notifieds = []
     user_role = req.user.role.name
+    
+    # Solo necesitamos el rol de auditor
     auditor_role = Roles.objects.get(name="auditor")
-    supervisor_role = Roles.objects.get(name="supervisor")
+    audit_manager_role = Roles.objects.get(name="audit_manager")
+    
+    # Obtener auditorías según el rol
     if user_role == "audit_manager":
         assigned_audits = Audit.objects.filter(audit_manager=req.user)
-
-    elif user_role in ["supervisor", "auditor"]:
-        assigned_audits = Audit.objects.filter(assigned_users=req.user)
-
-    if user_role == "audit_manager":
-        auditores = User.objects.filter(
-            assigned_users__in=assigned_audits, role=auditor_role
-        ).distinct()
-
-        supervisores = User.objects.filter(
-            assigned_users__in=assigned_audits, role=supervisor_role
-        ).distinct()
-
-        notifieds.extend(auditores)
-        notifieds.extend(supervisores)
-
-    elif user_role == "supervisor":
-        auditores = User.objects.filter(
-            assigned_users__in=assigned_audits, role=auditor_role
-        ).distinct()
-
-        audit_managers = [audit.audit_manager for audit in assigned_audits]
-
-        notifieds.extend(auditores)
-        notifieds.extend(audit_managers)
-
     elif user_role == "auditor":
-        supervisores = User.objects.filter(
-            assigned_users__in=assigned_audits, role=supervisor_role
-        ).distinct()
+        assigned_audits = Audit.objects.filter(assigned_users=req.user)
+    else:
+        # Para cualquier otro rol, no hay auditorías asignadas
+        assigned_audits = Audit.objects.none()
 
-        notifieds.extend(supervisores)
+    # Determinar a quién puede notificar según el rol
+    if user_role == "audit_manager":
+        # Jefe de auditoría puede notificar a auditores
+        auditores = User.objects.filter(
+            assigned_users__in=assigned_audits, role=auditor_role
+        ).distinct()
+        notifieds.extend(auditores)
+        
+    elif user_role == "auditor":
+        # Auditores pueden notificar a jefes de auditoría
+        audit_managers = [audit.audit_manager for audit in assigned_audits]
+        notifieds.extend(audit_managers)
+    
+    # Convertir a JSON para la plantilla
     notifieds_json = json.dumps([user_to_dict(user) for user in notifieds])
     audits_json = json.dumps([audit_to_dict(audit) for audit in assigned_audits])
 
