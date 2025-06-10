@@ -84,7 +84,7 @@ class UserCreationForm(forms.Form):
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Contraseña'})
     )
     role = forms.ModelChoiceField(
-        queryset=Roles.objects.all(),
+        queryset=Roles.objects.filter(name__in=["audit_manager", "superadmin"]),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     modalidad = forms.ChoiceField(
@@ -92,7 +92,7 @@ class UserCreationForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     plan = forms.ChoiceField(
-        choices=[('M', 'Mensual'), ('A', 'Anual')],
+        choices=[('M', 'Mensual'), ('A', 'Anual'), ('D', 'Demo')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
