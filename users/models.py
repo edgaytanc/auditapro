@@ -21,6 +21,7 @@ class User(AbstractUser):
     MODALIDAD_CHOICES = [
         ('I', 'Modalidad Individual'),
         ('G', 'Modalidad Grupal'),
+        ('S', 'Superadmin'),  
     ]
     
     first_name = models.CharField(max_length=30)
@@ -33,14 +34,14 @@ class User(AbstractUser):
         max_length=1,
         choices=MODALIDAD_CHOICES,
         default='I',
-        help_text="Indica si el usuario pertenece a modalidad individual (I) o grupal (G)"
+        help_text="Indica si el usuario pertenece a modalidad individual (I), grupal (G) o es superadmin (S)"
     )
     
     # Campo para identificar el plan específico (letra)
     plan = models.CharField(
-        max_length=1,
+        max_length=2,  
         default='M',
-        help_text="Letra que identifica el plan específico (M: mensual, etc.)"
+        help_text="Letra que identifica el plan específico (M: mensual, NT: no tiene plan, etc.)"
     )
     
     # Relación con el administrador (para usuarios en modalidad grupal)
@@ -113,3 +114,28 @@ class User(AbstractUser):
                     auditor.save()
         
         return True
+    
+    def reactivate_user(self):
+        """
+        Reactiva a un usuario y a sus auditores asociados si es un administrador en modalidad grupal.
+        
+        Returns:
+            int: Número de auditores reactivados
+        """
+        # Marcar como activo
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
+        
+        # Si es un administrador en modalidad grupal, reactivar a todos sus auditores
+        auditores_reactivados = 0
+        if self.is_admin() and self.modalidad == 'G':
+            auditores = self.get_auditores()
+            for auditor in auditores:
+                if auditor.is_deleted:  # Solo reactivar auditores inactivos
+                    auditor.is_deleted = False
+                    auditor.deleted_at = None
+                    auditor.save()
+                    auditores_reactivados += 1
+        
+        return auditores_reactivados

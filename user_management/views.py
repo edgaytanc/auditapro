@@ -5,7 +5,10 @@ from users.models import User, Roles
 from django.contrib.auth.hashers import make_password
 from .decorators import admin_or_superadmin_required
 from django import forms
+import logging
 
+# Configurar el logger
+logger = logging.getLogger(__name__)
 
 @login_required
 @admin_or_superadmin_required
@@ -84,17 +87,41 @@ class UserCreationForm(forms.Form):
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Contraseña'})
     )
     role = forms.ModelChoiceField(
-        queryset=Roles.objects.all(),
+        queryset=Roles.objects.filter(name__in=["audit_manager", "superadmin"]),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     modalidad = forms.ChoiceField(
-        choices=[('I', 'Individual'), ('G', 'Grupal')],
+        choices=[('I', 'Individual'), ('G', 'Grupal'), ('S', 'Superadmin')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     plan = forms.ChoiceField(
-        choices=[('M', 'Mensual'), ('A', 'Anual')],
+        choices=[('M', 'Mensual'), ('A', 'Anual'), ('D', 'Demo'), ('NT', 'No Tiene')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        role = cleaned_data.get('role')
+        plan = cleaned_data.get('plan')
+        
+        # Si el rol es superadmin, asignar valores específicos
+        if role and role.name == 'superadmin':
+            cleaned_data['modalidad'] = 'S'
+            cleaned_data['plan'] = 'NT'
+            logger.info(f"Asignando valores para superadmin: modalidad=S, plan=NT")
+        
+        # Si el plan es Demo, asignar modalidad Individual y rol audit_manager
+        elif plan == 'D':
+            cleaned_data['modalidad'] = 'I'
+            # Buscar y asignar el rol audit_manager
+            audit_manager_role = Roles.objects.filter(name='audit_manager').first()
+            if audit_manager_role:
+                cleaned_data['role'] = audit_manager_role
+                logger.info(f"Plan Demo seleccionado: asignando modalidad=I (Individual), rol=audit_manager")
+            else:
+                logger.error("No se encontró el rol audit_manager en la base de datos")
+            
+        return cleaned_data
 
 
 @login_required
@@ -102,47 +129,85 @@ def create_user(request):
     """
     Vista para crear un nuevo usuario.
     """
+    logger.info("=== INICIO create_user ===")
+    logger.info(f"Método: {request.method}")
+    
     if request.method == 'POST':
+        logger.info("Procesando formulario POST")
         form = UserCreationForm(request.POST)
+        logger.info(f"Formulario válido: {form.is_valid()}")
+        
         if form.is_valid():
             # Obtener datos del formulario
             username = form.cleaned_data['username']
+            email = form.cleaned_data['email']
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
-            email = form.cleaned_data['email']
             password = form.cleaned_data['password']
             role = form.cleaned_data['role']
             modalidad = form.cleaned_data['modalidad']
             plan_type = form.cleaned_data['plan']
             
+            logger.info(f"Datos del formulario:")
+            logger.info(f"- Username: {username}")
+            logger.info(f"- Role: {role.name}")
+            logger.info(f"- Modalidad: {modalidad}")
+            logger.info(f"- Plan: {plan_type}")
+            
             # Verificar si el usuario ya existe
             if User.objects.filter(username=username).exists():
+                logger.warning(f"Error: El usuario {username} ya existe")
                 messages.error(request, "El nombre de usuario ya está en uso.")
                 return redirect('create_user')
             
-            # Crear el usuario
-            user = User(
-                username=username,
-                first_name=first_name,
-                last_name=last_name,
-                email=email,
-                password=make_password(password),  # Encriptar la contraseña
-                role=role,
-                modalidad=modalidad,
-                plan=plan_type
-            )
-            
-            # Si es un auditor en modalidad grupal, asignar al administrador actual
-            if role.name == "auditor" and modalidad == 'G':
-                # Asumimos que el creador es un administrador
-                if request.user.is_admin():
-                    user.administrador = request.user
-            
-            user.save()
-            messages.success(request, f"Usuario {username} creado exitosamente.")
-            return redirect('user_list')
+            try:
+                logger.info("Creando usuario...")
+                # Crear el usuario
+                user = User(
+                    username=username,
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    password=make_password(password),  # Encriptar la contraseña
+                    role=role
+                )
+                
+                # Asignar modalidad y plan según el rol
+                if role.name == "superadmin":
+                    logger.info("Es superadmin, asignando modalidad=S y plan=NT")
+                    user.modalidad = "S"  # S para superadmin
+                    user.plan = "NT"      # NT para superadmin
+                else:
+                    logger.info(f"No es superadmin, asignando modalidad={modalidad} y plan={plan_type}")
+                    user.modalidad = modalidad
+                    user.plan = plan_type
+                
+                # Si es un auditor en modalidad grupal, asignar al administrador actual
+                if role.name == "auditor" and modalidad == 'G':
+                    logger.info("Es auditor en modalidad grupal")
+                    # Asumimos que el creador es un administrador
+                    if request.user.is_admin():
+                        logger.info(f"Asignando administrador: {request.user.username}")
+                        user.administrador = request.user
+                
+                logger.info("Guardando usuario...")
+                user.save()
+                logger.info(f"Usuario {username} guardado con éxito")
+                messages.success(request, f"Usuario {username} creado exitosamente.")
+                logger.info("Redirigiendo a user_list")
+                return redirect('user_list')
+            except Exception as e:
+                logger.error(f"ERROR al crear usuario: {str(e)}", exc_info=True)
+                messages.error(request, f"Error al crear el usuario: {str(e)}")
+        else:
+            logger.warning("Formulario inválido")
+            logger.warning(f"Errores: {form.errors}")
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Error en {field}: {error}")
     else:
         # Si es GET, mostrar el formulario vacío
+        logger.info("Mostrando formulario vacío (GET)")
         form = UserCreationForm()
     
     # Seleccionar la plantilla según el rol del usuario
@@ -151,6 +216,7 @@ def create_user(request):
     else:
         template = 'user_management/create_user.html'
     
+    logger.info(f"Renderizando plantilla: {template}")
     return render(request, template, {
         'form': form,
         'roles': Roles.objects.all(),
@@ -250,12 +316,18 @@ def reactivate_user(request, user_id):
         messages.warning(request, f"El usuario {user_to_reactivate.username} ya está activo.")
         return redirect('user_details', user_id=user_id)
     
-    # Reactivar usuario
-    user_to_reactivate.is_deleted = False
-    user_to_reactivate.deleted_at = None
-    user_to_reactivate.save()
+    # Reactivar usuario y sus auditores asociados si corresponde
+    auditores_reactivados = user_to_reactivate.reactivate_user()
     
-    messages.success(request, f"Usuario {user_to_reactivate.username} reactivado exitosamente.")
+    # Mostrar mensaje apropiado según el resultado
+    if user_to_reactivate.is_admin() and user_to_reactivate.modalidad == 'G' and auditores_reactivados > 0:
+        messages.success(
+            request, 
+            f"Usuario {user_to_reactivate.username} y {auditores_reactivados} auditores asociados reactivados exitosamente."
+        )
+    else:
+        messages.success(request, f"Usuario {user_to_reactivate.username} reactivado exitosamente.")
+    
     return redirect('user_details', user_id=user_id)
 
 
