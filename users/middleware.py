@@ -132,7 +132,7 @@ class DemoUserExpirationMiddleware:
         """Verifica y da de baja a los usuarios demo expirados"""
         try:
             # Calcular la fecha límite (48 horas atrás desde ahora)
-            expiration_time = timezone.now() - timezone.timedelta(hours=48)
+            expiration_time = timezone.now() - timezone.timedelta(hours=120)
             
             # Buscar usuarios con plan DEMO que no estén dados de baja y que fueron creados antes del tiempo límite
             expired_demo_users = User.objects.filter(
