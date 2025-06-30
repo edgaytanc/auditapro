@@ -352,7 +352,10 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
             download_url = f"/auditoria/download/{audit_id}/{folder_encoded}/{filename_encoded}"
             
             # aunque el usuario no esté verificado
-            is_investment_folder = (current_path and "3 INVERSIONES" in current_path)
+            is_investment_folder = (current_path and 
+                                     ("1 CAJA Y BANCOS" in current_path or 
+                                      "3 INVERSIONES" in current_path or
+                                      "2 AUDITORIA PROCESOS CONTABILIDAD" in current_path))
             
             # Mostrar con enlace si el usuario está verificado o si el archivo está en 3 INVERSIONES
             if user_verified or is_investment_folder:
