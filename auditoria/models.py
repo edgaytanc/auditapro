@@ -20,6 +20,7 @@ class BalanceCuentas(models.Model):
     fecha_corte = models.DateField(verbose_name='Fecha de Corte')
     seccion = models.CharField(max_length=10, choices=SECCION_CHOICES, verbose_name='Sección')
     nombre_cuenta = models.CharField(max_length=100, verbose_name='Nombre de la Cuenta')
+    tipo_cuenta = models.CharField(max_length=50, blank=True, null=True, verbose_name='Tipo de Cuenta')
     valor = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Valor')
 
     class Meta:
