@@ -57,7 +57,7 @@ def modify_document_excel(template_path, audit):
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin,
     )
-    
+    print(data_bd)
     # Procesar el documento Excel
     process_excel_sheets(wb, tables_config, replacements, data_bd, template_path)
     
