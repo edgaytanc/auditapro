@@ -120,7 +120,7 @@ class EstadosFinancierosImporter:
             fechas_globales_anterior = None
             fechas_globales_actual = None
 
-            for idx, row in enumerate(sheet.iter_rows(min_row=2, max_col=5, values_only=True), start=2):
+            for idx, row in enumerate(sheet.iter_rows(min_row=2, max_col=6, values_only=True), start=2):
                 primera_columna = str(row[0]).strip() if row[0] is not None else ""
 
                 # Saltar fila si está completamente vacía
@@ -174,6 +174,15 @@ class EstadosFinancierosImporter:
 
                 # Si llegamos aquí y tenemos valores numéricos, es una cuenta válida
                 nombre_cuenta = primera_columna
+                
+                # Leer el tipo de cuenta desde la columna D (índice 3)
+                tipo_cuenta_raw = str(row[3]).strip().upper() if row[3] is not None else ""
+                if tipo_cuenta_raw == "C":
+                    tipo_cuenta = "Corriente"
+                elif tipo_cuenta_raw == "NC":
+                    tipo_cuenta = "No Corriente"
+                else:
+                    tipo_cuenta = None  # Si no está especificado o es inválido
 
                 # Usar las fechas globales extraídas de la sección Activo
                 if not (fechas_globales_anterior and fechas_globales_actual):
@@ -189,6 +198,7 @@ class EstadosFinancierosImporter:
                         fecha_corte=fechas_globales_anterior,
                         seccion=current_section,
                         nombre_cuenta=nombre_cuenta,
+                        tipo_cuenta=tipo_cuenta,
                         valor=valor_anterior
                     )
                     formatted_records.append({
@@ -197,6 +207,7 @@ class EstadosFinancierosImporter:
                         "fecha_corte": fechas_globales_anterior,
                         "seccion": current_section,
                         "nombre_cuenta": nombre_cuenta,
+                        "tipo_cuenta": tipo_cuenta,
                         "valor": valor_anterior
                     })
 
@@ -207,6 +218,7 @@ class EstadosFinancierosImporter:
                         fecha_corte=fechas_globales_actual,
                         seccion=current_section,
                         nombre_cuenta=nombre_cuenta,
+                        tipo_cuenta=tipo_cuenta,
                         valor=valor_actual
                     )
                     formatted_records.append({
@@ -215,6 +227,7 @@ class EstadosFinancierosImporter:
                         "fecha_corte": fechas_globales_actual,
                         "seccion": current_section,
                         "nombre_cuenta": nombre_cuenta,
+                        "tipo_cuenta": tipo_cuenta,
                         "valor": valor_actual
                     })
 
@@ -288,6 +301,8 @@ class EstadosFinancierosImporter:
                     continue
 
                 tipo_balance = "SEMESTRAL"
+                # Para la hoja semestral, siempre asignar "NT" como tipo_cuenta
+                tipo_cuenta = "NT"
                 
                 # Iteramos sobre cada valor y su fecha correspondiente
                 for i, (valor, fecha) in enumerate(zip(valores, fechas_globales)):
@@ -299,6 +314,7 @@ class EstadosFinancierosImporter:
                             fecha_corte=fecha,
                             seccion=current_section,
                             nombre_cuenta=nombre_cuenta,
+                            tipo_cuenta=tipo_cuenta,
                             valor=valor
                         )
                         rec_summary = {
@@ -307,6 +323,7 @@ class EstadosFinancierosImporter:
                             "fecha_corte": fecha,
                             "seccion": current_section,
                             "nombre_cuenta": nombre_cuenta,
+                            "tipo_cuenta": tipo_cuenta,
                             "valor": valor
                         }
                         formatted_records.append(rec_summary)

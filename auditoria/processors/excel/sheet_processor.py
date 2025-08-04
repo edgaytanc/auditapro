@@ -9,12 +9,12 @@ from .initial_balance_tests import process_initial_balance_tests
 from .centralizadoras_file import process_centralizadora_file
 from .sumaria_file import process_sumaria_file
 from .importance_relative import process_importance_relative
+from .ratios_financieros import process_ratios_financieros
 import os
 
 logger = logging.getLogger(__name__)
 
 def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_path=None):
-    print("llega a proccess excel")
     """
     Procesa las hojas del Excel aplicando los reemplazos de texto
     
@@ -64,7 +64,6 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
                                 cell.value = valor_original.replace(patron, replacements[placeholder])
                                 break
     
-    # Procesar las hojas ANUAL y SEMESTRAL solo si el archivo es "1 Estados Financieros Actuales y Anterior.xlsx"
     if file_path:
         file_name = os.path.basename(file_path)
         if (file_name == "1 Estados Financieros Actuales y Anterior.xlsx" or 
@@ -83,6 +82,8 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
             workbook = process_horizontal_vertical_analysis(workbook, balances)
         elif file_name == "6 Prueba de Saldos Iniciales.xlsx" and balances and saldos_iniciales:
             workbook = process_initial_balance_tests(workbook, balances, saldos_iniciales)
+        elif file_name == "6 RATIOS FINANCIEROS.xlsx" and balances:
+            workbook = process_ratios_financieros(workbook, balances)
         elif file_name.startswith("CENTRALIZADORA") and balances:
             workbook = process_centralizadora_file(workbook, balances, file_name)
         elif "SUMARIA" in file_name.upper() and balances:

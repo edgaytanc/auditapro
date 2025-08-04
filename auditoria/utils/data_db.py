@@ -66,6 +66,7 @@ def _serialize_balance(balance: BalanceCuentas) -> Dict[str, Any]:
         'fecha_corte': balance.fecha_corte.isoformat() if balance.fecha_corte else None,
         'seccion': balance.seccion,
         'nombre_cuenta': balance.nombre_cuenta,
+        'tipo_cuenta': balance.tipo_cuenta if hasattr(balance, 'tipo_cuenta') and balance.tipo_cuenta else 'NT',
         'valor': float(balance.valor) if balance.valor else 0,
         'audit_id': balance.audit_id
     }
@@ -96,7 +97,7 @@ def _serialize_saldo_inicial(saldo: SaldoInicial) -> Dict[str, Any]:
 def organize_financial_data(financial_data: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Dict[str, Any]]:
     """
     Organiza los datos financieros en diccionarios indexados por claves específicas:
-    - Balances: tipo_balance-fecha_corte-seccion-nombre_cuenta
+    - Balances: tipo_balance-fecha_corte-seccion-nombre_cuenta-tipo_cuenta
     - Registros auxiliares: nombre_cuenta
     - Saldos iniciales: nombre_cuenta-fecha_corte
     
@@ -114,7 +115,7 @@ def organize_financial_data(financial_data: Dict[str, List[Dict[str, Any]]]) -> 
     
     # Organizar balances
     for balance in financial_data['balances']:
-        key = f"{balance['tipo_balance']}-{balance['fecha_corte']}-{balance['seccion']}-{balance['nombre_cuenta']}"
+        key = f"{balance['tipo_balance']}-{balance['fecha_corte']}-{balance['seccion']}-{balance['nombre_cuenta']}-{balance['tipo_cuenta']}"
         organized_data['balances'][key] = balance['valor']
     
     # Organizar registros auxiliares
