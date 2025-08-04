@@ -1,8 +1,5 @@
-import logging
 from openpyxl.styles import Border, Side
 from copy import copy
-
-logger = logging.getLogger(__name__)
 
 def process_materialidad_file(workbook, balances):
     """Procesa el archivo de materialidad con las cuentas de ESTADO DE RESULTADOS del año más reciente"""
@@ -33,10 +30,6 @@ def process_materialidad_file(workbook, balances):
                 cuenta = partes[5]  # La cuenta está en la posición 5, no en la 4
                 valor = balances[key]
                 cuentas_resultados[cuenta] = valor
-    
-    # Mostrar las cuentas encontradas
-    for cuenta, valor in cuentas_resultados.items():
-        logger.info(f"  - {cuenta}: {valor}")
     
     # Insertar las cuentas en la tabla de materialidad
     for sheet in workbook.worksheets:

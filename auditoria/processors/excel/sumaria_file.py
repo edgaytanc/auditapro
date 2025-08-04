@@ -1,10 +1,7 @@
-import logging
 import re
 from datetime import datetime
 from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
-
-logger = logging.getLogger(__name__)
 
 def process_sumaria_file(workbook, balances, file_name):
     """

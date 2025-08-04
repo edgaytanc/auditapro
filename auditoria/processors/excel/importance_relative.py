@@ -1,8 +1,5 @@
-import logging
 from openpyxl.utils import get_column_letter, column_index_from_string
 from openpyxl.worksheet.table import Table, TableStyleInfo
-
-logger = logging.getLogger(__name__)
 
 def process_importance_relative(workbook, balances):
     """

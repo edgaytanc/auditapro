@@ -1,7 +1,3 @@
-import logging
-
-logger = logging.getLogger(__name__)
-
 def process_auxiliary_file_sheets(workbook, registros_auxiliares):
     """Procesa la hoja de registros auxiliares insertando los valores en la tabla."""
     if not workbook.worksheets: return workbook

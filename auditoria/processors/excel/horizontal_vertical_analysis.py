@@ -1,7 +1,3 @@
-import logging
-
-logger = logging.getLogger(__name__)
-
 def process_horizontal_vertical_analysis(workbook, balances):
     """
     Procesa el archivo de análisis horizontal y vertical

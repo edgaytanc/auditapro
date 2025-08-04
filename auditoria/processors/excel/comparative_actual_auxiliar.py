@@ -1,7 +1,4 @@
-import logging
 from datetime import datetime
-
-logger = logging.getLogger(__name__)
 
 def process_comparative_file(workbook, balances, registros_auxiliares):
     """Procesa el archivo comparativo entre estados financieros y registros auxiliares."""
