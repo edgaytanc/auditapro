@@ -22,6 +22,8 @@ class BalanceCuentas(models.Model):
     nombre_cuenta = models.CharField(max_length=100, verbose_name='Nombre de la Cuenta')
     tipo_cuenta = models.CharField(max_length=50, blank=True, null=True, verbose_name='Tipo de Cuenta')
     valor = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Valor')
+    debe = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Debe', default=0)
+    haber = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Haber', default=0)
 
     class Meta:
         verbose_name = 'Balance de Cuentas'
