@@ -1,82 +1,80 @@
 from .base import (
     preparar_fechas_excel,
     insertar_fechas_en_celdas,
-    procesar_seccion_balance,
     buscar_fila_por_valor
 )
 
-def insertar_datos_pasivo_patrimonio(workbook, cuentas_por_fecha, fechas_semestrales):
+def insertar_datos_pasivo_patrimonio(workbook, cuentas_por_fecha, fechas_semestrales, ajustes_reclasificaciones):
     """
-    Inserta los datos en el archivo CENTRALIZADORA DEL PASIVO Y PATRIMONIO
+    Inserta datos en CENTRALIZADORA PASIVO-PATRIMONIO con ajustes.
     
-    Procesa dos secciones (Pasivo y Patrimonio) en la misma hoja.
+    Estructura de columnas (según imagen):
+    - D: Al 01/01/2023
+    - E: Al 31/07/2023
+    - F: Al 31/12/2023
+    - G: Debe
+    - H: Haber
+    - I: Al 31/12/2024
     """
     sheet = workbook.active
 
-    # Preparar fechas
+    # 1. Preparar fechas
     fechas_año_viejo, fecha_mas_reciente, _, _, fechas_excel = preparar_fechas_excel(fechas_semestrales)
-    if not fechas_excel:
-        return
-
-    # Insertar fechas en celdas
     insertar_fechas_en_celdas(sheet, fechas_excel)
 
-    # ------------------------------------------------------------------
-    # 1. Construir listas ordenadas de cuentas (Pasivo primero, luego Patrimonio)
-    # ------------------------------------------------------------------
-    pasivo_cuentas = sorted({cuenta for data in cuentas_por_fecha.values() if "Pasivo" in data for cuenta in data["Pasivo"].keys()})
-    patrimonio_cuentas = sorted({cuenta for data in cuentas_por_fecha.values() if "Patrimonio" in data for cuenta in data["Patrimonio"].keys()})
-    todas_las_cuentas = pasivo_cuentas + patrimonio_cuentas
-
-    if not todas_las_cuentas:
-        return
-
-    # ------------------------------------------------------------------
-    # 2. Reorganizar el diccionario para procesar_seccion_balance con clave ficticia 'PP'
-    # ------------------------------------------------------------------
-    cuentas_pp_por_fecha = {}
+    # 2. Obtener cuentas únicas de Pasivo y Patrimonio (sin '-NT')
+    pasivo_cuentas = set()
+    patrimonio_cuentas = set()
+    
     for fecha, secciones in cuentas_por_fecha.items():
-        combinado = {}
-        # Pasivo primero
-        for c in pasivo_cuentas:
-            if "Pasivo" in secciones and c in secciones["Pasivo"]:
-                combinado[c] = secciones["Pasivo"][c]
-        # Patrimonio después
-        for c in patrimonio_cuentas:
-            if "Patrimonio" in secciones and c in secciones["Patrimonio"]:
-                combinado[c] = secciones["Patrimonio"][c]
-        cuentas_pp_por_fecha[fecha] = {"PP": combinado}
+        if "Pasivo" in secciones:
+            for cuenta in secciones["Pasivo"].keys():
+                pasivo_cuentas.add(cuenta.replace('-NT', ''))
+        if "Patrimonio" in secciones:
+            for cuenta in secciones["Patrimonio"].keys():
+                patrimonio_cuentas.add(cuenta.replace('-NT', ''))
+    
+    todas_cuentas = sorted(pasivo_cuentas) + sorted(patrimonio_cuentas)
 
-    # ------------------------------------------------------------------
-    # 3. Insertar todas las cuentas contiguamente a partir de la fila 13
-    # ------------------------------------------------------------------
-    procesar_seccion_balance(
-        sheet,
-        cuentas_pp_por_fecha,
-        fechas_año_viejo,
-        fecha_mas_reciente,
-        "PP",
-        13,
-        19,
-        orden_explicit=todas_las_cuentas,
-    )
+    # 3. Insertar datos por fila (fila_inicio = 13)
+    fila_inicio = 13
+    for i, cuenta in enumerate(todas_cuentas):
+        fila_actual = fila_inicio + i
+        
+        # Nombre de la cuenta (columna B)
+        sheet[f'B{fila_actual}'] = cuenta
 
-    # ------------------------------------------------------------------
-    # 4. Reubicar la fila "Suma Pasivo y Patrimonio" inmediatamente después de la última cuenta
-    # ------------------------------------------------------------------
-    last_row_cuentas = 13 + len(todas_las_cuentas) - 1
-    suma_row = buscar_fila_por_valor(sheet, 'B', 'Suma Pasivo y Patrimonio')
-    if suma_row and suma_row != last_row_cuentas + 1:
-        filas_a_subir = suma_row - (last_row_cuentas + 1)
-        if filas_a_subir > 0:
-            sheet.move_range(f"A{suma_row}:I{suma_row}", rows=-filas_a_subir)
-            suma_row = suma_row - filas_a_subir
+        # Insertar saldos por fecha (columnas D, E, F, I)
+        fechas_columnas = {
+            'D': fechas_año_viejo[0],  # 01/01/2023
+            'E': fechas_año_viejo[1],  # 31/07/2023
+            'F': fechas_año_viejo[2],  # 31/12/2023
+            'I': fecha_mas_reciente   # 31/12/2024
+        }
+        
+        for col, fecha in fechas_columnas.items():
+            cuenta_nt = f"{cuenta}-NT"
+            seccion = "Pasivo" if cuenta in pasivo_cuentas else "Patrimonio"
+            
+            if fecha in cuentas_por_fecha and seccion in cuentas_por_fecha[fecha] and cuenta_nt in cuentas_por_fecha[fecha][seccion]:
+                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][seccion][cuenta_nt]
+            else:
+                sheet[f'{col}{fila_actual}'] = 0
 
-    # ------------------------------------------------------------------
-    # 5. Actualizar las fórmulas de la fila de suma según el nuevo rango
-    # ------------------------------------------------------------------
-    if suma_row:
+        # Insertar ajustes (columnas G=Debe, H=Haber)
+        sheet[f'G{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('debe', 0)
+        sheet[f'H{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('haber', 0)
+
+    # 4. Actualizar fila de suma
+    if todas_cuentas:
+        last_row = fila_inicio + len(todas_cuentas) - 1
+        suma_row = buscar_fila_por_valor(sheet, 'B', 'Suma Pasivo y Patrimonio') or (last_row + 1)
+        
+        # Mover fila de suma si es necesario
+        if suma_row != last_row + 1:
+            sheet.move_range(f"A{suma_row}:I{suma_row}", rows=-(suma_row - (last_row + 1)))
+            suma_row = last_row + 1
+        
+        # Actualizar fórmulas de suma (columnas D-I)
         for col in ['D', 'E', 'F', 'G', 'H', 'I']:
-            sheet[f"{col}{suma_row}"] = f"=SUM({col}13:{col}{last_row_cuentas})"
-
-    return  # Fin de insertar_datos_pasivo_patrimonio
+            sheet[f"{col}{suma_row}"] = f"=SUM({col}{fila_inicio}:{col}{last_row})"

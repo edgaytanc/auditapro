@@ -1,115 +1,117 @@
 from .base import (
     preparar_fechas_excel,
     insertar_fechas_en_celdas,
-    procesar_seccion_balance,
     buscar_fila_por_valor
 )
 
-def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales):
+def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales, ajustes_reclasificaciones):
     """
-    Inserta los datos en el archivo CENTRALIZADORA BALANCE
+    Inserta datos en CENTRALIZADORA BALANCE con ajustes.
     
-    Args:
-        workbook: El libro de Excel a procesar
-        cuentas_por_fecha: Diccionario con las cuentas por fecha
-        fechas_semestrales: Lista con todas las fechas semestrales
+    Estructura de columnas (según imagen):
+    - D: Al 01/01/2023
+    - E: Al 31/07/2023
+    - F: Al 31/12/2023
+    - G: Debe
+    - H: Haber
+    - I: Al 31/12/2024
     """
-    # Obtener la hoja activa
     sheet = workbook.active
-    
-    # Preparar fechas
+
+    # 1. Preparar fechas
     fechas_año_viejo, fecha_mas_reciente, _, _, fechas_excel = preparar_fechas_excel(fechas_semestrales)
-    if not fechas_excel:
-        return
-    
-    # Insertar fechas en celdas
     insertar_fechas_en_celdas(sheet, fechas_excel)
-    
+
     # ------------------------------------------------------------------
-    # 1. Procesar ACTIVO (filas 13-19)
+    # 2. Procesar ACTIVO (filas 13-19)
     # ------------------------------------------------------------------
-    # Primero obtener la lista de cuentas de activo para calcular desplazamiento
-    activo_cuentas = sorted({cuenta for fecha, secciones in cuentas_por_fecha.items() 
-                            if "Activo" in secciones for cuenta in secciones["Activo"].keys()})
+    # Obtener cuentas de activo (sin '-NT')
+    activo_cuentas = sorted({cuenta.replace('-NT', '') for fecha, secciones in cuentas_por_fecha.items() 
+                           if "Activo" in secciones for cuenta in secciones["Activo"].keys()})
     
-    # Calcular cuántas filas se necesitarán insertar
-    filas_activo_necesarias = len(activo_cuentas) if activo_cuentas else 0
-    filas_activo_originales = 7  # filas 13-19 = 7 filas
-    filas_insertadas_activo = max(0, filas_activo_necesarias - filas_activo_originales)
-    
-    procesar_seccion_balance(sheet, cuentas_por_fecha, fechas_año_viejo, fecha_mas_reciente, 
-                             "Activo", 13, 19)
-    
-    # Ajustar fila "Suma Activo" según la cantidad real de cuentas de activo
+    # Insertar datos de activo
+    fila_inicio_activo = 13
+    for i, cuenta in enumerate(activo_cuentas):
+        fila_actual = fila_inicio_activo + i
+        
+        # Nombre de la cuenta (columna B)
+        sheet[f'B{fila_actual}'] = cuenta
+
+        # Insertar saldos por fecha (columnas D, E, F, I)
+        fechas_columnas = {
+            'D': fechas_año_viejo[0],  # 01/01/2023
+            'E': fechas_año_viejo[1],  # 31/07/2023
+            'F': fechas_año_viejo[2],  # 31/12/2023
+            'I': fecha_mas_reciente    # 31/12/2024
+        }
+        
+        for col, fecha in fechas_columnas.items():
+            cuenta_nt = f"{cuenta}-NT"
+            if fecha in cuentas_por_fecha and "Activo" in cuentas_por_fecha[fecha] and cuenta_nt in cuentas_por_fecha[fecha]["Activo"]:
+                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha]["Activo"][cuenta_nt]
+            else:
+                sheet[f'{col}{fila_actual}'] = 0
+
+        # Insertar ajustes (columnas G=Debe, H=Haber)
+        sheet[f'G{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('debe', 0)
+        sheet[f'H{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('haber', 0)
+
+    # Ajustar fila "Suma Activo"
     if activo_cuentas:
-        last_row_activo = 13 + len(activo_cuentas) - 1
-        suma_activo_row = buscar_fila_por_valor(sheet, 'B', 'Suma Activo')
+        last_row_activo = fila_inicio_activo + len(activo_cuentas) - 1
+        suma_activo_row = buscar_fila_por_valor(sheet, 'B', 'Suma Activo') or (last_row_activo + 1)
         
-        # Reubicar la fila de suma si quedó separada
-        if suma_activo_row and suma_activo_row != last_row_activo + 1:
-            filas_a_subir = suma_activo_row - (last_row_activo + 1)
-            if filas_a_subir > 0:
-                sheet.move_range(f"A{suma_activo_row}:I{suma_activo_row}", rows=-filas_a_subir)
-                suma_activo_row -= filas_a_subir
+        if suma_activo_row != last_row_activo + 1:
+            sheet.move_range(f"A{suma_activo_row}:I{suma_activo_row}", rows=-(suma_activo_row - (last_row_activo + 1)))
+            suma_activo_row = last_row_activo + 1
         
-        # Actualizar fórmulas de suma para cubrir todo el rango real de activo
-        if suma_activo_row:
-            for col in ['D', 'E', 'F', 'G', 'H', 'I']:
-                sheet[f"{col}{suma_activo_row}"] = f"=SUBTOTAL(9,{col}13:{col}{last_row_activo})"
-    
+        for col in ['D', 'E', 'F', 'G', 'H', 'I']:
+            sheet[f"{col}{suma_activo_row}"] = f"=SUM({col}{fila_inicio_activo}:{col}{last_row_activo})"
+
     # ------------------------------------------------------------------
-    # 2. Procesar PASIVO Y PATRIMONIO combinados (posición dinámica)
+    # 3. Procesar PASIVO Y PATRIMONIO (posición dinámica)
     # ------------------------------------------------------------------
-    # Calcular nueva posición de inicio considerando las filas insertadas en activo
-    nueva_fila_inicio_pp = 22 + filas_insertadas_activo
-    nueva_fila_fin_pp = 24 + filas_insertadas_activo  # rango fila 22-24
-    
-    # Construir listas ordenadas de cuentas (Pasivo primero, luego Patrimonio)
-    pasivo_cuentas = sorted({cuenta for fecha, secciones in cuentas_por_fecha.items() 
+    # Calcular nueva posición de inicio (22 + filas insertadas en activo)
+    filas_insertadas_activo = max(0, len(activo_cuentas) - 7)  # 7 filas originales (13-19)
+    fila_inicio_pp = 22 + filas_insertadas_activo
+
+    # Obtener cuentas de pasivo y patrimonio (sin '-NT')
+    pasivo_cuentas = sorted({cuenta.replace('-NT', '') for fecha, secciones in cuentas_por_fecha.items() 
                             if "Pasivo" in secciones for cuenta in secciones["Pasivo"].keys()})
-    patrimonio_cuentas = sorted({cuenta for fecha, secciones in cuentas_por_fecha.items() 
+    patrimonio_cuentas = sorted({cuenta.replace('-NT', '') for fecha, secciones in cuentas_por_fecha.items() 
                                 if "Patrimonio" in secciones for cuenta in secciones["Patrimonio"].keys()})
     todas_pp_cuentas = pasivo_cuentas + patrimonio_cuentas
-    
+
+    # Insertar datos de pasivo y patrimonio
+    for i, cuenta in enumerate(todas_pp_cuentas):
+        fila_actual = fila_inicio_pp + i
+        
+        # Nombre de la cuenta (columna B)
+        sheet[f'B{fila_actual}'] = cuenta
+
+        # Determinar sección (Pasivo o Patrimonio)
+        seccion = "Pasivo" if cuenta in pasivo_cuentas else "Patrimonio"
+
+        # Insertar saldos por fecha (columnas D, E, F, I)
+        for col, fecha in fechas_columnas.items():
+            cuenta_nt = f"{cuenta}-NT"
+            if fecha in cuentas_por_fecha and seccion in cuentas_por_fecha[fecha] and cuenta_nt in cuentas_por_fecha[fecha][seccion]:
+                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][seccion][cuenta_nt]
+            else:
+                sheet[f'{col}{fila_actual}'] = 0
+
+        # Insertar ajustes (columnas G=Debe, H=Haber)
+        sheet[f'G{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('debe', 0)
+        sheet[f'H{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('haber', 0)
+
+    # Ajustar fila "Suma Pasivo y Patrimonio"
     if todas_pp_cuentas:
-        # Reorganizar el diccionario para procesar_seccion_balance con clave ficticia 'PP'
-        cuentas_pp_por_fecha = {}
-        for fecha, secciones in cuentas_por_fecha.items():
-            combinado = {}
-            # Pasivo primero
-            for c in pasivo_cuentas:
-                if "Pasivo" in secciones and c in secciones["Pasivo"]:
-                    combinado[c] = secciones["Pasivo"][c]
-            # Patrimonio después
-            for c in patrimonio_cuentas:
-                if "Patrimonio" in secciones and c in secciones["Patrimonio"]:
-                    combinado[c] = secciones["Patrimonio"][c]
-            cuentas_pp_por_fecha[fecha] = {"PP": combinado}
+        last_row_pp = fila_inicio_pp + len(todas_pp_cuentas) - 1
+        suma_pp_row = buscar_fila_por_valor(sheet, 'B', 'Suma Pasivo y Patrimonio') or (last_row_pp + 1)
         
-        # Insertar todas las cuentas contiguamente desde la nueva posición
-        procesar_seccion_balance(
-            sheet,
-            cuentas_pp_por_fecha,
-            fechas_año_viejo,
-            fecha_mas_reciente,
-            "PP",
-            nueva_fila_inicio_pp,
-            nueva_fila_fin_pp,
-            orden_explicit=todas_pp_cuentas,
-        )
+        if suma_pp_row != last_row_pp + 1:
+            sheet.move_range(f"A{suma_pp_row}:I{suma_pp_row}", rows=-(suma_pp_row - (last_row_pp + 1)))
+            suma_pp_row = last_row_pp + 1
         
-        # Ajustar fila "Suma Pasivo y Patrimonio" según la cantidad real de cuentas
-        last_row_pp = nueva_fila_inicio_pp + len(todas_pp_cuentas) - 1
-        suma_pp_row = buscar_fila_por_valor(sheet, 'B', 'Suma Pasivo y Patrimonio')
-        
-        # Reubicar la fila de suma si quedó separada
-        if suma_pp_row and suma_pp_row != last_row_pp + 1:
-            filas_a_subir = suma_pp_row - (last_row_pp + 1)
-            if filas_a_subir > 0:
-                sheet.move_range(f"A{suma_pp_row}:I{suma_pp_row}", rows=-filas_a_subir)
-                suma_pp_row -= filas_a_subir
-        
-        # Actualizar fórmulas de suma para cubrir todo el rango real de pasivo y patrimonio
-        if suma_pp_row:
-            for col in ['D', 'E', 'F', 'G', 'H', 'I']:
-                sheet[f"{col}{suma_pp_row}"] = f"=SUM({col}{nueva_fila_inicio_pp}:{col}{last_row_pp})"
+        for col in ['D', 'E', 'F', 'G', 'H', 'I']:
+            sheet[f"{col}{suma_pp_row}"] = f"=SUM({col}{fila_inicio_pp}:{col}{last_row_pp})"

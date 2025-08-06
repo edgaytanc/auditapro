@@ -5,52 +5,58 @@ from .base import (
     buscar_fila_por_valor
 )
 
-def insertar_datos_activo(workbook, cuentas_por_fecha, fechas_semestrales):
-    """
-    Inserta los datos en el archivo CENTRALIZADORA DEL ACTIVO
-    
-    Args:
-        workbook: El libro de Excel a procesar
-        cuentas_por_fecha: Diccionario con las cuentas por fecha
-        fechas_semestrales: Lista con todas las fechas semestrales
-    """
-    # Obtener la hoja activa
+def insertar_datos_activo(workbook, cuentas_por_fecha, fechas_semestrales, ajustes_reclasificaciones):
     sheet = workbook.active
     
-    # Preparar fechas
+    # 1. Preparar fechas
     fechas_año_viejo, fecha_mas_reciente, _, _, fechas_excel = preparar_fechas_excel(fechas_semestrales)
-    if not fechas_excel:
-        return
-    
-    # Insertar fechas en celdas
     insertar_fechas_en_celdas(sheet, fechas_excel)
     
-    # Crear un diccionario adaptado para procesar_seccion_balance
-    cuentas_adaptadas = {}
+    # 2. Procesar cada cuenta
+    fila_inicio = 13  # Fila donde comienzan las cuentas de activo
+    todas_cuentas = set()
+    
+    # Obtener todas las cuentas únicas (sin '-NT')
     for fecha, cuentas in cuentas_por_fecha.items():
-        cuentas_adaptadas[fecha] = {'Activo': cuentas}
+        for cuenta in cuentas.keys():
+            todas_cuentas.add(cuenta.replace('-NT', ''))
     
-    procesar_seccion_balance(sheet, cuentas_adaptadas, fechas_año_viejo, fecha_mas_reciente, 
-                             "Activo", 13, 19)
+    # Insertar datos en cada fila
+    for i, cuenta in enumerate(sorted(todas_cuentas)):
+        fila_actual = fila_inicio + i
+        
+        # Nombre de la cuenta (columna B)
+        sheet[f'B{fila_actual}'] = cuenta
+        
+        # Insertar saldos por fecha (columnas D, E, F, I)
+        fechas_columnas = {
+            'D': fechas_año_viejo[0],  # 01/01/2023
+            'E': fechas_año_viejo[1],  # 31/07/2023
+            'F': fechas_año_viejo[2],  # 31/12/2023
+            'I': fecha_mas_reciente    # 31/12/2024
+        }
+        
+        for col, fecha in fechas_columnas.items():
+            cuenta_nt = f"{cuenta}-NT"
+            if fecha in cuentas_por_fecha and cuenta_nt in cuentas_por_fecha[fecha]:
+                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][cuenta_nt]
+            else:
+                sheet[f'{col}{fila_actual}'] = 0
+        
+        # Insertar ajustes (columna G=Debe, H=Haber)
+        sheet[f'G{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('debe', 0)
+        sheet[f'H{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('haber', 0)
     
-    # ------------------------------------------------------------------
-    # Ajustar fila "Suma Activo" según la cantidad real de cuentas
-    # ------------------------------------------------------------------
-    todas_las_cuentas = sorted({cuenta for cuentas in cuentas_por_fecha.values() for cuenta in cuentas.keys()})
-    
-    if todas_las_cuentas:
-        last_row_cuentas = 13 + len(todas_las_cuentas) - 1
+    # 3. Actualizar fila de suma (columnas D-I)
+    if todas_cuentas:
+        last_row = fila_inicio + len(todas_cuentas) - 1
+        suma_row = buscar_fila_por_valor(sheet, 'B', 'Suma Activo') or (last_row + 1)
         
-        suma_row = buscar_fila_por_valor(sheet, 'B', 'Suma Activo')
+        # Mover fila de suma si es necesario
+        if suma_row != last_row + 1:
+            sheet.move_range(f"A{suma_row}:I{suma_row}", rows=-(suma_row - (last_row + 1)))
+            suma_row = last_row + 1
         
-        # Reubicar la fila de suma si quedó separada
-        if suma_row and suma_row != last_row_cuentas + 1:
-            filas_a_subir = suma_row - (last_row_cuentas + 1)
-            if filas_a_subir > 0:
-                sheet.move_range(f"A{suma_row}:I{suma_row}", rows=-filas_a_subir)
-                suma_row -= filas_a_subir
-        
-        # Actualizar fórmulas de suma para cubrir todo el rango real
-        if suma_row:
-            for col in ['D', 'E', 'F', 'G', 'H', 'I']:
-                sheet[f"{col}{suma_row}"] = f"=SUM({col}13:{col}{last_row_cuentas})"
+        # Actualizar fórmulas de suma
+        for col in ['D', 'E', 'F', 'G', 'H', 'I']:
+            sheet[f"{col}{suma_row}"] = f"=SUM({col}{fila_inicio}:{col}{last_row})"

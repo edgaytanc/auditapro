@@ -26,6 +26,7 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
     balances = data_bd.get('balances', {})
     registros_auxiliares = data_bd.get('registros_auxiliares', {})
     saldos_iniciales = data_bd.get('saldos_iniciales', {})
+    ajustes_reclasificaciones = data_bd.get('ajustes_reclasificaciones', {})
 
     # Procesar reemplazos normales en todas las hojas
     for sheet in workbook.worksheets:
@@ -87,7 +88,7 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
             workbook = process_ratios_financieros(workbook, balances)
         elif file_name.startswith("CENTRALIZADORA") and balances:
             workbook = process_centralizadora_file(
-                workbook, balances, file_name)
+                workbook, balances, ajustes_reclasificaciones, file_name)
         elif "SUMARIA" in file_name.upper() and balances:
             workbook = process_sumaria_file(workbook, balances, file_name)
         elif "IMPORTANCIA RELATIVA" in file_name.upper() and balances:
