@@ -1,7 +1,12 @@
 import logging
 from typing import Dict, Any, List, Optional
 from django.db.models import QuerySet
-from auditoria.models import BalanceCuentas, RegistroAuxiliar, SaldoInicial
+from auditoria.models import (
+    BalanceCuentas,
+    RegistroAuxiliar,
+    SaldoInicial,
+    AjustesReclasificaciones,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +61,11 @@ def get_initial_balances(audit_id: int) -> Dict[str, Any]:
         logger.exception(e)
         return {'saldos': [], 'total_saldos': 0}
 
+def get_adjustment_records(audit_id: int) -> Dict[str, Any]:
+    """Obtiene ajustes y reclasificaciones para la auditoría."""
+    ajustes = AjustesReclasificaciones.objects.filter(audit_id=audit_id)
+    return {'ajustes': ajustes}
+
 def _serialize_balance(balance: BalanceCuentas) -> Dict[str, Any]:
     """
     Serializa un objeto BalanceCuentas a un diccionario
@@ -94,23 +104,26 @@ def _serialize_saldo_inicial(saldo: SaldoInicial) -> Dict[str, Any]:
         'audit_id': saldo.audit_id
     }
 
-def organize_financial_data(financial_data: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Dict[str, Any]]:
+def _serialize_ajuste(ajuste: AjustesReclasificaciones) -> Dict[str, Any]:
     """
-    Organiza los datos financieros en diccionarios indexados por claves específicas:
-    - Balances: tipo_balance-fecha_corte-seccion-nombre_cuenta-tipo_cuenta
-    - Registros auxiliares: nombre_cuenta
-    - Saldos iniciales: nombre_cuenta-fecha_corte
-    
-    Args:
-        financial_data: Diccionario con los datos financieros serializados
-        
-    Returns:
-        Diccionario con los datos organizados por claves específicas
+    Serializa un objeto AjustesReclasificaciones a un diccionario
     """
-    organized_data = {
+    return {
+        'cuenta': ajuste.nombre_cuenta,
+        'debe': float(ajuste.debe),
+        'haber': float(ajuste.haber),
+    }
+
+def organize_financial_data(financial_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Organiza los datos financieros en un diccionario estructurado
+    para facilitar el acceso en otras partes del sistema.
+    """
+    organized_data: Dict[str, Dict[str, Any]] = {
         'balances': {},
         'registros_auxiliares': {},
-        'saldos_iniciales': {}
+        'saldos_iniciales': {},
+        'ajustes_reclasificaciones': {},
     }
     
     # Organizar balances
@@ -128,6 +141,14 @@ def organize_financial_data(financial_data: Dict[str, List[Dict[str, Any]]]) -> 
         key = f"{saldo['cuenta']}-{saldo['fecha_corte']}"
         organized_data['saldos_iniciales'][key] = saldo['saldo']
     
+    # Organizar ajustes / reclasificaciones
+    for ajuste in financial_data.get('ajustes_reclasificaciones', []):
+        key = f"{ajuste['cuenta']}"
+        organized_data['ajustes_reclasificaciones'][key] = {
+            'debe': ajuste['debe'],
+            'haber': ajuste['haber'],
+        }
+    
     return organized_data
 
 def get_all_financial_data(audit_id: int) -> Dict[str, Any]:
@@ -139,17 +160,20 @@ def get_all_financial_data(audit_id: int) -> Dict[str, Any]:
     balance_data = get_balance_data(audit_id)
     auxiliary_data = get_auxiliary_records(audit_id)
     initial_data = get_initial_balances(audit_id)
+    adjustment_data = get_adjustment_records(audit_id)
     
     # Serializar los datos a formato JSON
     serialized_balances = [_serialize_balance(b) for b in balance_data['balances']]
     serialized_registros = [_serialize_registro_auxiliar(r) for r in auxiliary_data['registros']]
     serialized_saldos = [_serialize_saldo_inicial(s) for s in initial_data['saldos']]
+    serialized_ajustes = [_serialize_ajuste(a) for a in adjustment_data['ajustes']]
     
     # Datos serializados
     serialized_data = {
         'balances': serialized_balances,
         'registros_auxiliares': serialized_registros,
         'saldos_iniciales': serialized_saldos,
+        'ajustes_reclasificaciones': serialized_ajustes,
     }
     
     # Organizar datos por claves específicas
