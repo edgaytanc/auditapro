@@ -5,46 +5,42 @@ logger = logging.getLogger(__name__)
 def process_ratios_financieros(workbook, balances):
     """
     Procesa las hojas de ratios financieros insertando las cuentas clasificadas por tipo y año.
-    
+
     Args:
         workbook: Objeto workbook de openpyxl
         balances: Diccionario con los balances en formato:
                  ANUAL-YYYY-MM-DD-Seccion-Cuenta-TipoCuenta: valor
     """
-    logger.info("Iniciando procesamiento de ratios financieros")
-    
+
     # Extraer fechas anuales disponibles
     fechas_anual = extraer_fechas_anuales(balances)
-    logger.info(f"Fechas anuales encontradas: {fechas_anual}")
-    
+
     if len(fechas_anual) < 2:
-        logger.warning(f"Se necesitan al menos 2 años de datos. Solo se encontraron: {fechas_anual}")
         return workbook
-    
+
     # Ordenar fechas (más reciente primero)
     fechas_anual = sorted(fechas_anual, reverse=True)
     año_actual = fechas_anual[0]
     año_anterior = fechas_anual[1]
-    
-    logger.info(f"Año actual: {año_actual}, Año anterior: {año_anterior}")
-    
+
     # Clasificar cuentas por sección y tipo
-    cuentas_clasificadas = clasificar_cuentas_por_seccion_y_tipo(balances, año_actual, año_anterior)
-    
+    cuentas_clasificadas = clasificar_cuentas_por_seccion_y_tipo(
+        balances, año_actual, año_anterior)
+
     # Procesar cada hoja relevante
     for sheet in workbook.worksheets:
         sheet_title = sheet.title.upper()
-        
+
         if "ESTADOS FINANCIEROS COMPARATIVO" in sheet_title:
-            logger.info(f"Procesando hoja: {sheet.title}")
-            procesar_hoja_comparativo(sheet, cuentas_clasificadas, año_actual, año_anterior)
-            
+            procesar_hoja_comparativo(
+                sheet, cuentas_clasificadas, año_actual, año_anterior)
+
         elif "ANÁLISIS VERTICAL" in sheet_title or "ANALISIS VERTICAL" in sheet_title:
-            logger.info(f"Procesando hoja: {sheet.title}")
-            procesar_hoja_analisis_vertical(sheet, cuentas_clasificadas, año_actual, año_anterior)
-    
-    logger.info("Finalizado procesamiento de ratios financieros")
+            procesar_hoja_analisis_vertical(
+                sheet, cuentas_clasificadas, año_actual, año_anterior)
+
     return workbook
+
 
 def extraer_fechas_anuales(balances):
     """Extrae las fechas anuales únicas del diccionario balances"""
@@ -56,10 +52,11 @@ def extraer_fechas_anuales(balances):
             fechas.add(fecha)
     return sorted(list(fechas))
 
+
 def clasificar_cuentas_por_seccion_y_tipo(balances, año_actual, año_anterior):
     """
     Clasifica las cuentas por sección y tipo, organizadas por año.
-    
+
     Returns:
         dict: {
             'Activo': {
@@ -82,7 +79,7 @@ def clasificar_cuentas_por_seccion_y_tipo(balances, año_actual, año_anterior):
         'Patrimonio': {año_actual: {}, año_anterior: {}},
         'ESTADO DE RESULTADOS': {año_actual: {}, año_anterior: {}}
     }
-    
+
     for clave, valor in balances.items():
         partes = clave.split('-')
         if len(partes) >= 6 and partes[0] == 'ANUAL':
@@ -90,20 +87,21 @@ def clasificar_cuentas_por_seccion_y_tipo(balances, año_actual, año_anterior):
             seccion = partes[4]
             cuenta = partes[5]
             tipo_cuenta = partes[6]
-            
+
             if fecha in [año_actual, año_anterior] and seccion in estructura:
                 if seccion in ['Activo', 'Pasivo']:
                     if tipo_cuenta in ['Corriente', 'No Corriente']:
                         estructura[seccion][tipo_cuenta][fecha][cuenta] = valor
                 elif seccion in ['Patrimonio', 'ESTADO DE RESULTADOS']:
                     estructura[seccion][fecha][cuenta] = valor
-    
+
     return estructura
+
 
 def encontrar_columnas_años(sheet):
     """Encuentra las columnas donde están 'Año actual' y 'Año anterior'"""
     columnas = {'año_actual': None, 'año_anterior': None}
-    
+
     # Buscar en las primeras 10 filas
     for fila in range(1, 11):
         for col in range(1, 15):
@@ -114,13 +112,14 @@ def encontrar_columnas_años(sheet):
                     columnas['año_actual'] = col
                 elif 'año anterior' in valor:
                     columnas['año_anterior'] = col
-    
+
     return columnas
+
 
 def obtener_rangos_fijos_por_hoja(sheet_title):
     """
     Devuelve los rangos de filas fijos para cada sección según la hoja.
-    
+
     Returns:
         dict: {
             'activo_corriente': (fila_inicio, fila_fin),
@@ -131,7 +130,7 @@ def obtener_rangos_fijos_por_hoja(sheet_title):
         }
     """
     sheet_title_upper = sheet_title.upper()
-    
+
     if "ANÁLISIS VERTICAL" in sheet_title_upper or "ANALISIS VERTICAL" in sheet_title_upper:
         return {
             'activo_corriente': (11, 27),
@@ -158,48 +157,49 @@ def obtener_rangos_fijos_por_hoja(sheet_title):
             'patrimonio': (90, 99)
         }
 
+
 def procesar_hoja_comparativo(sheet, cuentas_clasificadas, año_actual, año_anterior):
     """Procesa la hoja Estados Financieros Comparativo"""
     columnas = encontrar_columnas_años(sheet)
     rangos = obtener_rangos_fijos_por_hoja(sheet.title)
-    
-    logger.info(f"Columnas encontradas: {columnas}")
-    logger.info(f"Rangos de filas para {sheet.title}: {rangos}")
-    
+
     if not columnas['año_actual'] or not columnas['año_anterior']:
         logger.error("No se encontraron las columnas de años")
         return
-    
+
     # Insertar cuentas en cada sección usando rangos fijos
-    insertar_cuentas_en_rango(sheet, rangos['activo_corriente'], 
-                             cuentas_clasificadas['Activo']['Corriente'],
-                             columnas, año_actual, año_anterior, 'Activo Corriente')
-    
+    insertar_cuentas_en_rango(sheet, rangos['activo_corriente'],
+                              cuentas_clasificadas['Activo']['Corriente'],
+                              columnas, año_actual, año_anterior, 'Activo Corriente')
+
     insertar_cuentas_en_rango(sheet, rangos['activo_no_corriente'],
-                             cuentas_clasificadas['Activo']['No Corriente'],
-                             columnas, año_actual, año_anterior, 'Activo No Corriente')
-    
+                              cuentas_clasificadas['Activo']['No Corriente'],
+                              columnas, año_actual, año_anterior, 'Activo No Corriente')
+
     insertar_cuentas_en_rango(sheet, rangos['pasivo_corriente'],
-                             cuentas_clasificadas['Pasivo']['Corriente'],
-                             columnas, año_actual, año_anterior, 'Pasivo Corriente')
-    
+                              cuentas_clasificadas['Pasivo']['Corriente'],
+                              columnas, año_actual, año_anterior, 'Pasivo Corriente')
+
     insertar_cuentas_en_rango(sheet, rangos['pasivo_no_corriente'],
-                             cuentas_clasificadas['Pasivo']['No Corriente'],
-                             columnas, año_actual, año_anterior, 'Pasivo No Corriente')
-    
+                              cuentas_clasificadas['Pasivo']['No Corriente'],
+                              columnas, año_actual, año_anterior, 'Pasivo No Corriente')
+
     insertar_cuentas_en_rango(sheet, rangos['patrimonio'],
-                             cuentas_clasificadas['Patrimonio'],
-                             columnas, año_actual, año_anterior, 'Patrimonio')
+                              cuentas_clasificadas['Patrimonio'],
+                              columnas, año_actual, año_anterior, 'Patrimonio')
+
 
 def procesar_hoja_analisis_vertical(sheet, cuentas_clasificadas, año_actual, año_anterior):
     """Procesa la hoja Análisis Vertical"""
     # Usa la misma lógica que comparativo pero con rangos específicos para análisis vertical
-    procesar_hoja_comparativo(sheet, cuentas_clasificadas, año_actual, año_anterior)
+    procesar_hoja_comparativo(
+        sheet, cuentas_clasificadas, año_actual, año_anterior)
+
 
 def insertar_cuentas_en_rango(sheet, rango, datos_seccion, columnas, año_actual, año_anterior, nombre_seccion):
     """
     Inserta las cuentas de una sección en un rango específico de filas.
-    
+
     Args:
         sheet: Hoja de Excel
         rango: Tupla (fila_inicio, fila_fin) 
@@ -210,40 +210,36 @@ def insertar_cuentas_en_rango(sheet, rango, datos_seccion, columnas, año_actual
         nombre_seccion: Nombre de la sección para logging
     """
     fila_inicio, fila_fin = rango
-    
+
     # Obtener todas las cuentas únicas
     cuentas_unicas = set()
     if isinstance(datos_seccion, dict) and año_actual in datos_seccion:
         cuentas_unicas.update(datos_seccion[año_actual].keys())
     if isinstance(datos_seccion, dict) and año_anterior in datos_seccion:
         cuentas_unicas.update(datos_seccion[año_anterior].keys())
-    
+
     cuentas_ordenadas = sorted(list(cuentas_unicas))
     filas_disponibles = fila_fin - fila_inicio + 1
-    
-    logger.info(f"Insertando {len(cuentas_ordenadas)} cuentas de {nombre_seccion} en rango {fila_inicio}-{fila_fin} ({filas_disponibles} filas disponibles)")
-    
-    if len(cuentas_ordenadas) > filas_disponibles:
-        logger.warning(f"¡ATENCIÓN! Se tienen {len(cuentas_ordenadas)} cuentas pero solo {filas_disponibles} filas disponibles en {nombre_seccion}")
-    
+
     for i, cuenta in enumerate(cuentas_ordenadas):
         if i >= filas_disponibles:
-            logger.error(f"No hay más espacio para insertar la cuenta '{cuenta}' en {nombre_seccion}")
+            logger.error(
+                f"No hay más espacio para insertar la cuenta '{cuenta}' en {nombre_seccion}")
             break
-            
+
         fila_actual = fila_inicio + i
-        
+
         # Insertar nombre de cuenta en columna C
         sheet.cell(row=fila_actual, column=3).value = cuenta
-        
+
         # Insertar valor año actual
         if isinstance(datos_seccion, dict) and año_actual in datos_seccion:
             valor_actual = datos_seccion[año_actual].get(cuenta, 0)
-            sheet.cell(row=fila_actual, column=columnas['año_actual']).value = valor_actual
-        
+            sheet.cell(row=fila_actual,
+                       column=columnas['año_actual']).value = valor_actual
+
         # Insertar valor año anterior
         if isinstance(datos_seccion, dict) and año_anterior in datos_seccion:
             valor_anterior = datos_seccion[año_anterior].get(cuenta, 0)
-            sheet.cell(row=fila_actual, column=columnas['año_anterior']).value = valor_anterior
-        
-        logger.info(f"  Insertada cuenta '{cuenta}' en fila {fila_actual}")
+            sheet.cell(row=fila_actual,
+                       column=columnas['año_anterior']).value = valor_anterior
