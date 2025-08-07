@@ -17,7 +17,41 @@ __all__ = [
     "insertar_datos_cuenta",
     "obtener_todas_cuentas_seccion",
     "insertar_multiples_cuentas",
+    "encontrar_ajuste_para_cuenta",
 ]
+
+
+def encontrar_ajuste_para_cuenta(
+    ajustes_reclasificaciones: Dict[str, Dict[str, float]],
+    nombre_cuenta: str
+) -> Dict[str, float] | None:
+    """Busca coincidencias exactas o parciales en ajustes_reclasificaciones.
+    
+    Args:
+        ajustes_reclasificaciones: Diccionario de ajustes/reclasificaciones
+        nombre_cuenta: Nombre de la cuenta a buscar
+        
+    Returns:
+        Diccionario con valores de debe/haber o None si no se encuentra
+    """
+    if not ajustes_reclasificaciones:
+        return None
+        
+    # Coincidencia exacta
+    if nombre_cuenta in ajustes_reclasificaciones:
+        logger.debug(f"Encontrada coincidencia exacta para ajustes: '{nombre_cuenta}'")
+        return ajustes_reclasificaciones[nombre_cuenta]
+    
+    # Coincidencia parcial
+    nombre_normalizado = nombre_cuenta.lower().strip()
+    for cuenta, valores in ajustes_reclasificaciones.items():
+        cuenta_normalizada = cuenta.lower().strip()
+        if nombre_normalizado in cuenta_normalizada or cuenta_normalizada in nombre_normalizado:
+            logger.debug(f"Encontrada coincidencia parcial para ajustes: '{nombre_cuenta}' con '{cuenta}'")
+            return valores
+    
+    logger.debug(f"No se encontraron ajustes para cuenta: '{nombre_cuenta}'")
+    return None
 
 
 # ---------------------------------------------------------------------
@@ -45,17 +79,18 @@ def insertar_datos_cuenta(
                 sheet[celda].alignment = Alignment(horizontal="right")
                 logger.debug(f"Inserción de valor {datos_cuenta[fecha]} en celda {celda}")
     
-    # Insertar valores de ajustes/reclasificaciones
-    if ajustes_reclasificaciones and nombre_cuenta in ajustes_reclasificaciones:
+    # Insertar valores de ajustes/reclasificaciones usando la nueva función
+    valores_ajuste = encontrar_ajuste_para_cuenta(ajustes_reclasificaciones, nombre_cuenta)
+    if valores_ajuste:
         logger.debug(f"Ajustes/reclasificaciones encontrados para cuenta {nombre_cuenta}")
-        if 'debe' in ajustes_reclasificaciones[nombre_cuenta]:
-            sheet["H13"].value = ajustes_reclasificaciones[nombre_cuenta]['debe']
+        if 'debe' in valores_ajuste:
+            sheet["H13"].value = valores_ajuste['debe']
             sheet["H13"].alignment = Alignment(horizontal="right")
-            logger.debug(f"Inserción de valor {ajustes_reclasificaciones[nombre_cuenta]['debe']} en celda H13")
-        if 'haber' in ajustes_reclasificaciones[nombre_cuenta]:
-            sheet["I13"].value = ajustes_reclasificaciones[nombre_cuenta]['haber']
+            logger.debug(f"Inserción de valor {valores_ajuste['debe']} en celda H13")
+        if 'haber' in valores_ajuste:
+            sheet["I13"].value = valores_ajuste['haber']
             sheet["I13"].alignment = Alignment(horizontal="right")
-            logger.debug(f"Inserción de valor {ajustes_reclasificaciones[nombre_cuenta]['haber']} en celda I13")
+            logger.debug(f"Inserción de valor {valores_ajuste['haber']} en celda I13")
 
 
 # ---------------------------------------------------------------------
@@ -186,14 +221,15 @@ def insertar_multiples_cuentas(
                     sheet[f"{col_letra}{fila}"].alignment = Alignment(horizontal="right")
                     logger.debug(f"Inserción de valor {todas_cuentas[nombre_cuenta][fecha]} en celda {col_letra}{fila}")
         
-        # Insertar valores de ajustes/reclasificaciones
-        if ajustes_reclasificaciones and nombre_cuenta in ajustes_reclasificaciones:
+        # Insertar valores de ajustes/reclasificaciones usando la nueva función
+        valores_ajuste = encontrar_ajuste_para_cuenta(ajustes_reclasificaciones, nombre_cuenta)
+        if valores_ajuste:
             logger.debug(f"Ajustes/reclasificaciones encontrados para cuenta {nombre_cuenta}")
-            if 'debe' in ajustes_reclasificaciones[nombre_cuenta]:
-                sheet[f"H{fila}"].value = ajustes_reclasificaciones[nombre_cuenta]['debe']
+            if 'debe' in valores_ajuste:
+                sheet[f"H{fila}"].value = valores_ajuste['debe']
                 sheet[f"H{fila}"].alignment = Alignment(horizontal="right")
-                logger.debug(f"Inserción de valor {ajustes_reclasificaciones[nombre_cuenta]['debe']} en celda H{fila}")
-            if 'haber' in ajustes_reclasificaciones[nombre_cuenta]:
-                sheet[f"I{fila}"].value = ajustes_reclasificaciones[nombre_cuenta]['haber']
+                logger.debug(f"Inserción de valor {valores_ajuste['debe']} en celda H{fila}")
+            if 'haber' in valores_ajuste:
+                sheet[f"I{fila}"].value = valores_ajuste['haber']
                 sheet[f"I{fila}"].alignment = Alignment(horizontal="right")
-                logger.debug(f"Inserción de valor {ajustes_reclasificaciones[nombre_cuenta]['haber']} en celda I{fila}")
+                logger.debug(f"Inserción de valor {valores_ajuste['haber']} en celda I{fila}")
