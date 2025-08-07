@@ -16,7 +16,7 @@ def insertar_datos_activo(workbook, cuentas_por_fecha, fechas_semestrales, ajust
     fila_inicio = 13  # Fila donde comienzan las cuentas de activo
     todas_cuentas = set()
     
-    # Obtener todas las cuentas únicas (ya no necesitamos quitar el sufijo -NT)
+    # Obtener todas las cuentas únicas
     for fecha, cuentas in cuentas_por_fecha.items():
         for cuenta in cuentas.keys():
             todas_cuentas.add(cuenta)
@@ -37,7 +37,6 @@ def insertar_datos_activo(workbook, cuentas_por_fecha, fechas_semestrales, ajust
         }
         
         for col, fecha in fechas_columnas.items():
-            # Ya no necesitamos agregar el sufijo -NT porque los balances ya están normalizados
             if fecha in cuentas_por_fecha and cuenta in cuentas_por_fecha[fecha]:
                 sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][cuenta]
             else:

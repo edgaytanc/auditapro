@@ -25,7 +25,7 @@ def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales, ajus
     # ------------------------------------------------------------------
     # 2. Procesar ACTIVO (filas 13-19)
     # ------------------------------------------------------------------
-    # Obtener cuentas de activo (ya no necesitamos quitar el sufijo -NT porque ya están normalizadas)
+    # Obtener cuentas de activo
     activo_cuentas = sorted({cuenta for fecha, secciones in cuentas_por_fecha.items() 
                            if "Activo" in secciones for cuenta in secciones["Activo"].keys()})
     
@@ -46,7 +46,6 @@ def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales, ajus
         }
         
         for col, fecha in fechas_columnas.items():
-            # Ya no necesitamos agregar el sufijo -NT porque los balances ya están normalizados
             if fecha in cuentas_por_fecha and "Activo" in cuentas_por_fecha[fecha] and cuenta in cuentas_por_fecha[fecha]["Activo"]:
                 sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha]["Activo"][cuenta]
             else:
@@ -75,7 +74,7 @@ def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales, ajus
     filas_insertadas_activo = max(0, len(activo_cuentas) - 7)  # 7 filas originales (13-19)
     fila_inicio_pp = 22 + filas_insertadas_activo
 
-    # Obtener cuentas de pasivo y patrimonio (ya no necesitamos quitar el sufijo -NT)
+    # Obtener cuentas de pasivo y patrimonio
     pasivo_cuentas = sorted({cuenta for fecha, secciones in cuentas_por_fecha.items() 
                             if "Pasivo" in secciones for cuenta in secciones["Pasivo"].keys()})
     patrimonio_cuentas = sorted({cuenta for fecha, secciones in cuentas_por_fecha.items() 
@@ -94,7 +93,6 @@ def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales, ajus
 
         # Insertar saldos por fecha (columnas D, E, F, I)
         for col, fecha in fechas_columnas.items():
-            # Ya no necesitamos agregar el sufijo -NT porque los balances ya están normalizados
             if fecha in cuentas_por_fecha and seccion in cuentas_por_fecha[fecha] and cuenta in cuentas_por_fecha[fecha][seccion]:
                 sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][seccion][cuenta]
             else:

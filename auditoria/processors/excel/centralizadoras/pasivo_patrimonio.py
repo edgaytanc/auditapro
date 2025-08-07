@@ -22,7 +22,7 @@ def insertar_datos_pasivo_patrimonio(workbook, cuentas_por_fecha, fechas_semestr
     fechas_año_viejo, fecha_mas_reciente, _, _, fechas_excel = preparar_fechas_excel(fechas_semestrales)
     insertar_fechas_en_celdas(sheet, fechas_excel)
 
-    # 2. Obtener cuentas únicas de Pasivo y Patrimonio (ya no necesitamos quitar el sufijo -NT)
+    # 2. Obtener cuentas únicas de Pasivo y Patrimonio
     pasivo_cuentas = set()
     patrimonio_cuentas = set()
     
