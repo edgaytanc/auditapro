@@ -25,8 +25,8 @@ def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales, ajus
     # ------------------------------------------------------------------
     # 2. Procesar ACTIVO (filas 13-19)
     # ------------------------------------------------------------------
-    # Obtener cuentas de activo (sin '-NT')
-    activo_cuentas = sorted({cuenta.replace('-NT', '') for fecha, secciones in cuentas_por_fecha.items() 
+    # Obtener cuentas de activo (ya no necesitamos quitar el sufijo -NT porque ya están normalizadas)
+    activo_cuentas = sorted({cuenta for fecha, secciones in cuentas_por_fecha.items() 
                            if "Activo" in secciones for cuenta in secciones["Activo"].keys()})
     
     # Insertar datos de activo
@@ -46,9 +46,9 @@ def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales, ajus
         }
         
         for col, fecha in fechas_columnas.items():
-            cuenta_nt = f"{cuenta}-NT"
-            if fecha in cuentas_por_fecha and "Activo" in cuentas_por_fecha[fecha] and cuenta_nt in cuentas_por_fecha[fecha]["Activo"]:
-                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha]["Activo"][cuenta_nt]
+            # Ya no necesitamos agregar el sufijo -NT porque los balances ya están normalizados
+            if fecha in cuentas_por_fecha and "Activo" in cuentas_por_fecha[fecha] and cuenta in cuentas_por_fecha[fecha]["Activo"]:
+                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha]["Activo"][cuenta]
             else:
                 sheet[f'{col}{fila_actual}'] = 0
 
@@ -75,10 +75,10 @@ def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales, ajus
     filas_insertadas_activo = max(0, len(activo_cuentas) - 7)  # 7 filas originales (13-19)
     fila_inicio_pp = 22 + filas_insertadas_activo
 
-    # Obtener cuentas de pasivo y patrimonio (sin '-NT')
-    pasivo_cuentas = sorted({cuenta.replace('-NT', '') for fecha, secciones in cuentas_por_fecha.items() 
+    # Obtener cuentas de pasivo y patrimonio (ya no necesitamos quitar el sufijo -NT)
+    pasivo_cuentas = sorted({cuenta for fecha, secciones in cuentas_por_fecha.items() 
                             if "Pasivo" in secciones for cuenta in secciones["Pasivo"].keys()})
-    patrimonio_cuentas = sorted({cuenta.replace('-NT', '') for fecha, secciones in cuentas_por_fecha.items() 
+    patrimonio_cuentas = sorted({cuenta for fecha, secciones in cuentas_por_fecha.items() 
                                 if "Patrimonio" in secciones for cuenta in secciones["Patrimonio"].keys()})
     todas_pp_cuentas = pasivo_cuentas + patrimonio_cuentas
 
@@ -94,9 +94,9 @@ def insertar_datos_balance(workbook, cuentas_por_fecha, fechas_semestrales, ajus
 
         # Insertar saldos por fecha (columnas D, E, F, I)
         for col, fecha in fechas_columnas.items():
-            cuenta_nt = f"{cuenta}-NT"
-            if fecha in cuentas_por_fecha and seccion in cuentas_por_fecha[fecha] and cuenta_nt in cuentas_por_fecha[fecha][seccion]:
-                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][seccion][cuenta_nt]
+            # Ya no necesitamos agregar el sufijo -NT porque los balances ya están normalizados
+            if fecha in cuentas_por_fecha and seccion in cuentas_por_fecha[fecha] and cuenta in cuentas_por_fecha[fecha][seccion]:
+                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][seccion][cuenta]
             else:
                 sheet[f'{col}{fila_actual}'] = 0
 

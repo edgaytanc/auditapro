@@ -22,11 +22,11 @@ def insertar_datos_estado_resultados(workbook, cuentas_por_fecha, fechas_semestr
     fechas_año_viejo, fecha_mas_reciente, _, _, fechas_excel = preparar_fechas_excel(fechas_semestrales)
     insertar_fechas_en_celdas(sheet, fechas_excel)
 
-    # 2. Obtener cuentas únicas (sin '-NT')
+    # 2. Obtener cuentas únicas (ya no necesitamos quitar el sufijo -NT)
     todas_cuentas = set()
     for fecha, cuentas in cuentas_por_fecha.items():
         for cuenta in cuentas.keys():
-            todas_cuentas.add(cuenta.replace('-NT', ''))
+            todas_cuentas.add(cuenta)
     
     cuentas_ordenadas = sorted(todas_cuentas)
 
@@ -47,9 +47,9 @@ def insertar_datos_estado_resultados(workbook, cuentas_por_fecha, fechas_semestr
         }
         
         for col, fecha in fechas_columnas.items():
-            cuenta_nt = f"{cuenta}-NT"
-            if fecha in cuentas_por_fecha and cuenta_nt in cuentas_por_fecha[fecha]:
-                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][cuenta_nt]
+            # Ya no necesitamos agregar el sufijo -NT porque los balances ya están normalizados
+            if fecha in cuentas_por_fecha and cuenta in cuentas_por_fecha[fecha]:
+                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][cuenta]
             else:
                 sheet[f'{col}{fila_actual}'] = 0
 

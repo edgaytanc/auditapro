@@ -22,17 +22,17 @@ def insertar_datos_pasivo_patrimonio(workbook, cuentas_por_fecha, fechas_semestr
     fechas_año_viejo, fecha_mas_reciente, _, _, fechas_excel = preparar_fechas_excel(fechas_semestrales)
     insertar_fechas_en_celdas(sheet, fechas_excel)
 
-    # 2. Obtener cuentas únicas de Pasivo y Patrimonio (sin '-NT')
+    # 2. Obtener cuentas únicas de Pasivo y Patrimonio (ya no necesitamos quitar el sufijo -NT)
     pasivo_cuentas = set()
     patrimonio_cuentas = set()
     
     for fecha, secciones in cuentas_por_fecha.items():
         if "Pasivo" in secciones:
             for cuenta in secciones["Pasivo"].keys():
-                pasivo_cuentas.add(cuenta.replace('-NT', ''))
+                pasivo_cuentas.add(cuenta)
         if "Patrimonio" in secciones:
             for cuenta in secciones["Patrimonio"].keys():
-                patrimonio_cuentas.add(cuenta.replace('-NT', ''))
+                patrimonio_cuentas.add(cuenta)
     
     todas_cuentas = sorted(pasivo_cuentas) + sorted(patrimonio_cuentas)
 
@@ -53,11 +53,10 @@ def insertar_datos_pasivo_patrimonio(workbook, cuentas_por_fecha, fechas_semestr
         }
         
         for col, fecha in fechas_columnas.items():
-            cuenta_nt = f"{cuenta}-NT"
             seccion = "Pasivo" if cuenta in pasivo_cuentas else "Patrimonio"
             
-            if fecha in cuentas_por_fecha and seccion in cuentas_por_fecha[fecha] and cuenta_nt in cuentas_por_fecha[fecha][seccion]:
-                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][seccion][cuenta_nt]
+            if fecha in cuentas_por_fecha and seccion in cuentas_por_fecha[fecha] and cuenta in cuentas_por_fecha[fecha][seccion]:
+                sheet[f'{col}{fila_actual}'] = cuentas_por_fecha[fecha][seccion][cuenta]
             else:
                 sheet[f'{col}{fila_actual}'] = 0
 

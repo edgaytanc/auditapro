@@ -6,10 +6,42 @@ from .materialidad_file import process_materialidad_file
 from .horizontal_vertical_analysis import process_horizontal_vertical_analysis
 from .initial_balance_tests import process_initial_balance_tests
 from .centralizadoras import process_centralizadora_file
-from .sumaria_file import process_sumaria_file
+from .sumaria import process_sumaria_file
 from .importance_relative import process_importance_relative
 from .ratios_financieros import process_ratios_financieros
 import os
+import re
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def normalizar_balances(balances):
+    """
+    Normaliza las claves del diccionario balances eliminando los sufijos de tipo_cuenta.
+    
+    Args:
+        balances: Diccionario original de balances
+        
+    Returns:
+        Diccionario con claves normalizadas (sin sufijos de tipo_cuenta)
+    """
+    balances_normalizados = {}
+    patron_sufijo = re.compile(r'(.*)-([A-Z]{1,2})$')
+    
+    for clave, valor in balances.items():
+        # Verificar si la clave tiene un sufijo de tipo_cuenta
+        match = patron_sufijo.match(clave)
+        if match:
+            # Extraer la parte principal de la clave sin el sufijo
+            clave_base = match.group(1)
+            logger.debug(f"Normalizando clave: '{clave}' -> '{clave_base}'")
+            balances_normalizados[clave_base] = valor
+        else:
+            balances_normalizados[clave] = valor
+    
+    return balances_normalizados
+
 
 def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_path=None):
     """
@@ -65,33 +97,41 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
 
     if file_path:
         file_name = os.path.basename(file_path)
-        if (file_name == "1 Estados Financieros Actuales y Anterior.xlsx" or
-                file_name == "19 Estados Financieros Actuales y Anterior.xlsx") and balances:
-            workbook = process_anual_semestral_sheets(workbook, balances)
-        elif file_name == "2 REGISTROS AUXILIARES.xlsx" and registros_auxiliares:
-            workbook = process_auxiliary_file_sheets(
-                workbook, registros_auxiliares)
-        elif file_name == "3 Comparativo Estados Financieros y Registros Auxiliares.xlsx" and balances and registros_auxiliares:
-            workbook = process_comparative_file(
-                workbook, balances, registros_auxiliares)
-        elif file_name == "8 MATERIALIDAD.xlsx" or file_name == "23 MATERIALIDAD.xlsx" and balances:
-            workbook = process_materialidad_file(workbook, balances)
-        elif (file_name == "4 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx" or
-              file_name == "20 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx" or
-              file_name == "5 ANÁLISIS VERTICAL DE BALANCE GENERAL.xlsx" or
-              file_name == "21 ANÁLISIS VERTICAL DE BALANCE GENERAL.xlsx") and balances:
-            workbook = process_horizontal_vertical_analysis(workbook, balances)
-        elif file_name == "6 Prueba de Saldos Iniciales.xlsx" and balances and saldos_iniciales:
-            workbook = process_initial_balance_tests(
-                workbook, balances, saldos_iniciales)
-        elif file_name == "6 RATIOS FINANCIEROS.xlsx" and balances:
+        
+        # Para RATIOS FINANCIEROS, usamos los balances originales con sufijos de tipo_cuenta
+        if file_name == "6 RATIOS FINANCIEROS.xlsx" and balances:
+            logger.info("Procesando RATIOS FINANCIEROS con balances originales (con sufijos tipo_cuenta)")
             workbook = process_ratios_financieros(workbook, balances)
-        elif file_name.startswith("CENTRALIZADORA") and balances:
-            workbook = process_centralizadora_file(
-                workbook, balances, ajustes_reclasificaciones, file_name)
-        elif "SUMARIA" in file_name.upper() and balances:
-            workbook = process_sumaria_file(workbook, balances, file_name)
-        elif "IMPORTANCIA RELATIVA" in file_name.upper() and balances:
-            workbook = process_importance_relative(workbook, balances)
+        else:
+            # Para todos los demás archivos, normalizamos los balances eliminando sufijos
+            balances_normalizados = normalizar_balances(balances)
+            
+            if (file_name == "1 Estados Financieros Actuales y Anterior.xlsx" or
+                    file_name == "19 Estados Financieros Actuales y Anterior.xlsx") and balances_normalizados:
+                workbook = process_anual_semestral_sheets(workbook, balances_normalizados)
+            elif file_name == "2 REGISTROS AUXILIARES.xlsx" and registros_auxiliares:
+                workbook = process_auxiliary_file_sheets(
+                    workbook, registros_auxiliares)
+            elif file_name == "3 Comparativo Estados Financieros y Registros Auxiliares.xlsx" and balances_normalizados and registros_auxiliares:
+                workbook = process_comparative_file(
+                    workbook, balances_normalizados, registros_auxiliares)
+            elif file_name == "8 MATERIALIDAD.xlsx" or file_name == "23 MATERIALIDAD.xlsx" and balances_normalizados:
+                workbook = process_materialidad_file(workbook, balances_normalizados)
+            elif (file_name == "4 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx" or
+                  file_name == "20 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx" or
+                  file_name == "5 ANÁLISIS VERTICAL DE BALANCE GENERAL.xlsx" or
+                  file_name == "21 ANÁLISIS VERTICAL DE BALANCE GENERAL.xlsx") and balances_normalizados:
+                workbook = process_horizontal_vertical_analysis(workbook, balances_normalizados)
+            elif file_name == "6 Prueba de Saldos Iniciales.xlsx" and balances_normalizados and saldos_iniciales:
+                workbook = process_initial_balance_tests(
+                    workbook, balances_normalizados, saldos_iniciales)
+            elif file_name.startswith("CENTRALIZADORA") and balances_normalizados:
+                workbook = process_centralizadora_file(
+                    workbook, balances_normalizados, ajustes_reclasificaciones, file_name)
+            elif "SUMARIA" in file_name.upper() and balances_normalizados:
+                workbook = process_sumaria_file(
+                    workbook, balances_normalizados, ajustes_reclasificaciones, file_name)
+            elif "IMPORTANCIA RELATIVA" in file_name.upper() and balances_normalizados:
+                workbook = process_importance_relative(workbook, balances_normalizados)
 
     return workbook
