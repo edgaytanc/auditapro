@@ -1,24 +1,20 @@
 from datetime import datetime
 import traceback
 from audits.models import Audit
-from auditoria.models import BalanceCuentas, AjustesReclasificaciones
+from auditoria.models import BalanceCuentas
 
 __all__ = ["process_annual_sheet"]
 
 def process_annual_sheet(sheet, audit_id):
-    """Procesa la hoja *ESTADOS FINANCIEROS ANUAL* con la nueva estructura.
+    """Procesa la hoja *ESTADOS FINANCIEROS ANUAL* con la estructura actual.
 
     Columnas esperadas por fila de cuenta:
         A -> Nombre de la cuenta
         B -> Valor año anterior
-        C -> Debe (ajustes / reclasificaciones)
-        D -> Haber (ajustes / reclasificaciones)
-        E -> Valor año actual
-        F -> Tipo. Cuenta (C / NC)
+        C -> Valor año actual
+        D -> Tipo. Cuenta (C / NC)
 
-    Crea registros en:
-        - BalanceCuentas (valores de años)
-        - AjustesReclasificaciones (debe / haber)
+    Crea registros en BalanceCuentas (valores de años).
     """
     try:
         current_section = None
@@ -57,7 +53,7 @@ def process_annual_sheet(sheet, audit_id):
             ):
                 current_section = primera_columna
                 if current_section == "Activo":
-                    # Extraer fechas de la fila de encabezado
+                    # Extraer fechas de la fila de encabezado: B (anterior) y C (actual)
                     if isinstance(row[1], str) and row[1].strip().lower().startswith("al "):
                         raw_date_anterior = row[1].replace("Al ", "").strip()
                         try:
@@ -66,9 +62,8 @@ def process_annual_sheet(sheet, audit_id):
                             ).date()
                         except Exception:
                             pass
-                    # La fecha del año actual ahora está en la columna E (índice 4)
-                    if isinstance(row[4], str) and row[4].strip().lower().startswith("al "):
-                        raw_date_actual = row[4].replace("Al ", "").strip()
+                    if isinstance(row[2], str) and row[2].strip().lower().startswith("al "):
+                        raw_date_actual = row[2].replace("Al ", "").strip()
                         try:
                             fechas_globales_actual = datetime.strptime(
                                 raw_date_actual, "%d/%m/%Y"
@@ -80,29 +75,22 @@ def process_annual_sheet(sheet, audit_id):
             if current_section is None:
                 continue
 
-            if len(row) < 6:
+            # Ahora solo necesitamos hasta la columna D (índice 3)
+            if len(row) < 4:
                 continue
 
             try:
                 valor_anterior = float(row[1]) if row[1] not in (None, "") else None
-                valor_actual = float(row[4]) if row[4] not in (None, "") else None
+                valor_actual = float(row[2]) if row[2] not in (None, "") else None
 
-                debe = float(row[2]) if row[2] not in (None, "") else 0
-                haber = float(row[3]) if row[3] not in (None, "") else 0
-
-                # Si todos los valores son cero o None, omitir fila
-                if (
-                    valor_anterior is None
-                    and valor_actual is None
-                    and debe == 0
-                    and haber == 0
-                ):
+                # Si ambos valores son None, omitir fila
+                if valor_anterior is None and valor_actual is None:
                     continue
             except (ValueError, TypeError):
                 continue
 
             nombre_cuenta = primera_columna
-            tipo_cuenta_raw = str(row[5]).strip().upper() if len(row) >= 6 and row[5] is not None else ""
+            tipo_cuenta_raw = str(row[3]).strip().upper() if row[3] is not None else ""
             if tipo_cuenta_raw == "C":
                 tipo_cuenta = "Corriente"
             elif tipo_cuenta_raw == "NC":
@@ -133,15 +121,6 @@ def process_annual_sheet(sheet, audit_id):
                     nombre_cuenta=nombre_cuenta,
                     tipo_cuenta=tipo_cuenta,
                     valor=valor_actual,
-                )
-
-            # Registrar ajustes / reclasificaciones si existen
-            if debe != 0 or haber != 0:
-                AjustesReclasificaciones.objects.create(
-                    audit=audit_instance,
-                    nombre_cuenta=nombre_cuenta,
-                    debe=debe,
-                    haber=haber,
                 )
         return True
     except Exception:
