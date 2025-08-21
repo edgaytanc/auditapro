@@ -11,6 +11,7 @@ class Audit(models.Model):
     identidad = models.CharField(max_length=255, default='Sin identidad')
     fechaEnd = models.DateTimeField(default=timezone.now)
     tipoAuditoria = models.CharField(max_length=255, default='F')
+    moneda = models.CharField(max_length=10, default='GTQ')
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     audit_manager = models.ForeignKey(

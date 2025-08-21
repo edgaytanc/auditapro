@@ -59,13 +59,81 @@
                    required />
           </div>
         </div>
-        <div class="col-12">
+        <div class="col-md-6">
           <div class="mb-3">
             <label class="form-label">Tipo de Auditoría</label>
             <div class="form-check">
               <input type="checkbox" class="form-check-input" id="audit_financial" name="audit_financial" />
               <label class="form-check-label" for="audit_financial">Auditoría Financiera</label>
             </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label for="audit_moneda" class="form-label">Moneda</label>
+            <select class="form-select" id="audit_moneda" name="audit_moneda" required>
+              <option value="">--- Seleccionar Moneda ---</option>
+              <optgroup label="🌎 América del Norte">
+                <option value="USD">Estados Unidos - USD</option>
+                <option value="CAD">Canadá - CAD</option>
+              </optgroup>
+              <optgroup label="🌍 América Central y Caribe">
+                <option value="MXN">México - MXN</option>
+                <option value="GTQ" selected>Guatemala - GTQ</option>
+                <option value="BZD">Belice - BZD</option>
+                <option value="USD">El Salvador - USD</option>
+                <option value="HNL">Honduras - HNL</option>
+                <option value="NIO">Nicaragua - NIO</option>
+                <option value="CRC">Costa Rica - CRC</option>
+                <option value="PAB">Panamá - PAB</option>
+                <option value="USD">Panamá - USD</option>
+                <option value="CUP">Cuba - CUP</option>
+                <option value="JMD">Jamaica - JMD</option>
+                <option value="HTG">Haití - HTG</option>
+                <option value="DOP">República Dominicana - DOP</option>
+                <option value="USD">Puerto Rico - USD</option>
+                <option value="TTD">Trinidad y Tobago - TTD</option>
+                <option value="BBD">Barbados - BBD</option>
+                <option value="BSD">Bahamas - BSD</option>
+              </optgroup>
+              <optgroup label="🌎 América del Sur">
+                <option value="ARS">Argentina - ARS</option>
+                <option value="BOB">Bolivia - BOB</option>
+                <option value="BRL">Brasil - BRL</option>
+                <option value="CLP">Chile - CLP</option>
+                <option value="COP">Colombia - COP</option>
+                <option value="USD">Ecuador - USD</option>
+                <option value="GYD">Guyana - GYD</option>
+                <option value="PYG">Paraguay - PYG</option>
+                <option value="PEN">Perú - PEN</option>
+                <option value="SRD">Suriname - SRD</option>
+                <option value="UYU">Uruguay - UYU</option>
+                <option value="VES">Venezuela - VES</option>
+                <option value="EUR">Guyana Francesa - EUR</option>
+              </optgroup>
+              <optgroup label="🌎 Europa - Zona Euro">
+                <option value="EUR">Alemania - EUR</option>
+                <option value="EUR">Austria - EUR</option>
+                <option value="EUR">Bélgica - EUR</option>
+                <option value="EUR">Chipre - EUR</option>
+                <option value="EUR">Croacia - EUR</option>
+                <option value="EUR">Eslovaquia - EUR</option>
+                <option value="EUR">Eslovenia - EUR</option>
+                <option value="EUR">España - EUR</option>
+                <option value="EUR">Estonia - EUR</option>
+                <option value="EUR">Finlandia - EUR</option>
+                <option value="EUR">Francia - EUR</option>
+                <option value="EUR">Grecia - EUR</option>
+                <option value="EUR">Irlanda - EUR</option>
+                <option value="EUR">Italia - EUR</option>
+                <option value="EUR">Letonia - EUR</option>
+                <option value="EUR">Lituania - EUR</option>
+                <option value="EUR">Luxemburgo - EUR</option>
+                <option value="EUR">Malta - EUR</option>
+                <option value="EUR">Países Bajos - EUR</option>
+                <option value="EUR">Portugal - EUR</option>
+              </optgroup>
+            </select>
           </div>
         </div>
         
