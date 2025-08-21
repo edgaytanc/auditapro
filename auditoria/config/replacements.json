@@ -52,5 +52,50 @@
   "auditor": {
     "placeholder": "[AUDITOR]",
     "default": "Auditor Principal"
+  },
+  "moneda": {
+    "placeholders": [
+      "Cifras expresadas en quetzales",
+      "Cifras expresadas en Quetzales",
+      "CIFRAS EXPRESADAS EN QUETZALES",
+      "cifras expresadas en quetzales",
+      "Expresado en quetzales",
+      "Expresado en Quetzales",
+      "EXPRESADO EN QUETZALES",
+      "expresado en quetzales",
+      "[MONEDA_EXPRESION]"
+    ],
+    "template": "Cifras expresadas en {}",
+    "default": "quetzales",
+    "currency_names": {
+      "GTQ": "quetzales",
+      "USD": "dólares estadounidenses",
+      "CAD": "dólares canadienses",
+      "MXN": "pesos mexicanos",
+      "BZD": "dólares beliceños",
+      "HNL": "lempiras",
+      "NIO": "córdobas",
+      "CRC": "colones costarricenses",
+      "PAB": "balboas",
+      "CUP": "pesos cubanos",
+      "JMD": "dólares jamaicanos",
+      "HTG": "gourdes",
+      "DOP": "pesos dominicanos",
+      "TTD": "dólares de Trinidad y Tobago",
+      "BBD": "dólares de Barbados",
+      "BSD": "dólares bahameños",
+      "ARS": "pesos argentinos",
+      "BOB": "bolivianos",
+      "BRL": "reales brasileños",
+      "CLP": "pesos chilenos",
+      "COP": "pesos colombianos",
+      "GYD": "dólares guyaneses",
+      "PYG": "guaraníes",
+      "PEN": "soles peruanos",
+      "SRD": "dólares surinameses",
+      "UYU": "pesos uruguayos",
+      "VES": "bolívares",
+      "EUR": "euros"
+    }
   }
 }

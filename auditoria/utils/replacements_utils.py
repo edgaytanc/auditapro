@@ -93,6 +93,24 @@ def build_replacements_dict(
                   else config['auditor']['default'])
         replacements[config['auditor']['placeholder']] = auditor
 
+    # Procesar moneda
+    if 'moneda' in config:
+        moneda_codigo = getattr(audit, 'moneda', 'GTQ')  # Obtener código de moneda de la auditoría
+        moneda_config = config['moneda']
+        
+        # Obtener el nombre de la moneda en español
+        moneda_nombre = moneda_config['currency_names'].get(
+            moneda_codigo, 
+            moneda_config['default']
+        )
+        
+        # Crear el texto de reemplazo usando el template
+        moneda_texto = moneda_config['template'].format(moneda_nombre)
+        
+        # Aplicar a todos los placeholders
+        for placeholder in moneda_config['placeholders']:
+            replacements[placeholder] = moneda_texto
+
     # Nota: El procesamiento de balance ha sido eliminado
     logger.debug(f"Total de reemplazos generados: {len(replacements)}")
     if replacements:
