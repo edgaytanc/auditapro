@@ -200,7 +200,11 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True") == "True"
     SESSION_COOKIE_SECURE = True  # Cookies de sesión solo se envían a través de HTTPS
     CSRF_COOKIE_SECURE = True  # Cookies CSRF solo se envían a través de HTTPS
-    CSRF_TRUSTED_ORIGINS = [os.environ.get("BASE_URL", "https://sistema.auditapro.com")]
+    
+    # Configurar orígenes confiables para CSRF desde variable de entorno
+    csrf_trusted_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "https://sistema.auditapro.com")
+    CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in csrf_trusted_origins.split(",")]
+    
     SECURE_HSTS_SECONDS = 31536000  # 1 año
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True  # Aplicar HSTS a subdominios
     SECURE_HSTS_PRELOAD = True  # Permitir precargar en listas HSTS
