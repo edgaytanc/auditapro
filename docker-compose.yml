@@ -6,7 +6,7 @@ services:
 
     # Variables de entorno para desarrollo
     env_file:
-      - ./.env.local
+      - ./.env
 
     # Monta tus volúmenes de datos
     volumes:
