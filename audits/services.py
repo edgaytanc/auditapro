@@ -153,6 +153,7 @@ def create_audit(
     audit_fechaInit: str,
     audit_fechaEnd: str,
     audit_financial: bool,
+    audit_moneda: str,
     audit_assigned_users_ids: list[str],
 ):
     audit = None
@@ -180,6 +181,7 @@ def create_audit(
             fechaInit=audit_fechaInit,
             fechaEnd=audit_fechaEnd,
             tipoAuditoria='F' if audit_financial else 'I',
+            moneda=audit_moneda or 'GTQ',
             audit_manager=audit_manager,
         )
 

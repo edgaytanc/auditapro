@@ -90,6 +90,7 @@ def create_audit(req):
     audit_fecha_inicio = req.POST.get("audit_fechaInit")
     audit_fecha_final = req.POST.get("audit_fechaEnd")
     audit_financial = 'audit_financial' in req.POST
+    audit_moneda = req.POST.get("audit_moneda")
     
     # Si el usuario es de modalidad Individual, asignar la auditoría automáticamente a él mismo
     if req.user.modalidad == 'I':
@@ -105,6 +106,7 @@ def create_audit(req):
             audit_fecha_inicio,
             audit_fecha_final,
             audit_financial,
+            audit_moneda,
             audit_assigned_users_ids
         )
         messages.success(req, "Auditoría creada exitosamente.")
