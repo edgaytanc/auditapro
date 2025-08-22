@@ -154,5 +154,20 @@
     ],
     "template": "{}",
     "default": "GTQ"
+  },
+  "monto_material_moneda": {
+    "placeholders": [
+      "Monto Material en Q",
+      "Monto Material en Q.",
+      "MONTO MATERIAL EN Q",
+      "MONTO MATERIAL EN Q.",
+      "monto material en Q",
+      "monto material en Q.",
+      "Monto material en Q",
+      "Monto material en Q.",
+      "[MONTO_MATERIAL_MONEDA]"
+    ],
+    "template": "Monto Material en {}",
+    "default": "GTQ"
   }
 }

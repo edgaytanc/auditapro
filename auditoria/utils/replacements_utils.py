@@ -144,6 +144,21 @@ def build_replacements_dict(
         for placeholder in code_config['placeholders']:
             replacements[placeholder] = code_texto
 
+    # Procesar monto_material_moneda (Monto Material en código de moneda)
+    if 'monto_material_moneda' in config:
+        moneda_codigo = getattr(audit, 'moneda', 'GTQ')  # Obtener código de moneda de la auditoría
+        material_config = config['monto_material_moneda']
+        
+        # El código de moneda se usa directamente
+        codigo_moneda = moneda_codigo or material_config['default']
+        
+        # Crear el texto de reemplazo usando el template
+        material_texto = material_config['template'].format(codigo_moneda)
+        
+        # Aplicar a todos los placeholders
+        for placeholder in material_config['placeholders']:
+            replacements[placeholder] = material_texto
+
     # Nota: El procesamiento de balance ha sido eliminado
     logger.debug(f"Total de reemplazos generados: {len(replacements)}")
     if replacements:
