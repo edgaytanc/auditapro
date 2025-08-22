@@ -111,6 +111,24 @@ def build_replacements_dict(
         for placeholder in moneda_config['placeholders']:
             replacements[placeholder] = moneda_texto
 
+    # Procesar monto_moneda (símbolos de moneda)
+    if 'monto_moneda' in config:
+        moneda_codigo = getattr(audit, 'moneda', 'GTQ')
+        monto_config = config['monto_moneda']
+        
+        # Obtener el símbolo de la moneda
+        moneda_simbolo = monto_config['currency_symbols'].get(
+            moneda_codigo, 
+            monto_config['default']
+        )
+        
+        # Crear el texto de reemplazo usando el template
+        monto_texto = monto_config['template'].format(moneda_simbolo)
+        
+        # Aplicar a todos los placeholders
+        for placeholder in monto_config['placeholders']:
+            replacements[placeholder] = monto_texto
+
     # Nota: El procesamiento de balance ha sido eliminado
     logger.debug(f"Total de reemplazos generados: {len(replacements)}")
     if replacements:

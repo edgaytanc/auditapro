@@ -97,5 +97,50 @@
       "VES": "bolívares",
       "EUR": "euros"
     }
+  },
+  "monto_moneda": {
+    "placeholders": [
+      "Monto en Q.",
+      "Monto en Q",
+      "MONTO EN Q.",
+      "MONTO EN Q",
+      "monto en Q.",
+      "monto en Q",
+      "Monto en q.",
+      "Monto en q",
+      "[MONTO_MONEDA]"
+    ],
+    "template": "Monto en {}",
+    "default": "Q",
+    "currency_symbols": {
+      "GTQ": "Q",
+      "USD": "$",
+      "CAD": "C$",
+      "MXN": "$",
+      "BZD": "BZ$",
+      "HNL": "L",
+      "NIO": "C$",
+      "CRC": "₡",
+      "PAB": "B/.",
+      "CUP": "$",
+      "JMD": "J$",
+      "HTG": "G",
+      "DOP": "RD$",
+      "TTD": "TT$",
+      "BBD": "Bds$",
+      "BSD": "B$",
+      "ARS": "$",
+      "BOB": "Bs",
+      "BRL": "R$",
+      "CLP": "$",
+      "COP": "$",
+      "GYD": "G$",
+      "PYG": "₲",
+      "PEN": "S/",
+      "SRD": "$",
+      "UYU": "$U",
+      "VES": "Bs",
+      "EUR": "€"
+    }
   }
 }
