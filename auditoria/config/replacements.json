@@ -142,5 +142,17 @@
       "VES": "VES",
       "EUR": "EUR"
     }
+  },
+  "code_moneda": {
+    "placeholders": [
+      "code-moneda",
+      "CODE-MONEDA",
+      "Code-Moneda",
+      "code-Moneda",
+      "CODE-moneda",
+      "[CODE_MONEDA]"
+    ],
+    "template": "{}",
+    "default": "GTQ"
   }
 }
