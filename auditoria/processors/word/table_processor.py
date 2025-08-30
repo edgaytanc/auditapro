@@ -155,7 +155,7 @@ def process_tables(doc, replacements, tables_config=None, document_name=None, do
                         valor = replacements.get(key, "")
                         
                         if pattern and valor and cell.text:
-                            match = re.search(pattern, cell.text)
+                            match = re.search(pattern, cell.text, flags=re.IGNORECASE)
                             if match:
                                 patrones_aplicados.add(patron_id)
                                 matched_text = cell.text[match.start():match.end()]
