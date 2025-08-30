@@ -3,13 +3,6 @@ class InvalidAuditTitleError(Exception):
         super().__init__("El título de la auditoria no puede ser vacío o es inválido.")
 
 
-class InvalidAuditDescriptionError(Exception):
-    def __init__(self):
-        super().__init__(
-            "La descripción de la auditoria no puede ser vacía o es inválida."
-        )
-
-
 class InvalidAuditCompanyError(Exception):
     def __init__(self):
         super().__init__(

@@ -7,7 +7,6 @@ from .errors import (
     AuditManagerDoNotExits,
     AuditsNullError,
     InvalidAuditCompanyError,
-    InvalidAuditDescriptionError,
     InvalidAuditTitleError,
     AuditManagerUnauthorized,
     InvalidAuditIdentidadError,
@@ -123,8 +122,6 @@ def update_audit(
             raise AuditDoNotExits()
         if not audit_title:
             raise InvalidAuditTitleError()
-        if not audit_description:
-            raise InvalidAuditDescriptionError()
         if not audit_company:
             raise InvalidAuditCompanyError()
 

@@ -40,7 +40,18 @@
   },
   "titulo_auditoria": {
     "placeholder": "[TITULO_AUDITORIA]",
-    "default": "Sin título"
+    "default": "Sin título",
+    "placeholders": [
+      "AUDITORIA FINANCIERA",
+      "Auditoria Financiera",
+      "Auditoría Financiera",
+      "Auditoria financiera",
+      "auditoria financiera",
+      "Auditoria de Estados Financieros",
+      "Auditoría de Estados Financieros",
+      "Auditoría de Procesos",
+      "Auditoria de Procesos"
+    ]
   },
   "tipo_auditoria": {
     "placeholder": "[TIPO_AUDITORIA]",
@@ -97,5 +108,19 @@
       "VES": "bolívares",
       "EUR": "euros"
     }
-  }
+  },
+  "patrones_regex": [
+    {
+      "pattern": "Entidad:\\s*",
+      "reemplazar_por": "[ENTIDAD_COMPLETA]"
+    },
+    {
+      "pattern": "Auditor[ií]a:\\s*",
+      "reemplazar_por": "[AUDITORIA_COMPLETA]"
+    },
+    {
+      "pattern": "Per[ií]odo:\\s*",
+      "reemplazar_por": "[FECHA_RANGO_COMPLETA]"
+    }
+  ]
 }
