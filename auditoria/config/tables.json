@@ -19,19 +19,19 @@
   ],
   "patrones_regex": [
     {
-      "pattern": "Entidad:\\s*[^\n]*",
+      "pattern": "Entidad:[^\n]*",
       "reemplazar_por": "[ENTIDAD_COMPLETA]"
     },
     {
-      "pattern": "Auditor[ií]a:\\s*[^\n]*",
+      "pattern": "Auditoría:[^\n]*",
       "reemplazar_por": "[AUDITORIA_COMPLETA]"
     },
     {
-      "pattern": "Per[ií]odo:\\s*[^\n]*",
+      "pattern": "Período:[^\n]*",
       "reemplazar_por": "[FECHA_RANGO_COMPLETA]"
     },
     {
-      "pattern": "Tipo de Auditor[ií]a:\\s*[^\n]*",
+      "pattern": "Tipo de Auditoría:[^\n]*",
       "reemplazar_por": "[TIPO_AUDITORIA_COMPLETA]"
     }
   ]
