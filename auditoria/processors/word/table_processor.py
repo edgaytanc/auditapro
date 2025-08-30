@@ -109,7 +109,15 @@ def process_tables(doc, replacements, tables_config=None, document_name=None, do
                 if cell_id in processed_cells:
                     continue
                     
-                cell_text = cell.text.strip().replace('\n', ' ').replace('  ', ' ')
+                # Normalizar texto de celda: espacios duros (NBSP), saltos de línea, espacios múltiples y variantes de dos puntos
+                cell_text = (
+                    cell.text
+                    .replace('\xa0', ' ')
+                    .replace('：', ':')  # Dos puntos de ancho completo (fullwidth)
+                    .strip()
+                    .replace('\n', ' ')
+                    .replace('  ', ' ')
+                )
 
                 # Caso 1: reemplazo en celda adyacente con estilo
                 for patron in patrones:
@@ -117,7 +125,9 @@ def process_tables(doc, replacements, tables_config=None, document_name=None, do
                     clave = patron.get("valor")
                     valor = replacements.get(clave, "")
 
-                    if cell_text == buscar:
+                    # Coincidencia robusta: inicio de la celda con el label, ignorando mayúsculas y espacios adicionales
+                    if cell_text.lower().startswith((buscar or "").lower()):
+                        logger.debug(f"[tables] Match label '{buscar}' -> writing value for key '{clave}' in adjacent cell")
                         try:
                             next_cell = row.cells[col_idx + 1]
                             next_cell_id = f"table_{idx}_row_{row_idx}_col_{col_idx + 1}"
@@ -155,8 +165,10 @@ def process_tables(doc, replacements, tables_config=None, document_name=None, do
                         valor = replacements.get(key, "")
                         
                         if pattern and valor and cell.text:
+                            # Hacer la búsqueda regex insensible a mayúsculas/minúsculas y variaciones de acentos
                             match = re.search(pattern, cell.text, flags=re.IGNORECASE)
                             if match:
+                                logger.debug(f"[tables] Regex match '{pattern}' -> key '{key}' in cell")
                                 patrones_aplicados.add(patron_id)
                                 matched_text = cell.text[match.start():match.end()]
                                 replace_text_preserving_format(cell, matched_text, valor)
