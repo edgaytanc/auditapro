@@ -58,7 +58,9 @@ def build_replacements_dict(
                 template = formato.get('template', '{}')
                 for placeholder in formato.get('placeholders', []):
                     replacements[placeholder] = template.format(entidad_valor)
-            replacements['[ENTIDAD_COMPLETA]'] = f"Entidad: {entidad_valor}"
+        replacements['[ENTIDAD_COMPLETA]'] = f"Entidad: {entidad_valor}"
+        # NUEVO: reemplazo literal de encabezado
+        replacements['Entidad: '] = f"Entidad: {entidad_valor}"
 
     # Procesar fechas
     if 'fecha_rango' in config:
@@ -72,12 +74,19 @@ def build_replacements_dict(
             '[FECHA_FIN]': fecha_fin,
             '[FECHA_RANGO_COMPLETA]': f"Período: {fecha_rango}"
         })
+        # NUEVO: reemplazo literal de encabezado
+        replacements['Período: '] = f"Período: {fecha_rango}"
 
     # Procesar título y tipo de auditoría
     if 'titulo_auditoria' in config:
         titulo = audit.title or config['titulo_auditoria']['default']
         replacements[config['titulo_auditoria']['placeholder']] = titulo
         replacements['[AUDITORIA_COMPLETA]'] = f"Auditoría: {titulo}"
+        # NUEVO: mapear frases literales a título
+        for literal in config['titulo_auditoria'].get('placeholders', []):
+            replacements[literal] = titulo
+        # NUEVO: reemplazo literal de encabezado
+        replacements['Auditoría: '] = f"Auditoría: {titulo}"
 
     if 'tipo_auditoria' in config:
         tipo = config['tipo_auditoria']['values'].get(
