@@ -4,6 +4,29 @@ from .base import (
     procesar_seccion_balance,
     buscar_fila_por_valor
 )
+from openpyxl.utils.cell import coordinate_from_string
+
+
+def _mover_imagenes_por_insercion(sheet, start_row: int, delta_rows: int):
+    """Mueve imágenes ancladas en filas >= start_row hacia abajo delta_rows."""
+    if not hasattr(sheet, "_images") or delta_rows == 0:
+        return
+    for img in list(sheet._images):
+        try:
+            anchor = img.anchor
+            if isinstance(anchor, str):
+                col_letters, row = coordinate_from_string(anchor)
+                if row >= start_row:
+                    img.anchor = f"{col_letters}{row + delta_rows}"
+                continue
+            if hasattr(anchor, "_from"):
+                if anchor._from.row + 1 >= start_row:
+                    anchor._from.row += delta_rows
+                if hasattr(anchor, "_to") and anchor._to is not None and anchor._to.row + 1 >= start_row:
+                    anchor._to.row += delta_rows
+        except Exception:
+            continue
+
 
 def insertar_datos_activo(workbook, cuentas_por_fecha, fechas_semestrales, ajustes_reclasificaciones):
     sheet = workbook.active
@@ -30,6 +53,7 @@ def insertar_datos_activo(workbook, cuentas_por_fecha, fechas_semestrales, ajust
     filas_a_insertar = max(0, filas_necesarias - filas_disponibles)
     if filas_a_insertar:
         sheet.insert_rows(suma_row, filas_a_insertar)
+        _mover_imagenes_por_insercion(sheet, suma_row, filas_a_insertar)
         suma_row += filas_a_insertar
 
     # Mapear fechas a columnas una sola vez

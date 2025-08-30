@@ -3,6 +3,29 @@ from .base import (
     insertar_fechas_en_celdas,
     buscar_fila_por_valor
 )
+from openpyxl.utils.cell import coordinate_from_string
+
+
+def _mover_imagenes_por_insercion(sheet, start_row: int, delta_rows: int):
+    """Mueve imágenes ancladas en filas >= start_row hacia abajo delta_rows."""
+    if not hasattr(sheet, "_images") or delta_rows == 0:
+        return
+    for img in list(sheet._images):
+        try:
+            anchor = img.anchor
+            if isinstance(anchor, str):
+                col_letters, row = coordinate_from_string(anchor)
+                if row >= start_row:
+                    img.anchor = f"{col_letters}{row + delta_rows}"
+                continue
+            if hasattr(anchor, "_from"):
+                if anchor._from.row + 1 >= start_row:
+                    anchor._from.row += delta_rows
+                if hasattr(anchor, "_to") and anchor._to is not None and anchor._to.row + 1 >= start_row:
+                    anchor._to.row += delta_rows
+        except Exception:
+            continue
+
 
 def insertar_datos_estado_resultados(workbook, cuentas_por_fecha, fechas_semestrales, ajustes_reclasificaciones):
     """
@@ -30,8 +53,20 @@ def insertar_datos_estado_resultados(workbook, cuentas_por_fecha, fechas_semestr
     
     cuentas_ordenadas = sorted(todas_cuentas)
 
-    # 3. Insertar datos por fila (fila_inicio = 13)
+    # 3. Asegurar espacio insertando antes de la fila "Suma"
     fila_inicio = 13
+    suma_row_pre = buscar_fila_por_valor(sheet, 'B', 'Suma')
+    if not suma_row_pre:
+        suma_row_pre = fila_inicio + 1
+    filas_disponibles = max(0, suma_row_pre - fila_inicio)
+    filas_necesarias = len(cuentas_ordenadas)
+    faltantes = max(0, filas_necesarias - filas_disponibles)
+    if faltantes:
+        sheet.insert_rows(suma_row_pre, faltantes)
+        _mover_imagenes_por_insercion(sheet, suma_row_pre, faltantes)
+        suma_row_pre += faltantes
+
+    # 4. Insertar datos por fila (fila_inicio = 13)
     for i, cuenta in enumerate(cuentas_ordenadas):
         fila_actual = fila_inicio + i
         
@@ -56,15 +91,17 @@ def insertar_datos_estado_resultados(workbook, cuentas_por_fecha, fechas_semestr
         sheet[f'G{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('debe', 0)
         sheet[f'H{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('haber', 0)
 
-    # 4. Actualizar fila de suma
+    # 5. Asegurar y actualizar la fila de suma
     if cuentas_ordenadas:
         last_row = fila_inicio + len(cuentas_ordenadas) - 1
-        suma_row = buscar_fila_por_valor(sheet, 'B', 'Suma') or (last_row + 1)
-        
-        # Mover fila de suma si es necesario
-        if suma_row != last_row + 1:
-            sheet.move_range(f"A{suma_row}:I{suma_row}", rows=-(suma_row - (last_row + 1)))
-            suma_row = last_row + 1
+        suma_target_row = last_row + 1
+        suma_row = buscar_fila_por_valor(sheet, 'B', 'Suma')
+        if not suma_row:
+            suma_row = suma_target_row
+            sheet[f'B{suma_row}'] = 'Suma'
+        elif suma_row != suma_target_row:
+            sheet.move_range(f"A{suma_row}:I{suma_row}", rows=(suma_target_row - suma_row))
+            suma_row = suma_target_row
         
         # Actualizar fórmulas de suma (columnas D-I)
         for col in ['D', 'E', 'F', 'G', 'H', 'I']:
