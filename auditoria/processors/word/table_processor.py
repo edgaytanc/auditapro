@@ -98,6 +98,7 @@ def process_tables(doc, replacements, tables_config=None, document_name=None, do
     patrones = tables_config.get("patrones", [])
     patrones_regex = tables_config.get("patrones_regex", [])
     processed_cells = {}  # Diccionario para rastrear celdas ya procesadas
+    is_programa_document = "1 programa" in document_name.lower()
 
     for idx, table in enumerate(doc.tables):
         for row_idx, row in enumerate(table.rows):
@@ -111,36 +112,8 @@ def process_tables(doc, replacements, tables_config=None, document_name=None, do
                     
                 cell_text = cell.text.strip().replace('\n', ' ').replace('  ', ' ')
 
-                # Caso 1: reemplazo en celda adyacente con estilo
-                for patron in patrones:
-                    buscar = patron.get("buscar")
-                    clave = patron.get("valor")
-                    valor = replacements.get(clave, "")
-
-                    if cell_text == buscar:
-                        try:
-                            next_cell = row.cells[col_idx + 1]
-                            next_cell_id = f"table_{idx}_row_{row_idx}_col_{col_idx + 1}"
-                            set_text_with_style_from_reference_cell(next_cell, valor, cell)
-                            processed_cells[cell_id] = processed_cells[next_cell_id] = True
-                        except IndexError:
-                            pass
-
-                # Si la celda ya fue procesada, saltamos los otros casos
-                if cell_id in processed_cells:
-                    continue
-
-                # Caso 2: reemplazo parcial dentro de la misma celda (directo)
-                for patron in patrones:
-                    buscar = patron.get("buscar")
-                    if buscar in cell_text:
-                        nuevo_texto = replace_text(cell_text, replacements)
-                        if nuevo_texto != cell_text:
-                            replace_text_preserving_format(cell, cell_text, nuevo_texto)
-                            processed_cells[cell_id] = True
-                
-                # Caso 3: aplicar reemplazos regex desde JSON
-                if not cell_id in processed_cells and patrones_regex:
+                # Para documentos "1 PROGRAMA", ejecutar Caso 3 (regex) PRIMERO con prioridad absoluta
+                if is_programa_document and patrones_regex:
                     texto_original = cell.text
                     patrones_aplicados = set()
                     
@@ -158,9 +131,86 @@ def process_tables(doc, replacements, tables_config=None, document_name=None, do
                             match = re.search(pattern, cell.text)
                             if match:
                                 patrones_aplicados.add(patron_id)
-                                matched_text = cell.text[match.start():match.end()]
-                                replace_text_preserving_format(cell, matched_text, valor)
+                                # Para patrones que terminan en \\s*$, agregar el valor después del patrón
+                                if pattern.endswith("\\s*$"):
+                                    # Reemplazar el patrón manteniendo la etiqueta y agregando el valor
+                                    matched_text = match.group(0)
+                                    # Extraer la etiqueta (ej: "Entidad:", "Auditoría:")
+                                    label = matched_text.rstrip()
+                                    new_text = f"{label} {valor}"
+                                    replace_text_preserving_format(cell, matched_text, new_text)
+                                else:
+                                    # Comportamiento original para otros patrones
+                                    matched_text = cell.text[match.start():match.end()]
+                                    replace_text_preserving_format(cell, matched_text, valor)
                                 processed_cells[cell_id] = True
+                    
+                    # Si ya se procesó con regex, continuar con la siguiente celda
+                    if cell_id in processed_cells:
+                        continue
+
+                # Para documentos que NO son "1 PROGRAMA", usar el flujo normal
+                if not is_programa_document:
+                    # Caso 1: reemplazo en celda adyacente con estilo
+                    for patron in patrones:
+                        buscar = patron.get("buscar")
+                        clave = patron.get("valor")
+                        valor = replacements.get(clave, "")
+
+                        if cell_text == buscar:
+                            try:
+                                next_cell = row.cells[col_idx + 1]
+                                next_cell_id = f"table_{idx}_row_{row_idx}_col_{col_idx + 1}"
+                                set_text_with_style_from_reference_cell(next_cell, valor, cell)
+                                processed_cells[cell_id] = processed_cells[next_cell_id] = True
+                            except IndexError:
+                                pass
+
+                    # Si la celda ya fue procesada, saltamos los otros casos
+                    if cell_id in processed_cells:
+                        continue
+
+                    # Caso 2: reemplazo parcial dentro de la misma celda (directo)
+                    for patron in patrones:
+                        buscar = patron.get("buscar")
+                        if buscar in cell_text:
+                            nuevo_texto = replace_text(cell_text, replacements)
+                            if nuevo_texto != cell_text:
+                                replace_text_preserving_format(cell, cell_text, nuevo_texto)
+                                processed_cells[cell_id] = True
+                    
+                    # Caso 3: aplicar reemplazos regex desde JSON para documentos normales
+                    if not cell_id in processed_cells and patrones_regex:
+                        texto_original = cell.text
+                        patrones_aplicados = set()
+                        
+                        for patron_regex in patrones_regex:
+                            pattern = patron_regex.get("pattern")
+                            key = patron_regex.get("reemplazar_por")
+                            
+                            patron_id = f"{pattern}_{key}"
+                            if patron_id in patrones_aplicados:
+                                continue
+                                
+                            valor = replacements.get(key, "")
+                            
+                            if pattern and valor and cell.text:
+                                match = re.search(pattern, cell.text)
+                                if match:
+                                    patrones_aplicados.add(patron_id)
+                                    # Para patrones que terminan en \\s*$, agregar el valor después del patrón
+                                    if pattern.endswith("\\s*$"):
+                                        # Reemplazar el patrón manteniendo la etiqueta y agregando el valor
+                                        matched_text = match.group(0)
+                                        # Extraer la etiqueta (ej: "Entidad:", "Auditoría:")
+                                        label = matched_text.rstrip()
+                                        new_text = f"{label} {valor}"
+                                        replace_text_preserving_format(cell, matched_text, new_text)
+                                    else:
+                                        # Comportamiento original para otros patrones
+                                        matched_text = cell.text[match.start():match.end()]
+                                        replace_text_preserving_format(cell, matched_text, valor)
+                                    processed_cells[cell_id] = True
     
     # Aplicar hipervínculos si hay información suficiente
     if audit_id and document_name:
