@@ -122,6 +122,15 @@ def modify_document_excel_with_macros(template_path, audit):
             fecha_fin=fecha_fin,
         )
         
+        # Normalizar encabezados: agregar variantes con y sin espacio después de los dos puntos
+        # para asegurar coincidencias en plantillas que usen "Entidad:" o "Entidad: " (igual para Auditoría y Período)
+        header_pairs = [("Entidad:", "Entidad: "), ("Auditoría:", "Auditoría: "), ("Período:", "Período: ")]
+        for no_space, with_space in header_pairs:
+            if with_space in replacements and no_space not in replacements:
+                replacements[no_space] = replacements[with_space]
+            if no_space in replacements and with_space not in replacements:
+                replacements[with_space] = replacements[no_space]
+        
         # Usar xlwings para aplicar los reemplazos y preservar macros
         app = xw.App(visible=False)
         try:
