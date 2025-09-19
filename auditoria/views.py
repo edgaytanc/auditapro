@@ -399,7 +399,7 @@ def auditoria_financiera_view(request):
         audit_id = request.POST.get('audit_id')
         return redirect('auditoria_detalle', audit_id=audit_id)
 
-    return render(request, 'auditoria/auditoria_financiera.html', {
+    return render(request, 'auditoria/auditoria-financiera/auditoria_financiera.html', {
         'auditorias': auditorias_financieras
     })
 
@@ -419,7 +419,7 @@ def auditoria_interna_view(request):
         audit_id = request.POST.get('audit_id')
         return redirect('auditoria_detalle', audit_id=audit_id)
 
-    return render(request, 'auditoria/auditoria_interna.html', {
+    return render(request, 'auditoria/auditoria-interna/auditoria_interna.html', {
         'auditorias': auditorias_internas
     })
 
@@ -461,7 +461,7 @@ def auditoria_detalle_view(request, audit_id):
     # Generar HTML de la estructura con la información de verificación
     estructura_html = generar_html_estructura(estructura_carpetas, audit_id, user_verified=user_verified)
 
-    return render(request, 'auditoria/auditoria_detalle.html', {
+    return render(request, 'auditoria/auditoria-detalle/auditoria_detalle.html', {
         'audit': audit,
         'estructura_html': mark_safe(estructura_html),  # Para que Django no escape el HTML
         'user_verified': user_verified,  # Pasar esta variable a la plantilla para debug
