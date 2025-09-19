@@ -1,14 +1,14 @@
-from ..shared.text_replacer import replace_text
-from .processor_anual_semestral import process_anual_semestral_sheets
-from .auxiliary_file import process_auxiliary_file_sheets
-from .comparative_actual_auxiliar import process_comparative_file
-from .materialidad_file import process_materialidad_file
-from .horizontal_vertical_analysis import process_horizontal_vertical_analysis
-from .initial_balance_tests import process_initial_balance_tests
-from .centralizadoras import process_centralizadora_file
-from .sumaria import process_sumaria_file
-from .importance_relativa import process_importance_relative
-from .ratios_financieros import process_ratios_financieros
+from ...shared.text_replacer import replace_text
+from ..processor_anual_semestral import process_anual_semestral_sheets
+from ..auxiliary_file import process_auxiliary_file_sheets
+from ..comparative_actual_auxiliar import process_comparative_file
+from ..materialidad_file import process_materialidad_file
+from ..horizontal_vertical_analysis import process_horizontal_vertical_analysis
+from ..initial_balance_tests import process_initial_balance_tests
+from ..centralizadoras import process_centralizadora_file
+from ..sumaria import process_sumaria_file
+from ..importance_relativa import process_importance_relative
+from ..ratios_financieros import process_ratios_financieros
 from .normalizar_balances import normalizar_balances
 import os
 import re

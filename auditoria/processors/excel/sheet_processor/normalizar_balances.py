@@ -1,3 +1,5 @@
+import re
+
 def normalizar_balances(balances):
     """
     Normaliza las claves del diccionario balances eliminando los sufijos de tipo_cuenta.
