@@ -7,7 +7,7 @@ from .horizontal_vertical_analysis import process_horizontal_vertical_analysis
 from .initial_balance_tests import process_initial_balance_tests
 from .centralizadoras import process_centralizadora_file
 from .sumaria import process_sumaria_file
-from .importance_relative import process_importance_relative
+from .importance_relativa import process_importance_relative
 from .ratios_financieros import process_ratios_financieros
 import os
 import re
