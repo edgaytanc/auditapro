@@ -9,39 +9,13 @@ from .centralizadoras import process_centralizadora_file
 from .sumaria import process_sumaria_file
 from .importance_relativa import process_importance_relative
 from .ratios_financieros import process_ratios_financieros
+from .normalizar_balances import normalizar_balances
 import os
 import re
 import logging
 
+
 logger = logging.getLogger(__name__)
-
-
-def normalizar_balances(balances):
-    """
-    Normaliza las claves del diccionario balances eliminando los sufijos de tipo_cuenta.
-
-    Args:
-        balances: Diccionario original de balances
-
-    Returns:
-        Diccionario con claves normalizadas (sin sufijos de tipo_cuenta)
-    """
-    balances_normalizados = {}
-    # Acepta C, NC, NT, Corriente y No Corriente (con espacio o guion), case-insensitive
-    patron_sufijo = re.compile(r'^(.*?)-(?:C|NC|NT|CORRIENTE|NO[ -]?CORRIENTE)$', re.IGNORECASE)
-
-    for clave, valor in balances.items():
-        # Verificar si la clave tiene un sufijo de tipo_cuenta
-        match = patron_sufijo.match(clave)
-        if match:
-            # Extraer la parte principal de la clave sin el sufijo
-            clave_base = match.group(1).strip()
-            balances_normalizados[clave_base] = valor
-        else:
-            balances_normalizados[clave] = valor
-
-    return balances_normalizados
-
 
 def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_path=None):
     """
