@@ -1,4 +1,4 @@
-from datetime import datetime
+from auditoria.utils.fechas import obtener_año_mas_reciente
 
 def process_comparative_file(workbook, balances, registros_auxiliares):
     """Procesa el archivo comparativo entre estados financieros y registros auxiliares."""
@@ -52,21 +52,3 @@ def process_comparative_file(workbook, balances, registros_auxiliares):
             if (fila_actual := fila_actual + 1) > max_filas: break
     
     return workbook
-
-def obtener_año_mas_reciente(balances):
-    """Obtiene el año más reciente de los balances."""
-    años = {}
-    
-    for clave in balances.keys():
-        partes = clave.split('-')
-        if len(partes) >= 4:
-            tipo, fecha = partes[0], f"{partes[1]}-{partes[2]}-{partes[3]}"
-            try:
-                fecha_obj = datetime.strptime(fecha, "%Y-%m-%d")
-                año = fecha_obj.year
-                if año not in años or fecha_obj > años[año]['fecha']:
-                    años[año] = {'fecha': fecha_obj, 'tipo': tipo, 'fecha_str': fecha}
-            except ValueError:
-                continue
-    
-    return f"{años[año_mas_reciente]['tipo']}-{años[año_mas_reciente]['fecha_str']}" if (años and (año_mas_reciente := max(años.keys()))) else None
