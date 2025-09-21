@@ -27,3 +27,14 @@ def obtener_fechas_semestrales(balances: dict[str, float]) -> List[str]:
             fechas.add(m.group(1))
 
     return sorted(fechas)
+
+
+# ---------------------------------------------------------------------
+# Formateo de fechas para encabezados
+# ---------------------------------------------------------------------
+
+def _formatear_fecha_ddmmaa(fecha_iso: str) -> str:
+    """Convierte 'YYYY-MM-DD' → 'DD/MM/YYYY'."""
+
+    yyyy, mm, dd = fecha_iso.split("-")
+    return f"{dd}/{mm}/{yyyy}"

@@ -10,10 +10,12 @@ from openpyxl.worksheet.worksheet import Worksheet
 
 from .formulas import ajustar_formula_para_nueva_fila
 from .data_extraction import encontrar_ajuste_para_cuenta
+from .fechas import _formatear_fecha_ddmmaa
 
 __all__ = [
     "insertar_datos_cuenta",
     "insertar_multiples_cuentas",
+    "actualizar_fechas_encabezados",
 ]
 
 
@@ -154,3 +156,29 @@ def insertar_multiples_cuentas(
             if 'haber' in valores_ajuste:
                 sheet[f"I{fila}"].value = valores_ajuste['haber']
                 sheet[f"I{fila}"].alignment = Alignment(horizontal="right")
+
+
+# ---------------------------------------------------------------------
+# Actualización de encabezados de fecha
+# ---------------------------------------------------------------------
+
+def actualizar_fechas_encabezados(
+    sheet: Worksheet,
+    fechas_semestrales: List[str],
+    tabla_info: Dict[str, int | List[int]],
+) -> None:
+    """Escribe las *fechas_semestrales* en las celdas estáticas de la plantilla."""
+
+    fechas_ordenadas = sorted(fechas_semestrales)
+    fechas_formateadas = [_formatear_fecha_ddmmaa(f) for f in fechas_ordenadas]
+
+    celdas_destino = ["E12", "F12", "G12", "J12"]
+    for idx, celda in enumerate(celdas_destino):
+        if idx >= len(fechas_formateadas):
+            break
+        valor_actual = sheet[celda].value
+        if isinstance(valor_actual, str) and valor_actual.upper().startswith("AL "):
+            sheet[celda].value = f"AL {fechas_formateadas[idx]}"
+        else:
+            sheet[celda].value = fechas_formateadas[idx]
+        sheet[celda].alignment = Alignment(horizontal="center")
