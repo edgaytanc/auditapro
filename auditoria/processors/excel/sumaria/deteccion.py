@@ -11,6 +11,10 @@ __all__ = [
 ]
 
 
+# ---------------------------------------------------------------------
+# Mapeo de palabras clave a nombres de cuentas contables
+# ---------------------------------------------------------------------
+
 _MAPEO_CUENTAS: dict[str, str] = {
     "CAJA": "Caja y Bancos",
     "BANCO": "Caja y Bancos",
@@ -41,6 +45,10 @@ _MAPEO_CUENTAS: dict[str, str] = {
 }
 
 
+# ---------------------------------------------------------------------
+# Detección de cuenta por nombre de archivo
+# ---------------------------------------------------------------------
+
 def determinar_cuenta_por_nombre_archivo(file_name: str) -> str | None:
     """Intenta inferir la cuenta contable a partir del nombre del archivo.
 
@@ -61,6 +69,10 @@ def determinar_cuenta_por_nombre_archivo(file_name: str) -> str | None:
 
     return None
 
+
+# ---------------------------------------------------------------------
+# Verificación de existencia de cuenta en balances
+# ---------------------------------------------------------------------
 
 def verificar_cuenta_en_balances(
     balances: Dict[str, float],

@@ -22,6 +22,8 @@ __all__ = [
 # ---------------------------------------------------------------------
 # Localizar tabla SUMARIA
 # ---------------------------------------------------------------------
+# 
+# Funciones para ubicar la tabla SUMARIA en la hoja de Excel.
 
 def buscar_tabla_sumaria(sheet: Worksheet) -> Optional[Dict[str, int | List[int]]]:
     """Intenta ubicar la tabla SUMARIA en *sheet*.
@@ -93,6 +95,8 @@ def buscar_tabla_sumaria(sheet: Worksheet) -> Optional[Dict[str, int | List[int]
 # ---------------------------------------------------------------------
 # Encabezados de fecha
 # ---------------------------------------------------------------------
+# 
+# Funciones para formatear y escribir fechas en los encabezados de la plantilla.
 
 def _formatear_fecha_ddmmaa(fecha_iso: str) -> str:
     """Convierte 'YYYY-MM-DD' → 'DD/MM/YYYY'."""

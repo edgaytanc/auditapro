@@ -7,6 +7,10 @@ from datetime import datetime
 from typing import List
 
 
+# ---------------------------------------------------------------------
+# Extracción de fechas semestrales desde balances
+# ---------------------------------------------------------------------
+
 def obtener_fechas_semestrales(balances: dict[str, float]) -> List[str]:
     """Extrae todas las fechas semestrales (YYYY-MM-DD) presentes en las claves
     del diccionario de *balances*.

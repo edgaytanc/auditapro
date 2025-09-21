@@ -1,11 +1,12 @@
 # Paquete de procesador SUMARIA
 """Funciones para procesar cédulas Sumarias.
 
-• fechas.py      → utilidades de fechas.
-• deteccion.py   → detección de cuentas y validaciones en balances.
-• tabla.py       → búsqueda y actualización de la tabla en la hoja.
-• insercion.py   → escritura de datos y manejo de filas/estilos.
-• formulas.py    → helpers para manipular fórmulas.
+• fechas.py         → utilidades de fechas.
+• deteccion.py      → detección de cuentas y validaciones en balances.
+• tabla.py          → búsqueda y actualización de la tabla en la hoja.
+• data_extraction.py → extracción y obtención de datos.
+• insercion.py      → escritura de datos y manejo de filas/estilos.
+• formulas.py       → helpers para manipular fórmulas.
 
 `process_sumaria_file` es la API externa que agrupa todo.
 """
@@ -17,8 +18,13 @@ from openpyxl.workbook import Workbook
 from .fechas import obtener_fechas_semestrales
 from .deteccion import determinar_cuenta_por_nombre_archivo, verificar_cuenta_en_balances
 from .tabla import buscar_tabla_sumaria, actualizar_fechas_encabezados
-from .insercion import insertar_datos_cuenta, insertar_multiples_cuentas, obtener_todas_cuentas_seccion
+from .insercion import insertar_datos_cuenta, insertar_multiples_cuentas
+from .data_extraction import obtener_todas_cuentas_seccion
 
+
+# ---------------------------------------------------------------------
+# API Principal del procesador SUMARIA
+# ---------------------------------------------------------------------
 
 def process_sumaria_file(
     workbook: Workbook,
