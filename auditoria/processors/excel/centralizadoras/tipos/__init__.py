@@ -1,0 +1,4 @@
+from .activo import insertar_datos_activo
+from .balance import insertar_datos_balance
+from .pasivo_patrimonio import insertar_datos_pasivo_patrimonio
+from .estados_resultados import insertar_datos_estado_resultados
