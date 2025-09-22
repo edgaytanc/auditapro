@@ -3,10 +3,6 @@ Utilidades para formateo de fechas en documentos Excel.
 Contiene funciones para formatear fechas de auditoría y traducir meses.
 """
 
-import logging
-
-logger = logging.getLogger(__name__)
-
 # Diccionario de traducción de meses inglés-español
 MONTH_TRANSLATIONS = {
     'January': 'Enero', 'February': 'Febrero', 'March': 'Marzo', 'April': 'Abril',

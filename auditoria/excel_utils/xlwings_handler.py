@@ -3,7 +3,6 @@ Manejador de xlwings para procesamiento de archivos Excel con macros.
 Contiene funciones para aplicar reemplazos usando xlwings preservando macros.
 """
 
-import logging
 import tempfile
 import os
 import shutil
@@ -12,8 +11,6 @@ try:
     import xlwings as xw
 except ImportError:
     xw = None
-
-logger = logging.getLogger(__name__)
 
 def process_xlsm_with_xlwings(template_path: str, replacements: dict) -> str:
     """
@@ -39,9 +36,6 @@ def process_xlsm_with_xlwings(template_path: str, replacements: dict) -> str:
     # Copiar el archivo original al temporal
     shutil.copy2(template_path, temp_file_path)
     
-    # DEBUG: Log de reemplazos relevantes
-    _log_relevant_replacements(replacements)
-    
     # Usar xlwings para aplicar los reemplazos y preservar macros
     app = xw.App(visible=False)
     try:
@@ -49,9 +43,6 @@ def process_xlsm_with_xlwings(template_path: str, replacements: dict) -> str:
         
         # Aplicar solo los reemplazos básicos en todas las hojas
         for sheet in wb.sheets:
-            # DEBUG: Verificar presencia de encabezados en la hoja antes de reemplazar
-            _log_sheet_headers(sheet)
-            
             _apply_replacements_to_sheet(sheet, replacements)
         
         # Guardar y cerrar
@@ -61,48 +52,6 @@ def process_xlsm_with_xlwings(template_path: str, replacements: dict) -> str:
         
     finally:
         app.quit()
-
-def _log_relevant_replacements(replacements: dict):
-    """
-    Registra en el log los reemplazos relevantes para debugging.
-    """
-    try:
-        logger.info(f"[XLSM] Reemplazos construidos: total={len(replacements)}")
-        relevant_keys = [
-            'Entidad:', 'Entidad: ',
-            'Auditoría:', 'Auditoría: ', 'Auditoria:', 'Auditoria: ',
-            'Período:', 'Período: ', 'Periodo:', 'Periodo: ',
-            '[IDENTIDAD]', '[TITULO_AUDITORIA]', '[FECHA_RANGO]',
-            '[ENTIDAD_COMPLETA]', '[AUDITORIA_COMPLETA]', '[FECHA_RANGO_COMPLETA]'
-        ]
-        
-        for key in relevant_keys:
-            if key in replacements:
-                logger.info(f"[XLSM] Clave presente en replacements: '{key}' -> '{replacements.get(key)}'")
-    except Exception:
-        pass
-
-def _log_sheet_headers(sheet):
-    """
-    Registra en el log los encabezados encontrados en una hoja para debugging.
-    """
-    try:
-        header_variants = [
-            'Entidad:', 'Entidad: ',
-            'Auditoría:', 'Auditoría: ', 'Auditoria:', 'Auditoria: ',
-            'Período:', 'Período: ', 'Periodo:', 'Periodo: ',
-        ]
-        found_any = []
-        for hv in header_variants:
-            try:
-                c = sheet.api.Cells.Find(hv)
-                if c is not None:
-                    found_any.append(hv)
-            except Exception:
-                continue
-        logger.info(f"[XLSM] Hoja '{sheet.name}': encabezados encontrados (pre): {found_any}")
-    except Exception:
-        pass
 
 def _apply_replacements_to_sheet(sheet, replacements: dict):
     """
@@ -127,10 +76,10 @@ def _apply_replacements_to_sheet(sheet, replacements: dict):
                             # Evitar bucle infinito
                             if found_cell is None or found_cell.Address == first_address:
                                 break
-                except Exception as e:
-                    logger.warning(f"Error al buscar texto '{search_text}': {str(e)}")
-        except Exception as e:
-            logger.warning(f"Error al reemplazar '{search_text}': {str(e)}")
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
 def is_xlwings_available() -> bool:
     """

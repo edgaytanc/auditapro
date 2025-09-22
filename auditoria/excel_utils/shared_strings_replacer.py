@@ -3,10 +3,7 @@ Reemplazador de texto en archivos XLSM usando manipulación directa de XML.
 Funciona como fallback cuando xlwings no está disponible.
 """
 
-import logging
 import zipfile
-
-logger = logging.getLogger(__name__)
 
 def replace_in_xlsm_shared_strings(src_path: str, dst_path: str, replacements: dict):
     """
@@ -63,10 +60,6 @@ def replace_in_xlsm_shared_strings(src_path: str, dst_path: str, replacements: d
                 data = text.encode('utf-8')
             
             zout.writestr(item, data)
-    
-    logger.debug(f"XLSM fallback: total reemplazos aplicados: {total_hits}")
-    for fname, hits in files_touched:
-        logger.debug(f"XLSM fallback: {fname} -> {hits} reemplazos")
 
 def build_filtered_replacements(replacements_all: dict) -> dict:
     """
@@ -101,7 +94,6 @@ def build_filtered_replacements(replacements_all: dict) -> dict:
         # Variantes comunes con y sin espacio adicional
         for label in ('Período:', 'Periodo:', 'Período :', 'Periodo :'):
             filtered_repl[label] = f"{label.split(':')[0]}: {period_value}"
-        logger.debug(f"XLSM fallback: valor de período aplicado: {period_value}")
         
         # Reemplazo del literal fijo del template
         default_period_literals = [

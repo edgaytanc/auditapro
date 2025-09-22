@@ -3,7 +3,6 @@ Procesador principal para archivos Excel con macros (.xlsm).
 Coordina entre xlwings y fallback de manipulación XML.
 """
 
-import logging
 import tempfile
 import os
 from .date_formatter import format_audit_dates
@@ -13,8 +12,6 @@ from ..utils.replacements_utils import (
     get_replacements_config,
     build_replacements_dict,
 )
-
-logger = logging.getLogger(__name__)
 
 def modify_document_excel_with_macros(template_path, audit):
     """
@@ -29,13 +26,11 @@ def modify_document_excel_with_macros(template_path, audit):
         string: Ruta al archivo procesado (puede ser el mismo o un temporal)
     """
     if not is_xlwings_available():
-        logger.warning("xlwings no está instalado. Fallback: reemplazo en sharedStrings + worksheets + drawings (conserva macros/shapes).")
         return _process_xlsm_fallback(template_path, audit)
     
     try:
         return _process_xlsm_with_xlwings(template_path, audit)
-    except Exception as e:
-        logger.error(f"Error al procesar archivo XLSM: {str(e)}")
+    except Exception:
         return template_path
 
 def _process_xlsm_fallback(template_path: str, audit) -> str:
@@ -65,8 +60,7 @@ def _process_xlsm_fallback(template_path: str, audit) -> str:
         replace_in_xlsm_shared_strings(template_path, temp_file_path, filtered_repl)
         return temp_file_path
         
-    except Exception as e:
-        logger.error(f"Fallback XLSM (package replace) falló: {str(e)}")
+    except Exception:
         return template_path
 
 def _process_xlsm_with_xlwings(template_path: str, audit) -> str:

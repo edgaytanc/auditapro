@@ -3,7 +3,6 @@ Utilidades modularizadas para procesamiento de documentos Excel.
 Funciones principales para modificar documentos Excel normales y con macros.
 """
 
-import logging
 from openpyxl import load_workbook
 from .date_formatter import format_audit_dates
 from .xlsm_processor import modify_document_excel_with_macros
@@ -14,8 +13,6 @@ from ..utils.replacements_utils import (
     build_replacements_dict,
 )
 from ..utils.data_db import get_all_financial_data
-
-logger = logging.getLogger(__name__)
 
 def modify_document_excel(template_path, audit):
     """
