@@ -13,7 +13,7 @@ import logging
 
 from .word_utils import modify_document_word
 from .excel_utils import modify_document_excel, modify_document_excel_with_macros
-from .processors.shared.urls_programs import get_file_info_from_pattern
+from .processors.shared.urls_programs.main_functions import get_file_info_from_pattern
 
 # Configurar logging
 log_path = os.path.join(settings.BASE_DIR, 'logs')

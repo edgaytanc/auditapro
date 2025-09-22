@@ -1,0 +1,29 @@
+# Agregar manejo especial para los programas principales
+SPECIAL_PATTERNS = {
+    'A-programa': '1 PROGRAMA.docx',
+    'B-programa': '1 PROGRAMA DE AUDITORIA CUENTAS POR COBRAR.docx',
+    'C-programa': '1 PROGRAMA DE AUDITORIA INVERSIONES.docx',
+    'D-programa': '1 PROGRAMA DE AUDITORIA INVENTARIOS.docx',
+    'E-programa': '1 PROGRAMA DE AUDITORIA CONSTRUCCIONES EN PROCESO.docx',
+    'F-programa': '1 PROGRAMA DE AUDITORIA ACTIVOS FIJOS.docx',
+    'G-programa': '1 PROGRAMA DE ACTIVO INTANGIBLE.docx',
+    'H-programa': '1 PROGRAMA DE AUDITORIA CUENTAS POR PAGAR.docx',
+    'I-programa': '1 PROGRAMA DE AUDITORIA PRESTAMOS POR PAGAR.docx',
+    'J-programa': '1 PROGRAMA DE AUDITORIA PATRIMONIO.docx',
+    'R-programa': '1 PROGRAMA DE AUDITORIA ESTADO RESULTADOS.docx',
+}
+
+# Mapeo de prefijos a sus archivos de programa correspondientes
+PREFIX_TO_PROGRAM = {
+    'A': '1 PROGRAMA.docx',
+    'B': '1 PROGRAMA DE AUDITORIA CUENTAS POR COBRAR.docx',
+    'C': '1 PROGRAMA DE AUDITORIA INVERSIONES.docx',
+    'D': '1 PROGRAMA DE AUDITORIA INVENTARIOS.docx',
+    'E': '1 PROGRAMA DE AUDITORIA CONSTRUCCIONES EN PROCESO.docx',
+    'F': '1 PROGRAMA DE AUDITORIA ACTIVOS FIJOS.docx',
+    'G': '1 PROGRAMA DE ACTIVO INTANGIBLE.docx',
+    'H': '1 PROGRAMA DE AUDITORIA CUENTAS POR PAGAR.docx',
+    'I': '1 PROGRAMA DE AUDITORIA PRESTAMOS POR PAGAR.docx',
+    'J': '1 PROGRAMA DE AUDITORIA PATRIMONIO.docx',
+    'R': '1 PROGRAMA DE AUDITORIA ESTADO RESULTADOS.docx',
+}
