@@ -7,7 +7,7 @@ import os
 import json
 from .config import (
     render, redirect, HttpResponse, mark_safe, settings,
-    Audit, login_required, logger
+    Audit, login_required
 )
 from .utils import crear_mensaje_error, generar_html_estructura
 
@@ -83,8 +83,7 @@ def auditoria_detalle_view(request, audit_id):
     try:
         with open(json_path, 'r', encoding='utf-8') as f:
             estructura_carpetas = json.load(f)
-    except Exception as e:
-        logger.error(f"Error al leer el archivo de estructura: {str(e)}")
+    except Exception:
         estructura_carpetas = {}  # Estructura vacía en caso de error
     
     # Usuario verificado si es administrador o tiene plan Mensual o Anual

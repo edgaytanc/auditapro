@@ -7,7 +7,7 @@ import os
 import urllib.parse
 from .config import (
     get_object_or_404, HttpResponse, FileResponse, mark_safe,
-    Audit, login_required, logger, io,
+    Audit, login_required, io,
     modify_document_word, modify_document_excel, modify_document_excel_with_macros,
     get_file_info_from_pattern
 )
@@ -19,7 +19,6 @@ def download_document(request, audit_id, folder, filename):
     # Decodificar la URL (por si tiene caracteres especiales)
     folder = urllib.parse.unquote(folder)
     filename = urllib.parse.unquote(filename)
-    logger.info(f"Iniciando descarga de documento para auditoría {audit_id}")
     audit = get_object_or_404(Audit, id=audit_id)
     
     # Determinar si es auditoría interna
@@ -27,7 +26,6 @@ def download_document(request, audit_id, folder, filename):
     
     template_path = get_template_path(folder, filename, is_internal=is_internal)
     if not template_path or not os.path.exists(template_path):
-        logger.error(f"Archivo no encontrado: {template_path}")
         return HttpResponse(f'Plantilla no encontrada: {folder}/{filename}', status=404)
     try:
         buffer = io.BytesIO()
@@ -59,12 +57,9 @@ def download_document(request, audit_id, folder, filename):
         response = FileResponse(buffer, as_attachment=True, filename=os.path.basename(template_path))
         response['Content-Type'] = content_type
 
-        logger.info("Documento procesado y enviado correctamente")
         return response
 
     except Exception as e:
-        logger.error(f"Error al descargar documento: {str(e)}")
-        logger.exception(e)
         return HttpResponse(f'Error al descargar documento: {str(e)}', status=500)
 
 @login_required
@@ -83,8 +78,6 @@ def download_document_by_pattern(request, audit_id, pattern):
         FileResponse: El archivo solicitado o un mensaje de error
     """
     try:
-        logger.info(f"Solicitud de documento con patrón: audit_id={audit_id}, pattern={pattern}")
-        
         # Verificar primero si la auditoría existe
         try:
             audit = Audit.objects.get(id=audit_id)
@@ -134,7 +127,6 @@ def download_document_by_pattern(request, audit_id, pattern):
         
         # Verificar que el archivo existe
         if not os.path.exists(template_path):
-            logger.error(f"Archivo no encontrado: {template_path}")
             mensaje_error = crear_mensaje_error(
                 "Plantilla no encontrada",
                 f"No se encontró la plantilla: {folder}/{filename}"
@@ -164,12 +156,9 @@ def download_document_by_pattern(request, audit_id, pattern):
             response = FileResponse(buffer, as_attachment=True, filename=os.path.basename(template_path))
             response['Content-Type'] = content_type
 
-            logger.info(f"Documento {pattern} procesado y enviado correctamente")
             return response
 
         except Exception as e:
-            logger.error(f"Error al procesar documento {pattern}: {str(e)}")
-            logger.exception(e)
             mensaje_error = crear_mensaje_error(
                 "Error al procesar documento",
                 f"Ocurrió un error al procesar el documento {pattern}: {str(e)}"
@@ -177,8 +166,6 @@ def download_document_by_pattern(request, audit_id, pattern):
             return HttpResponse(mark_safe(mensaje_error), status=500)
         
     except Exception as e:
-        logger.error(f"Error al procesar solicitud de documento con patrón: {str(e)}")
-        logger.exception(e)
         mensaje_error = crear_mensaje_error(
             "Error en la solicitud",
             f"Ocurrió un error al procesar su solicitud: {str(e)}"

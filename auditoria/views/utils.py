@@ -7,7 +7,6 @@ import os
 import urllib.parse
 import unicodedata
 from django.conf import settings
-from .config import logger
 
 def normalize_text(text):
     """
@@ -50,7 +49,6 @@ def get_template_path(folder, filename, is_internal=False):
                                 found = True
                                 break
                         if not found:
-                            logger.info(f"No se encontró la carpeta: {component} en {parent_dir}")
                             return None
         if os.path.exists(current_path):
             # Primero intentar encontrar una coincidencia exacta
@@ -70,7 +68,6 @@ def get_template_path(folder, filename, is_internal=False):
                     file_base = os.path.splitext(normalize_text(file))[0]
                     if file_base == filename_base:
                         return os.path.join(root, file)
-    logger.info(f"No se encontró el archivo: {filename} en {folder if folder else base_path}")
     return None
 
 def crear_mensaje_error(titulo, mensaje):
