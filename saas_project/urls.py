@@ -19,4 +19,6 @@ urlpatterns = [
     path("herramientas/", include(tools_urls)),
     path("auditoria/", include(auditoria_urls)),
     path("usuarios/", include(user_management_urls)),
+    path("mfa/", include("mfa.urls")),  # Rutas para la autenticación de dos factores
+    
 ]

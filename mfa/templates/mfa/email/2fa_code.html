@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Código de Verificación</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #333;">
+    <div style="max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
+        <h2 style="color: #0056b3;">Hola, {{ user.get_full_name|default:user.username }}</h2>
+        <p>Has solicitado iniciar sesión en tu cuenta de AuditaPro. Para completar el proceso, por favor utiliza el siguiente código de verificación:</p>
+        <p style="text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 5px; background-color: #f2f2f2; padding: 15px; border-radius: 5px;">
+            {{ code }}
+        </p>
+        <p>Este código expirará en 5 minutos. Si no has intentado iniciar sesión, por favor ignora este correo o contacta a nuestro soporte si tienes alguna preocupación.</p>
+        <hr style="border: 0; border-top: 1px solid #eee;">
+        <p style="font-size: 12px; color: #888;">Gracias,<br>El equipo de AuditaPro</p>
+    </div>
+</body>
+</html>
