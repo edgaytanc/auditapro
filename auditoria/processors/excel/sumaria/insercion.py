@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Dict, List
 
 from openpyxl.utils import get_column_letter
@@ -10,48 +9,14 @@ from openpyxl.styles import Alignment
 from openpyxl.worksheet.worksheet import Worksheet
 
 from .formulas import ajustar_formula_para_nueva_fila
-
-logger = logging.getLogger(__name__)
+from .data_extraction import encontrar_ajuste_para_cuenta
+from .fechas import _formatear_fecha_ddmmaa
 
 __all__ = [
     "insertar_datos_cuenta",
-    "obtener_todas_cuentas_seccion",
     "insertar_multiples_cuentas",
-    "encontrar_ajuste_para_cuenta",
+    "actualizar_fechas_encabezados",
 ]
-
-
-def encontrar_ajuste_para_cuenta(
-    ajustes_reclasificaciones: Dict[str, Dict[str, float]],
-    nombre_cuenta: str
-) -> Dict[str, float] | None:
-    """Busca coincidencias exactas o parciales en ajustes_reclasificaciones.
-    
-    Args:
-        ajustes_reclasificaciones: Diccionario de ajustes/reclasificaciones
-        nombre_cuenta: Nombre de la cuenta a buscar
-        
-    Returns:
-        Diccionario con valores de debe/haber o None si no se encuentra
-    """
-    if not ajustes_reclasificaciones:
-        return None
-        
-    # Coincidencia exacta
-    if nombre_cuenta in ajustes_reclasificaciones:
-        logger.debug(f"Encontrada coincidencia exacta para ajustes: '{nombre_cuenta}'")
-        return ajustes_reclasificaciones[nombre_cuenta]
-    
-    # Coincidencia parcial
-    nombre_normalizado = nombre_cuenta.lower().strip()
-    for cuenta, valores in ajustes_reclasificaciones.items():
-        cuenta_normalizada = cuenta.lower().strip()
-        if nombre_normalizado in cuenta_normalizada or cuenta_normalizada in nombre_normalizado:
-            logger.debug(f"Encontrada coincidencia parcial para ajustes: '{nombre_cuenta}' con '{cuenta}'")
-            return valores
-    
-    logger.debug(f"No se encontraron ajustes para cuenta: '{nombre_cuenta}'")
-    return None
 
 
 # ---------------------------------------------------------------------
@@ -67,7 +32,6 @@ def insertar_datos_cuenta(
 ) -> None:
     """Escribe *datos_cuenta* en la fila 13 de la plantilla."""
 
-    logger.debug(f"Inserción de cuenta {nombre_cuenta} en la fila 13")
     fechas_ordenadas = sorted(datos_cuenta.keys())
     sheet["B13"].value = nombre_cuenta
     celdas_valores = ["E13", "F13", "G13", "J13"]
@@ -77,50 +41,16 @@ def insertar_datos_cuenta(
             if fecha in datos_cuenta:
                 sheet[celda].value = datos_cuenta[fecha]
                 sheet[celda].alignment = Alignment(horizontal="right")
-                logger.debug(f"Inserción de valor {datos_cuenta[fecha]} en celda {celda}")
-    
+
     # Insertar valores de ajustes/reclasificaciones usando la nueva función
     valores_ajuste = encontrar_ajuste_para_cuenta(ajustes_reclasificaciones, nombre_cuenta)
     if valores_ajuste:
-        logger.debug(f"Ajustes/reclasificaciones encontrados para cuenta {nombre_cuenta}")
         if 'debe' in valores_ajuste:
             sheet["H13"].value = valores_ajuste['debe']
             sheet["H13"].alignment = Alignment(horizontal="right")
-            logger.debug(f"Inserción de valor {valores_ajuste['debe']} en celda H13")
         if 'haber' in valores_ajuste:
             sheet["I13"].value = valores_ajuste['haber']
             sheet["I13"].alignment = Alignment(horizontal="right")
-            logger.debug(f"Inserción de valor {valores_ajuste['haber']} en celda I13")
-
-
-# ---------------------------------------------------------------------
-# Helpers para obtener todas las cuentas de una sección
-# ---------------------------------------------------------------------
-
-def obtener_todas_cuentas_seccion(
-    balances: Dict[str, float],
-    fechas_semestrales: List[str],
-    seccion: str,
-) -> Dict[str, Dict[str, float]]:
-    """Construye un dict {nombre_cuenta: {fecha: valor, ...}} para *seccion*."""
-
-    import re
-
-    logger.debug(f"Obteniendo cuentas de sección {seccion}")
-    todas_cuentas: Dict[str, Dict[str, float]] = {}
-    patron = re.compile(fr"SEMESTRAL-(.*?)-{seccion}-(.*)")
-
-    for clave, valor in balances.items():
-        m = patron.match(clave)
-        if not m:
-            continue
-        fecha, nombre_cuenta = m.groups()
-        if fecha not in fechas_semestrales:
-            continue
-        logger.debug(f"Cuenta {nombre_cuenta} encontrada en balances")
-        todas_cuentas.setdefault(nombre_cuenta, {})[fecha] = valor
-
-    return todas_cuentas
 
 
 # ---------------------------------------------------------------------
@@ -136,7 +66,6 @@ def insertar_multiples_cuentas(
 ) -> None:
     """Inserta varias cuentas, creando filas adicionales después de la 13 si es necesario."""
 
-    logger.debug("Inserción múltiple de cuentas")
     fechas_ordenadas = sorted(fechas_semestrales)
     cuentas_ordenadas = sorted(todas_cuentas.keys())
 
@@ -158,7 +87,6 @@ def insertar_multiples_cuentas(
             )
 
     if filas_a_insertar:
-        logger.debug(f"Inserción de {filas_a_insertar} filas adicionales")
         # Copiar estilos/fórmulas de la fila 13
         estilos_fila_13 = {}
         formulas_fila_13 = {}
@@ -211,7 +139,6 @@ def insertar_multiples_cuentas(
     for i, nombre_cuenta in enumerate(cuentas_ordenadas):
         fila = 13 + i
         sheet[f"B{fila}"].value = nombre_cuenta
-        logger.debug(f"Inserción de cuenta {nombre_cuenta} en fila {fila}")
         celdas_valores_col = ["E", "F", "G", "J"]
         for j, col_letra in enumerate(celdas_valores_col):
             if j < len(fechas_ordenadas):
@@ -219,17 +146,39 @@ def insertar_multiples_cuentas(
                 if fecha in todas_cuentas[nombre_cuenta]:
                     sheet[f"{col_letra}{fila}"].value = todas_cuentas[nombre_cuenta][fecha]
                     sheet[f"{col_letra}{fila}"].alignment = Alignment(horizontal="right")
-                    logger.debug(f"Inserción de valor {todas_cuentas[nombre_cuenta][fecha]} en celda {col_letra}{fila}")
-        
+
         # Insertar valores de ajustes/reclasificaciones usando la nueva función
         valores_ajuste = encontrar_ajuste_para_cuenta(ajustes_reclasificaciones, nombre_cuenta)
         if valores_ajuste:
-            logger.debug(f"Ajustes/reclasificaciones encontrados para cuenta {nombre_cuenta}")
             if 'debe' in valores_ajuste:
                 sheet[f"H{fila}"].value = valores_ajuste['debe']
                 sheet[f"H{fila}"].alignment = Alignment(horizontal="right")
-                logger.debug(f"Inserción de valor {valores_ajuste['debe']} en celda H{fila}")
             if 'haber' in valores_ajuste:
                 sheet[f"I{fila}"].value = valores_ajuste['haber']
                 sheet[f"I{fila}"].alignment = Alignment(horizontal="right")
-                logger.debug(f"Inserción de valor {valores_ajuste['haber']} en celda I{fila}")
+
+
+# ---------------------------------------------------------------------
+# Actualización de encabezados de fecha
+# ---------------------------------------------------------------------
+
+def actualizar_fechas_encabezados(
+    sheet: Worksheet,
+    fechas_semestrales: List[str],
+    tabla_info: Dict[str, int | List[int]],
+) -> None:
+    """Escribe las *fechas_semestrales* en las celdas estáticas de la plantilla."""
+
+    fechas_ordenadas = sorted(fechas_semestrales)
+    fechas_formateadas = [_formatear_fecha_ddmmaa(f) for f in fechas_ordenadas]
+
+    celdas_destino = ["E12", "F12", "G12", "J12"]
+    for idx, celda in enumerate(celdas_destino):
+        if idx >= len(fechas_formateadas):
+            break
+        valor_actual = sheet[celda].value
+        if isinstance(valor_actual, str) and valor_actual.upper().startswith("AL "):
+            sheet[celda].value = f"AL {fechas_formateadas[idx]}"
+        else:
+            sheet[celda].value = fechas_formateadas[idx]
+        sheet[celda].alignment = Alignment(horizontal="center")

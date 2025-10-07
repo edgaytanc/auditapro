@@ -1,9 +1,15 @@
 {% load filters %}
+{% load static %}
 
 <nav id="sidebar">
   <ul>
     <li>
-      <span class="logo fs-4">Audita</span>
+      <!-- <span class="logo fs-4">Audita</span> -->
+      <img
+      src="{% static 'images/audita-logo-horizontal.png' %}"
+      alt="Logo de la Empresa"
+      class="h-8 w-auto" width="150" height="50"
+    />
       <button id="toggle-btn" onclick="toggleSidebar()">
         <svg xmlns="http://www.w3.org/2000/svg"
              height="24px"

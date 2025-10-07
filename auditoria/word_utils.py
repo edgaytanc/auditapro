@@ -5,11 +5,7 @@ from .utils.replacements_utils import (
     get_tables_config,
     build_replacements_dict
 )
-import logging
 import os
-
-logger = logging.getLogger(__name__)
-
 
 def modify_document_word(template_path, audit):
     """

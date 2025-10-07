@@ -7,10 +7,10 @@ import traceback
 import io
 
 # Importadores delegados
-from .annual_importer import process_annual_sheet as _process_annual_sheet
-from .semestral_importer import process_semestral_sheet as _process_semestral_sheet
-from .auxiliary_importer import process_auxiliary_records as _process_auxiliary_records
-from .initial_balances_importer import process_initial_balances as _process_initial_balances
+from .processors.annual_importer import process_annual_sheet as _process_annual_sheet
+from .processors.semestral_importer import process_semestral_sheet as _process_semestral_sheet
+from .processors.auxiliary_importer import process_auxiliary_records as _process_auxiliary_records
+from .processors.initial_balances_importer import process_initial_balances as _process_initial_balances
 
 class EstadosFinancierosImporter:
     """

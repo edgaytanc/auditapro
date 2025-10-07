@@ -1,0 +1,10 @@
+Hola, {{ user.get_full_name|default:user.username }}
+
+Has solicitado iniciar sesión en tu cuenta de AuditaPro. Para completar el proceso, por favor utiliza el siguiente código de verificación:
+
+{{ code }}
+
+Este código expirará en 5 minutos. Si no has intentado iniciar sesión, por favor ignora este correo o contacta a nuestro soporte si tienes alguna preocupación.
+
+Gracias,
+El equipo de AuditaPro
