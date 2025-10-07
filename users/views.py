@@ -61,7 +61,11 @@ def login_user(req):
         if user.is_superuser:
             login_func(req, user)
             messages.success(req, f"Bienvenido de nuevo, {user.get_full_name() or user.username}.")
-            return redirect("home")
+            # Si el usuario tiene rol superadmin, enviarlo al dashboard de gestión de usuarios
+            if getattr(user, 'role', None) and user.role and user.role.name == 'superadmin':
+                return redirect("superadmin_dashboard")
+            # Para otros superusuarios, llevar al dashboard general
+            return redirect("dashboard")
         else:
             send_2fa_code(user)
             req.session['pre_2fa_user_id'] = user.id
@@ -117,6 +121,9 @@ def delete_account(req):
 
 def index_page(req: HttpRequest):
     if req.user.is_authenticated:
+        # Si el usuario autenticado es superadmin por rol, redirigir a su dashboard específico
+        if getattr(req.user, 'role', None) and req.user.role and req.user.role.name == 'superadmin':
+            return redirect('superadmin_dashboard')
         return render(req, "users/index-system.html")
     else:
         return render(req, "common/home.html")
