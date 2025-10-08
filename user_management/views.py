@@ -98,6 +98,20 @@ class UserCreationForm(forms.Form):
         choices=[('M', 'Mensual'), ('A', 'Anual'), ('D', 'Demo'), ('NT', 'No Tiene')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Asegura class="form-control" y agrega is-invalid / is-valid al ligar el form
+        for name, field in self.fields.items():
+            base = field.widget.attrs.get('class', '')
+            field.widget.attrs['class'] = (base + ' form-control').strip()
+
+        if self.is_bound:  # el usuario ya envió datos
+            for name, field in self.fields.items():
+                cls = field.widget.attrs.get('class', '')
+                if self.errors.get(name):
+                    field.widget.attrs['class'] = f'{cls} is-invalid'
+                else: field.widget.attrs['class'] = f'{cls} is-valid'
     
     def clean(self):
         cleaned_data = super().clean()
@@ -122,6 +136,14 @@ class UserCreationForm(forms.Form):
                 logger.error("No se encontró el rol audit_manager en la base de datos")
             
         return cleaned_data
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("El correo electrónico ya está en uso.") 
+        return email
+
+    
 
 
 @login_required
