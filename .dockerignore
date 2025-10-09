@@ -1,0 +1,59 @@
+# VCS y editores
+.git
+.gitignore
+.gitattributes
+.vscode/
+.idea/
+.DS_Store
+
+# Python cache y pruebas
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Linters / tooling
+.mypy_cache/
+.ruff_cache/
+.tox/
+.hypothesis/
+
+# Entornos virtuales
+venv/
+.venv/
+env/
+
+# Variables de entorno
+.env
+.env.*
+
+# Archivos/dirs sensibles y voluminosos
+db/
+backups/
+logs/
+*.log
+*.sqlite3
+*.db
+
+# Django generados
+staticfiles/
+media/
+
+# Frontend
+node_modules/
+dist/
+build/
+
+# Docker compose y archivos que no deben ir a la imagen
+docker-compose.yml
+docker-compose.*.yml
+
+# Traefik / certificados (si existen en el repo)
+traefik/
+acme.json
+letsencrypt/
