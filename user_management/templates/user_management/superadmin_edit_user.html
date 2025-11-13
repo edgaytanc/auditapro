@@ -91,6 +91,26 @@ Editar Usuario
                         </div>
                     </div>
                 </div>
+
+                {# 🔹 NUEVO BLOQUE — Solo visible para el superadmin #}
+                {% if is_superadmin %}
+                <div class="form-check mt-4 mb-4">
+                    <input 
+                        type="checkbox" 
+                        class="form-check-input" 
+                        id="id_socio" 
+                        name="socio"
+                        {% if user_to_edit.socio %}checked{% endif %}
+                    >
+                    <label class="form-check-label fw-semibold" for="id_socio">
+                        Marcar como socio
+                    </label>
+                    <p class="text-muted mb-0 ms-1" style="font-size: 0.9rem;">
+                        Con privilegios de creación de usuarios
+                    </p>
+                </div>
+                {% endif %}
+                {# 🔹 FIN DEL BLOQUE NUEVO #}
                 
                 <div class="mt-4">
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>

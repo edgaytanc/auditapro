@@ -131,9 +131,20 @@ Crear Usuario
                     </div>
                 </div>
                 
-                <div class="mt-4">
-                    <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    {% if request.user.role.name == "superadmin" %}
+                    <div class="form-check m-0 d-flex align-items-center gap-2">
+                        <input type="checkbox" class="form-check-input" id="socio" name="socio">
+                        <label class="form-check-label fw-normal text-muted" for="socio">
+                            ¿Marcar como socio?<br>
+                            <small>Con privilegios de creación de usuarios</small>
+                        </label>
+                    </div>
+                    {% endif %}
+                    
+                    <button type="submit" class="btn btn-primary ms-auto">Crear Usuario</button>
                 </div>
+
             </form>
         </div>
     </div>

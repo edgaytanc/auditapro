@@ -30,7 +30,12 @@ def create_user(
     email: str,
     password_1: str,
     password_2: str,
+    req: HttpRequest = None,  # 🟩 nuevo parámetro opcional para acceder al usuario autenticado (superadmin)
 ):
+    """
+    Crea un nuevo usuario y, si el usuario autenticado es superadmin,
+    guarda también el valor del campo 'socio' (checkbox del formulario).
+    """
     try:
         if not username:
             raise UserNameNullError()
@@ -48,6 +53,7 @@ def create_user(
         is_username_used(username)
         is_email_used(email)
 
+        # 🟩 Crear el usuario normalmente
         user = User.objects.create_user(
             username=username,
             first_name=first_name,
@@ -56,12 +62,23 @@ def create_user(
             password=password_1,
         )
 
+        # 🟩 Si quien lo crea es un superadmin, guardar la marca de 'socio' si viene en el formulario
+        if req and hasattr(req, "user") and req.user.role and req.user.role.name == "superadmin":
+            socio_val = req.POST.get("socio")
+            if socio_val is not None:
+                user.socio = True if socio_val == "on" else False
+
         user.save()
+
     except Exception as e:
         raise e
 
 
 def update_user(req: HttpRequest, value: str, field: str):
+    """
+    Actualiza los campos de un usuario y, si el usuario autenticado es superadmin,
+    también permite actualizar la marca 'socio'.
+    """
     try:
         user = authenticate(req)
         user = req.user
@@ -80,11 +97,13 @@ def update_user(req: HttpRequest, value: str, field: str):
         if field not in ("username", "email", "first_name", "last_name", "password"):
             raise FieldInvalidError()
 
+        # Validaciones de unicidad
         if field == "username":
             is_username_used(value)
-
         if field == "email":
             is_email_used(value)
+
+        # Actualización de contraseña (caso especial)
         if field == "password":
             user.set_password(value)
             user.save()
@@ -93,7 +112,15 @@ def update_user(req: HttpRequest, value: str, field: str):
             setattr(user, field, value)
             user.save()
 
-    except ValidationError as ve:
+        # 🟩 NUEVO BLOQUE: permitir que el superadmin marque o desmarque el campo 'socio'
+        if req.user.role and req.user.role.name == "superadmin":
+            socio_val = req.POST.get("socio")
+            if socio_val is not None:
+                user.socio = True if socio_val == "on" else False
+                user.save()
+        # 🟩 FIN DEL NUEVO BLOQUE
+
+    except ValidationError:
         raise InvalidPassword()
     except User.DoesNotExist:
         raise UserDoNotExits()
