@@ -180,3 +180,4 @@ def is_excluded(text):
         'severity': None,
         'rule_type': None
     }
+a
