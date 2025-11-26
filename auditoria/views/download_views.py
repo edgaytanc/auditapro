@@ -5,6 +5,7 @@ Contiene funciones para descargar documentos por carpeta/archivo y por patrón.
 
 import os
 import urllib.parse
+import logging
 from .config import (
     get_object_or_404, HttpResponse, FileResponse, mark_safe,
     Audit, login_required, io,
@@ -12,6 +13,9 @@ from .config import (
     get_file_info_from_pattern
 )
 from .utils import get_template_path, crear_mensaje_error
+from auditoria.services.audit_mark_processor import AuditMarkProcessor
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def download_document(request, audit_id, folder, filename):
@@ -30,17 +34,39 @@ def download_document(request, audit_id, folder, filename):
     try:
         buffer = io.BytesIO()
         if filename.lower().endswith('.docx'):
+            # Aplicar reemplazos estándar
             doc = modify_document_word(template_path, audit)
+
+            # Aplicar marcas de auditoría (NUEVO)
+            try:
+                processor = AuditMarkProcessor(audit_id, filename)
+                doc = processor.process_word_document(doc)
+            except Exception as e:
+                logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
+                # Continuar con la descarga incluso si las marcas fallan
+
             doc.save(buffer)
             content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         elif filename.lower().endswith('.xlsx'):
+            # Aplicar reemplazos estándar
             wb = modify_document_excel(template_path, audit)
+
+            # Aplicar marcas de auditoría (NUEVO)
+            try:
+                processor = AuditMarkProcessor(audit_id, filename)
+                wb = processor.process_excel_document(wb)
+            except Exception as e:
+                logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
+                # Continuar con la descarga incluso si las marcas fallan
+
             wb.save(buffer)
             content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         elif filename.lower().endswith('.xlsm'):
             # modify_document_excel_with_macros devuelve una ruta de archivo, no un objeto workbook
             processed_file_path = modify_document_excel_with_macros(template_path, audit)
             # Leer el contenido del archivo procesado en el buffer
+            # NOTA: Los archivos XLSM NO obtienen marcas de auditoría (demasiado riesgoso para macros)
+            logger.info(f"Archivo XLSM: {filename} - Omitiendo procesamiento de marcas de auditoría")
             with open(processed_file_path, 'rb') as f:
                 buffer.write(f.read())
             buffer.seek(0)
@@ -137,11 +163,31 @@ def download_document_by_pattern(request, audit_id, pattern):
         try:
             buffer = io.BytesIO()
             if filename.lower().endswith('.docx'):
+                # Aplicar reemplazos estándar
                 doc = modify_document_word(template_path, audit)
+
+                # Aplicar marcas de auditoría (NUEVO)
+                try:
+                    processor = AuditMarkProcessor(audit_id, filename)
+                    doc = processor.process_word_document(doc)
+                except Exception as e:
+                    logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
+                    # Continuar con la descarga incluso si las marcas fallan
+
                 doc.save(buffer)
                 content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             elif filename.lower().endswith('.xlsx'):
+                # Aplicar reemplazos estándar
                 wb = modify_document_excel(template_path, audit)
+
+                # Aplicar marcas de auditoría (NUEVO)
+                try:
+                    processor = AuditMarkProcessor(audit_id, filename)
+                    wb = processor.process_excel_document(wb)
+                except Exception as e:
+                    logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
+                    # Continuar con la descarga incluso si las marcas fallan
+
                 wb.save(buffer)
                 content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             else:
