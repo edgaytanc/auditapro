@@ -1,0 +1,451 @@
+<!--
+Template Creator Modal - 4-Step Wizard for Creating Excel Templates
+
+USAGE:
+Include this partial in auditoria_detalle.html and add a button to trigger it:
+<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#templateCreatorModal">
+    <i class="bi bi-file-earmark-excel"></i> Crear Plantilla Excel
+</button>
+
+SECURITY:
+- Only creates NEW files, never modifies existing templates
+- All validation happens before generation
+- Real-time feedback for user input
+-->
+
+<!-- Template Creator Modal -->
+<div class="modal fade" id="templateCreatorModal" tabindex="-1" aria-labelledby="templateCreatorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="templateCreatorModalLabel">
+                    <i class="bi bi-file-earmark-excel me-2"></i>
+                    Crear Plantilla Excel de Marcas de Auditoría
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <!-- Progress Steps Indicator -->
+                <div class="progress-steps mb-4">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <div class="step-indicator active" data-step="1">
+                                <div class="step-number">1</div>
+                                <div class="step-title">Nombre</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="step-indicator" data-step="2">
+                                <div class="step-number">2</div>
+                                <div class="step-title">Columnas</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="step-indicator" data-step="3">
+                                <div class="step-number">3</div>
+                                <div class="step-title">Símbolos</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="step-indicator" data-step="4">
+                                <div class="step-number">4</div>
+                                <div class="step-title">Vista Previa</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 1: Workbook Name Configuration -->
+                <div class="wizard-step" id="step1" style="display: block;">
+                    <h5 class="mb-3">Paso 1: Configurar Nombre del Libro de Trabajo</h5>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        El nombre del libro de trabajo debe coincidir con un archivo existente en la auditoría.
+                        El sistema validará automáticamente el nombre ingresado.
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="workbookName" class="form-label">
+                            Nombre del Papel de Trabajo <span class="text-danger">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="workbookName"
+                            placeholder="Ejemplo: SUMARIA CAJAS Y BANCOS"
+                            required
+                        >
+                        <div class="form-text">
+                            El nombre será normalizado automáticamente (sin números iniciales ni extensiones)
+                        </div>
+
+                        <!-- Validation Feedback -->
+                        <div class="validation-feedback mt-2" id="workbookNameFeedback" style="display: none;">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+
+                        <!-- Suggestions -->
+                        <div class="suggestions-container mt-2" id="workbookNameSuggestions" style="display: none;">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="useExistingMarks" checked>
+                            <label class="form-check-label" for="useExistingMarks">
+                                Pre-poblar con marcas existentes de esta auditoría
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Column Configuration -->
+                <div class="wizard-step" id="step2" style="display: none;">
+                    <h5 class="mb-3">Paso 2: Configurar Columnas</h5>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Agregue las columnas que necesita en su plantilla. Mínimo 2 columnas requeridas.
+                    </div>
+
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-success" id="addColumnBtn">
+                            <i class="bi bi-plus-circle me-1"></i> Agregar Columna
+                        </button>
+                    </div>
+
+                    <!-- Columns Container -->
+                    <div id="columnsContainer" class="columns-container">
+                        <!-- Columns will be added here dynamically -->
+                    </div>
+
+                    <div class="text-muted small mt-2">
+                        <i class="bi bi-info-circle"></i>
+                        Arrastre las columnas para reordenarlas
+                    </div>
+                </div>
+
+                <!-- Step 3: Symbol Selection -->
+                <div class="wizard-step" id="step3" style="display: none;">
+                    <h5 class="mb-3">Paso 3: Seleccionar Símbolos</h5>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Seleccione al menos 30 símbolos de auditoría para incluir en la plantilla.
+                    </div>
+
+                    <!-- Symbol Counter -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Símbolos seleccionados:</span>
+                            <span class="badge bg-primary" id="symbolCount">0 / 30</span>
+                        </div>
+                        <div class="progress mt-2" style="height: 5px;">
+                            <div class="progress-bar" id="symbolProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Search Symbols -->
+                    <div class="mb-3">
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="symbolSearch"
+                            placeholder="Buscar símbolos..."
+                        >
+                    </div>
+
+                    <!-- Category Tabs -->
+                    <ul class="nav nav-tabs mb-3" id="symbolCategoryTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all-symbols" type="button">
+                                Todos
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="verification-tab" data-bs-toggle="tab" data-bs-target="#verification-symbols" type="button">
+                                Verificación <span class="badge bg-secondary ms-1" data-category="verification">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="calculation-tab" data-bs-toggle="tab" data-bs-target="#calculation-symbols" type="button">
+                                Cálculo <span class="badge bg-secondary ms-1" data-category="calculation">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="documentation-tab" data-bs-toggle="tab" data-bs-target="#documentation-symbols" type="button">
+                                Documentación <span class="badge bg-secondary ms-1" data-category="documentation">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="review-tab" data-bs-toggle="tab" data-bs-target="#review-symbols" type="button">
+                                Revisión <span class="badge bg-secondary ms-1" data-category="review">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="analysis-tab" data-bs-toggle="tab" data-bs-target="#analysis-symbols" type="button">
+                                Análisis <span class="badge bg-secondary ms-1" data-category="analysis">0</span>
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Symbol Grids -->
+                    <div class="tab-content" id="symbolCategoryContent">
+                        <div class="tab-pane fade show active" id="all-symbols">
+                            <div class="symbol-grid" id="symbolGridAll">
+                                <!-- Symbols will be loaded here -->
+                            </div>
+                        </div>
+                        <!-- Other category tabs will have similar structure -->
+                    </div>
+
+                    <!-- Bulk Actions -->
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllSymbols">
+                            Seleccionar Todos
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllSymbols">
+                            Deseleccionar Todos
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Preview & Download -->
+                <div class="wizard-step" id="step4" style="display: none;">
+                    <h5 class="mb-3">Paso 4: Vista Previa y Descarga</h5>
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        Configuración completa. Revise el resumen antes de generar la plantilla.
+                    </div>
+
+                    <!-- Configuration Summary -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <strong>Resumen de Configuración</strong>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tr>
+                                    <th style="width: 40%;">Nombre del Libro de Trabajo:</th>
+                                    <td id="summaryWorkbookName"></td>
+                                </tr>
+                                <tr>
+                                    <th>Número de Columnas:</th>
+                                    <td id="summaryColumnCount"></td>
+                                </tr>
+                                <tr>
+                                    <th>Símbolos Seleccionados:</th>
+                                    <td id="summarySymbolCount"></td>
+                                </tr>
+                                <tr>
+                                    <th>Estado de Validación:</th>
+                                    <td id="summaryValidationStatus"></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <strong>Opciones de Generación</strong>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="optionIncludeHeaders" checked>
+                                <label class="form-check-label" for="optionIncludeHeaders">
+                                    Incluir encabezados de columna
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="optionIncludeInstructions" checked>
+                                <label class="form-check-label" for="optionIncludeInstructions">
+                                    Incluir hoja de instrucciones
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="optionColorCodeSymbols" checked>
+                                <label class="form-check-label" for="optionColorCodeSymbols">
+                                    Colorear símbolos por categoría
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="optionSaveConfig" checked>
+                                <label class="form-check-label" for="optionSaveConfig">
+                                    Guardar configuración para reutilizar
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Download Button -->
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary btn-lg" id="downloadTemplateBtn">
+                            <i class="bi bi-download me-2"></i>
+                            Descargar Plantilla Excel
+                        </button>
+                    </div>
+
+                    <!-- Download Progress -->
+                    <div class="mt-3" id="downloadProgress" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">Generando plantilla...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="prevStepBtn" style="display: none;">
+                    <i class="bi bi-arrow-left me-1"></i> Anterior
+                </button>
+                <button type="button" class="btn btn-primary" id="nextStepBtn">
+                    Siguiente <i class="bi bi-arrow-right ms-1"></i>
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Step Indicator Styles */
+.progress-steps .step-indicator {
+    position: relative;
+    padding: 10px;
+}
+
+.progress-steps .step-number {
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    color: #6c757d;
+    margin: 0 auto 5px;
+    font-weight: bold;
+    transition: all 0.3s;
+}
+
+.progress-steps .step-indicator.active .step-number {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.progress-steps .step-indicator.completed .step-number {
+    background-color: #198754;
+    color: white;
+}
+
+.progress-steps .step-title {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.progress-steps .step-indicator.active .step-title {
+    color: #0d6efd;
+    font-weight: 500;
+}
+
+/* Validation Feedback Styles */
+.validation-feedback.valid {
+    color: #198754;
+    display: block !important;
+}
+
+.validation-feedback.invalid {
+    color: #dc3545;
+    display: block !important;
+}
+
+.validation-feedback.invalid input {
+    border-color: #dc3545 !important;
+    border-width: 2px !important;
+}
+
+/* Column Item Styles */
+.column-item {
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 10px;
+    background-color: #f8f9fa;
+    cursor: move;
+}
+
+.column-item:hover {
+    background-color: #e9ecef;
+}
+
+.column-item .drag-handle {
+    cursor: grab;
+    color: #6c757d;
+    margin-right: 10px;
+}
+
+/* Symbol Grid Styles */
+.symbol-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.symbol-card {
+    border: 2px solid #dee2e6;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.symbol-card:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.symbol-card.selected {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+}
+
+.symbol-card .symbol-icon {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #0d6efd;
+}
+
+.symbol-card .symbol-description {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 5px;
+}
+
+/* Suggestions Styles */
+.suggestions-container {
+    border: 1px solid #0dcaf0;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #cff4fc;
+}
+
+.suggestion-item {
+    padding: 5px 10px;
+    margin: 2px 0;
+    background-color: white;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background-color: #0dcaf0;
+    color: white;
+}
+</style>
