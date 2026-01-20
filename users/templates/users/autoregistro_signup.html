@@ -1,0 +1,85 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+{% block title %}Completar registro{% endblock title %}
+
+{% block content %}
+<main class="text-center min-vw-100 min-vh-100">
+
+  <div class="header-gradient"></div>
+  <style>
+    .header-gradient {
+      height: 220px;
+      background: linear-gradient(135deg, #003366 0%, #0072ff 100%);
+      border-bottom-left-radius: 80px;
+      border-bottom-right-radius: 80px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+  </style>
+
+  <div class="container">
+    <div class="card mx-auto shadow-lg border-0 bg-body-tertiary"
+         style="margin-top: -120px; max-width: 720px; border-radius: 15px;">
+      <div class="card-body py-5 px-md-5">
+
+        <div class="text-center mb-4">
+          <h2 class="fw-bold text-dark mb-0">AuditaPro</h2>
+          <p class="text-muted mb-4" style="font-size: 0.95rem;">Completa tu registro</p>
+        </div>
+
+        <h3 class="fw-semibold mb-4 text-center text-dark">Crear tu cuenta</h3>
+
+        {% if messages %}
+          <div class="mb-3">
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} text-center" role="alert">
+                {{ message }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="mb-3 text-start">
+            <label class="form-label fw-medium">Correo electrónico:</label>
+            <input type="email" class="form-control" value="{{ email_destino }}" readonly>
+            <small class="text-muted">Este correo fue invitado por tu socio de AuditaPro.</small>
+          </div>
+
+          <div class="row mb-3 text-start">
+            <div class="col-md-6 mb-3 mb-md-0">
+              <label class="form-label fw-medium" for="id_first_name">Nombre:</label>
+              {{ form.first_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium" for="id_last_name">Apellido:</label>
+              {{ form.last_name }}
+            </div>
+          </div>
+
+          <div class="mb-3 text-start">
+            <label class="form-label fw-medium" for="id_password1">Contraseña:</label>
+            {{ form.password1 }}
+          </div>
+
+          <div class="mb-4 text-start">
+            <label class="form-label fw-medium" for="id_password2">Confirmar contraseña:</label>
+            {{ form.password2 }}
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg w-100" style="background-color: #0055aa; border: none;">
+            Crear mi cuenta
+          </button>
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="text-center mt-4 text-muted small">
+    © {{ now|date:"Y" }} AuditaPro. Todos los derechos reservados.
+  </div>
+</main>
+{% endblock content %}

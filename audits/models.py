@@ -12,6 +12,7 @@ class Audit(models.Model):
     fechaEnd = models.DateTimeField(default=timezone.now)
     tipoAuditoria = models.CharField(max_length=255, default='F')
     moneda = models.CharField(max_length=10, default='GTQ')
+    activa_revisoria = models.BooleanField(default=False, verbose_name="Activar Revisoria")
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
     audit_manager = models.ForeignKey(

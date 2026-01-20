@@ -34,10 +34,15 @@ function handleExportCuentas() {
     document.getElementById("exportModal").style.display = "block";
 }
 
+function closeExportModal() {
+    document.getElementById("exportModal").style.display = "none";
+}
+
 function exportFile(tipo) {
     if (!audit_id) return;
     const url = `/auditoria/detalle/${audit_id}/exportar/${tipo}/`;
     window.location.href = url;
+    closeExportModal(); // Close modal after triggering export
 }
 
 function submitImportForm(event) {
@@ -62,7 +67,6 @@ function submitImportForm(event) {
             }
         })
         .catch(error => {
-            console.error("Error:", error);
             alert("❌ Error inesperado al subir el archivo.");
         });
 }

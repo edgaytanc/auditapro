@@ -1,28 +1,50 @@
 {% extends "common/base.html" %}
 
 {% block content %}
-  <main class="d-flex justify-content-center align-items-center h-100 min-h-screen min-vw-100 bg-light">
-    <div class="card border-0 shadow-sm" style="max-width: 450px; width: 100%;">
-      <div class="card-body p-5">
-        <div class="text-center mb-4">
-          <h2 class="fw-normal mb-2">Sistema Audita</h2>
-          <p class="text-muted">Gestión profesional de auditorías</p>
-        </div>
-        
+  <!-- Contenedor absoluto que ignora márgenes del base -->
+  <div class="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-light">
+    
+    <!-- Tarjeta centrada -->
+    <div class="card border-0 shadow-sm text-center" style="max-width: 420px; width: 100%;">
+      <div class="card-body p-4 p-md-5">
+        <h2 class="fw-normal mb-2">Sistema Audita</h2>
+        <p class="text-muted mb-4">Gestión profesional de auditorías</p>
+
         <div class="d-grid gap-3 mb-4">
-          <a href="{% url 'login' %}" class="btn btn-primary btn-lg">
+          <a href="{% url 'login' %}" class="btn btn-primary btn-lg w-100">
             Iniciar Sesión
           </a>
         </div>
-        
-        <div class="text-center mt-4 pt-3 border-top">
+
+        <hr>
+
+        <div class="mt-4">
           <h5 class="mb-3 fw-normal">¿Nuevo en Audita?</h5>
-          <p class="mb-3 text-muted">Accede a una versión limitada y descubre las principales funcionalidades</p>
-          <a href="{% url 'demo_signup' %}" class="btn btn-success btn-lg">
+          <p class="mb-3 text-muted">
+            Accede a una versión limitada y descubre las principales funcionalidades
+          </p>
+          <a href="{% url 'demo_signup' %}" class="btn btn-success btn-lg w-100">
             Probar Versión Demo
           </a>
         </div>
       </div>
     </div>
-  </main>
+
+    <!-- Footer centrado con rueda -->
+    <footer class="text-center text-muted small py-3 d-flex align-items-center justify-content-center gap-1">
+  <a 
+    href="{% url 'login_audit_manager' %}" 
+    class="text-decoration-none"
+    style="
+      color: inherit;
+      cursor: default; /* evita que el puntero cambie */
+    "
+    aria-label="Acceso para socios"
+    title="Acceso para socios"
+  >
+    ⚙️
+  </a>
+  © AuditaPro. Todos los derechos reservados.
+</footer>
+  </div>
 {% endblock content %}

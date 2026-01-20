@@ -3,8 +3,9 @@ import django_tables2 as tables
 from common.templatetags.filters import format_duration, format_duration_field
 from tools.models import (
     Activity,
-    AuditMarks,
+    # REMOVED: AuditMarks (deprecated)
     AuditTimeSummary,
+    CurrencyType,
     SummaryHoursWorked,
     WorkingPapersStatus,
 )
@@ -322,37 +323,7 @@ class WorkingPapersStatusesTable(BaseTable):
         return "Fecha no disponible"
 
 
-class BaseAuditMarksTable(tables.Table):
-    image = tables.TemplateColumn(
-        verbose_name="Símbolo",
-        template_code="""<img src='{{record.image}}' alt={{record.id}} width=35 height=35 />""",
-        orderable=False,
-        attrs={"td": {"class": "td-image"}},
-    )
-    name = tables.Column(verbose_name="Nombre de la marca")
-    description = tables.Column(verbose_name="Descripción")
-
-    class Meta(BaseTable.Meta):
-        model = AuditMarks
-        fields = (
-            "image",
-            "name",
-            "description",
-        )
-
-
-class AuditMarksTable(BaseTable):
-    image = tables.TemplateColumn(
-        verbose_name="Símbolo",
-        template_code="""<img src='{{record.image}}' alt={{record.id}} width=35 height=35 />""",
-    )
-    name = tables.Column(verbose_name="Nombre de la marca")
-    description = tables.Column(verbose_name="Descripción")
-
-    class Meta(BaseTable.Meta):
-        model = AuditMarks
-        fields = ("select", "image", "name", "description", "actions")
-
+# REMOVED: BaseAuditMarksTable and AuditMarksTable classes (30 lines) - tools.AuditMarks system deprecated
 
 class BaseCurrencyTypesTable(tables.Table):
     country = tables.Column(verbose_name="País")
@@ -361,7 +332,7 @@ class BaseCurrencyTypesTable(tables.Table):
     code = tables.Column(verbose_name="Código")
 
     class Meta(BaseTable.Meta):
-        model = AuditMarks
+        model = CurrencyType  # FIXED: was incorrectly AuditMarks
         fields = (
             "country",
             "currency",
@@ -377,7 +348,7 @@ class CurrencyTypesTable(BaseTable):
     code = tables.Column(verbose_name="Código")
 
     class Meta(BaseTable.Meta):
-        model = AuditMarks
+        model = CurrencyType  # FIXED: was incorrectly AuditMarks
         fields = ("select", "country", "currency", "name", "code", "actions")
 
 

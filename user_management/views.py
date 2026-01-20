@@ -6,6 +6,7 @@ from django.contrib.auth.hashers import make_password
 from .decorators import admin_or_superadmin_required
 from django import forms
 import logging
+from users.emails import send_activation_email_html as send_welcome_email_html, send_admin_notification_email as send_admin_summary_email
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -87,7 +88,7 @@ class UserCreationForm(forms.Form):
         widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Contraseña'})
     )
     role = forms.ModelChoiceField(
-        queryset=Roles.objects.filter(name__in=["audit_manager", "superadmin"]),
+        queryset=Roles.objects.filter(name__in=["audit_manager", "auditor"]),
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     modalidad = forms.ChoiceField(
@@ -138,107 +139,202 @@ class UserCreationForm(forms.Form):
         return cleaned_data
     
     def clean_email(self):
+        """
+        Valida que el correo electrónico no exista previamente
+        y asegura que username sea igual al email.
+        """
         email = self.cleaned_data.get('email', '').strip().lower()
+
+        # Validar duplicado de correo
         if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("El correo electrónico ya está en uso.") 
+            raise forms.ValidationError("El correo electrónico ya está en uso.")
+
+        # Validar duplicado de username (como el username es igual al email en Audita)
+        if User.objects.filter(username__iexact=email).exists():
+            raise forms.ValidationError("Ya existe un usuario registrado con este correo electrónico.")
+
+        # Forzar coherencia username=email
+        self.cleaned_data['username'] = email
+
         return email
 
+
+    def clean_username(self):
+        """
+        Valida que el nombre de usuario sea único (por si no coincide con el correo).
+        """
+        username = self.cleaned_data.get('username', '').strip()
+        if User.objects.filter(username__iexact=username).exists():
+            raise forms.ValidationError("El nombre de usuario ya está en uso.")
+        return username
     
 
+from django.http import Http404
+
+from django.http import Http404
 
 @login_required
 def create_user(request):
     """
     Vista para crear un nuevo usuario.
+
+    Acceso permitido únicamente a:
+      - Superadministradores del sistema (role.name == 'superadmin')
+      - Socios (cuando aplique en tu flujo)
+    Si no cumple, responde con 404 (sin redirecciones).
+
+    Además:
+      - Envía un correo HTML al nuevo usuario con sus credenciales,
+        guía PDF, plantilla Excel y enlace al video de demostración.
+      - Envía un correo resumen interno a sistemaaudita@gmail.com
+        con los datos del creador y del nuevo usuario.
     """
+
+    u = request.user
+    role_name = getattr(getattr(u, "role", None), "name", None)
+
+    #  Gate de acceso (sin redirecciones)
+    if not (u.is_superuser or role_name == "superadmin" or getattr(u, "socio", False)):
+        raise Http404("Página no encontrada.")
+
     logger.info("=== INICIO create_user ===")
     logger.info(f"Método: {request.method}")
-    
+
     if request.method == 'POST':
         logger.info("Procesando formulario POST")
         form = UserCreationForm(request.POST)
         logger.info(f"Formulario válido: {form.is_valid()}")
-        
+
         if form.is_valid():
-            # Obtener datos del formulario
+            # --- Datos del formulario ---
             username = form.cleaned_data['username']
             email = form.cleaned_data['email']
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
-            password = form.cleaned_data['password']
+            password = form.cleaned_data['password']  # ⚠️ Guarda antes de encriptar
             role = form.cleaned_data['role']
             modalidad = form.cleaned_data['modalidad']
             plan_type = form.cleaned_data['plan']
-            
-            logger.info(f"Datos del formulario:")
-            logger.info(f"- Username: {username}")
-            logger.info(f"- Role: {role.name}")
-            logger.info(f"- Modalidad: {modalidad}")
-            logger.info(f"- Plan: {plan_type}")
-            
-            # Verificar si el usuario ya existe
-            if User.objects.filter(username=username).exists():
-                logger.warning(f"Error: El usuario {username} ya existe")
+
+            # 🔹 Nuevo: leer la marca de Revisor Fiscal desde el checkbox
+            revisor_fiscal = request.POST.get("revisor_fiscal") == "on"
+
+            logger.info(
+                f"Datos del formulario: username={username}, role={role.name}, "
+                f"modalidad={modalidad}, plan={plan_type}, revisor_fiscal={revisor_fiscal}"
+            )
+
+            # --- Validaciones de duplicados ---
+            if User.objects.filter(email__iexact=email).exists():
+                messages.error(request, "El correo electrónico ya está en uso.")
+                return render(
+                    request,
+                    'user_management/superadmin_create_user.html' if role_name == 'superadmin' or u.is_superuser else 'user_management/create_user.html',
+                    {'form': form, 'roles': Roles.objects.all()}
+                )
+
+            if User.objects.filter(username__iexact=username).exists():
                 messages.error(request, "El nombre de usuario ya está en uso.")
-                return redirect('create_user')
-            
+                return render(
+                    request,
+                    'user_management/superadmin_create_user.html' if role_name == 'superadmin' or u.is_superuser else 'user_management/create_user.html',
+                    {'form': form, 'roles': Roles.objects.all()}
+                )
+
             try:
-                logger.info("Creando usuario...")
-                # Crear el usuario
+                # --- Creación del usuario ---
                 user = User(
                     username=username,
                     first_name=first_name,
                     last_name=last_name,
                     email=email,
-                    password=make_password(password),  # Encriptar la contraseña
-                    role=role
+                    password=make_password(password),
+                    role=role,
+                    revisor_fiscal=revisor_fiscal,  # 🔹 NUEVO: guardar la marca
                 )
-                
-                # Asignar modalidad y plan según el rol
+
+                # --- Asignar modalidad y plan ---
                 if role.name == "superadmin":
-                    logger.info("Es superadmin, asignando modalidad=S y plan=NT")
-                    user.modalidad = "S"  # S para superadmin
-                    user.plan = "NT"      # NT para superadmin
+                    user.modalidad = "S"
+                    user.plan = "NT"
                 else:
-                    logger.info(f"No es superadmin, asignando modalidad={modalidad} y plan={plan_type}")
                     user.modalidad = modalidad
                     user.plan = plan_type
-                
-                # Si es un auditor en modalidad grupal, asignar al administrador actual
-                if role.name == "auditor" and modalidad == 'G':
-                    logger.info("Es auditor en modalidad grupal")
-                    # Asumimos que el creador es un administrador
-                    if request.user.is_admin():
-                        logger.info(f"Asignando administrador: {request.user.username}")
-                        user.administrador = request.user
-                
-                logger.info("Guardando usuario...")
+
+                # --- Si es auditor grupal, asignar al administrador creador ---
+                if (
+                    role.name == "auditor"
+                    and modalidad == 'G'
+                    and hasattr(request.user, "is_admin")
+                    and request.user.is_admin()
+                ):
+                    user.administrador = request.user
+
+                # --- Marcar como socio si se seleccionó ---
+                user.socio = True if request.POST.get('socio') == 'on' else False
+
+                # --- Guardar usuario ---
                 user.save()
-                logger.info(f"Usuario {username} guardado con éxito")
+                logger.info(f"Usuario {username} guardado con éxito.")
                 messages.success(request, f"Usuario {username} creado exitosamente.")
-                logger.info("Redirigiendo a user_list")
-                return redirect('user_list')
+
+                # --- Envío de correos solo si el usuario se guardó correctamente ---
+                if user.id:
+                    try:
+                        # Correo HTML al nuevo usuario (credenciales + adjuntos)
+                        send_welcome_email_html(user, password)
+
+                        # Correo resumen interno (quién creó a quién)
+                        send_admin_summary_email(request.user, user)
+
+                        logger.info("Correos enviados correctamente al usuario %s.", user.email)
+
+                    except Exception as e:
+                        logger.error(f"Error al enviar correos de bienvenida o notificación: {e}", exc_info=True)
+                        messages.warning(
+                            request,
+                            "El usuario fue creado correctamente, pero hubo un problema al enviar los correos de notificación."
+                        )
+                else:
+                    logger.error("El usuario no tiene ID asignado tras guardarse. No se enviaron correos.")
+                    messages.warning(
+                        request,
+                        "El usuario fue creado, pero no se pudo confirmar el envío de correos de bienvenida."
+                    )
+
+                # --- Volver a mostrar formulario limpio ---
+                empty_form = UserCreationForm()
+                template = (
+                    'user_management/superadmin_create_user.html'
+                    if (role_name == 'superadmin' or u.is_superuser)
+                    else 'user_management/create_user.html'
+                )
+                return render(request, template, {'form': empty_form, 'roles': Roles.objects.all()})
+
             except Exception as e:
                 logger.error(f"ERROR al crear usuario: {str(e)}", exc_info=True)
                 messages.error(request, f"Error al crear el usuario: {str(e)}")
+                template = (
+                    'user_management/superadmin_create_user.html'
+                    if (role_name == 'superadmin' or u.is_superuser)
+                    else 'user_management/create_user.html'
+                )
+                return render(request, template, {'form': form, 'roles': Roles.objects.all()})
         else:
-            logger.warning("Formulario inválido")
-            logger.warning(f"Errores: {form.errors}")
+            # --- Errores del formulario ---
             for field, errors in form.errors.items():
                 for error in errors:
                     messages.error(request, f"Error en {field}: {error}")
     else:
-        # Si es GET, mostrar el formulario vacío
         logger.info("Mostrando formulario vacío (GET)")
         form = UserCreationForm()
-    
-    # Seleccionar la plantilla según el rol del usuario
-    if request.user.role and request.user.role.name == 'superadmin':
-        template = 'user_management/superadmin_create_user.html'
-    else:
-        template = 'user_management/create_user.html'
-    
-    logger.info(f"Renderizando plantilla: {template}")
+
+    # --- Render final ---
+    template = (
+        'user_management/superadmin_create_user.html'
+        if (role_name == 'superadmin' or u.is_superuser)
+        else 'user_management/create_user.html'
+    )
     return render(request, template, {
         'form': form,
         'roles': Roles.objects.all(),
@@ -250,37 +346,49 @@ def create_user(request):
 def edit_user(request, user_id):
     """
     Vista para editar un usuario existente.
+    Permite al superadmin modificar los campos 'socio' y 'revisor_fiscal'.
     """
     user_to_edit = get_object_or_404(User, id=user_id)
-    
+
     if request.method == 'POST':
         # Obtener datos del formulario
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         password = request.POST.get('password')
-        
-        # Actualizar los datos del usuario
+        socio = request.POST.get('socio')              # checkbox socio
+        revisor_fiscal = request.POST.get('revisor_fiscal')  # 🔹 checkbox revisor fiscal
+
+        # Actualizar datos básicos
         user_to_edit.first_name = first_name
         user_to_edit.last_name = last_name
         user_to_edit.email = email
-        
+
+        # Si el superadmin está editando → puede cambiar 'socio' y 'revisor_fiscal'
+        if request.user.role and request.user.role.name == 'superadmin':
+            user_to_edit.socio = (socio == 'on')
+            user_to_edit.revisor_fiscal = (revisor_fiscal == 'on')
+
         # Actualizar contraseña solo si se proporciona una nueva
         if password:
             user_to_edit.password = make_password(password)
-        
+
+        # Guardar cambios
         user_to_edit.save()
         messages.success(request, f"Usuario {user_to_edit.username} actualizado exitosamente.")
         return redirect('user_details', user_id=user_id)
-    
-    # Determinar qué plantilla base usar según el rol del usuario
+
+    # Seleccionar plantilla según el rol
     template = 'user_management/edit_user.html'
     if request.user.role and request.user.role.name == 'superadmin':
         template = 'user_management/superadmin_edit_user.html'
-    
+
+    # Renderizar vista de edición con datos actuales
     return render(request, template, {
         'user_to_edit': user_to_edit,
+        'is_superadmin': request.user.role.name == 'superadmin',  # Para mostrar los checks en el template
     })
+
 
 
 @login_required
@@ -360,8 +468,16 @@ def superadmin_dashboard(request):
     Solo muestra acceso al módulo de gestión de usuarios.
     """
     # Verificar si el usuario es superAdmin
-    if not request.user.role or request.user.role.name != "superadmin":
-        return redirect('dashboard')  # Redirigir a dashboard normal si no es superAdmin
+    user = request.user
+    role_name = getattr(getattr(user, "role", None), "name", None)
+
+    # Solo bloqueamos si NO es superadmin ni superusuario
+    if not (user.is_superuser or role_name == "superadmin"):
+        return redirect('dashboard')
+
+    
+    #if not request.user.role or request.user.role.name != "superadmin":
+     #   return redirect('dashboard')  # Redirigir a dashboard normal si no es superAdmin
     
     # Obtener estadísticas básicas de usuarios
     total_users = User.objects.count()

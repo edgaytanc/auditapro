@@ -36,8 +36,6 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
 
     # Procesar reemplazos normales en todas las hojas
     for sheet in workbook.worksheets:
-        print(f"\n Procesando reemplazos en hoja: {sheet.title}")
-
         # Procesar reemplazos normales usando tables_config
         patrones_exactos = tables_config.get('patrones_exactos', {})
         patrones_regex = tables_config.get('patrones_regex', {})

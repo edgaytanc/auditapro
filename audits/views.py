@@ -90,6 +90,7 @@ def create_audit(req):
     audit_fecha_inicio = req.POST.get("audit_fechaInit")
     audit_fecha_final = req.POST.get("audit_fechaEnd")
     audit_financial = 'audit_financial' in req.POST
+    activa_revisoria = 'activa_revisoria' in req.POST
     audit_moneda = req.POST.get("audit_moneda")
     
     # Si el usuario es de modalidad Individual, asignar la auditoría automáticamente a él mismo
@@ -106,6 +107,7 @@ def create_audit(req):
             audit_fecha_inicio,
             audit_fecha_final,
             audit_financial,
+            activa_revisoria,
             audit_moneda,
             audit_assigned_users_ids
         )
@@ -191,9 +193,11 @@ def manage_audit(req, audit_id):
     audit_title = req.POST.get("audit_title")
     audit_description = req.POST.get("audit_description")
     audit_company = req.POST.get("audit_company")
+    activa_revisoria = 'activa_revisoria' in req.POST
+    audit_financial = 'audit_financial' in req.POST
     try:
         update_audit(
-            audit_id, audit_title, audit_description, audit_company, req.user.id
+            audit_id, audit_title, audit_description, audit_company, activa_revisoria, audit_financial, req.user.id
         )
         messages.success(req, "Auditoria modificada exitosamente.")
         return redirect("manage_audit", audit_id)

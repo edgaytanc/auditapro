@@ -1,0 +1,227 @@
+<!-- Modal para cargar marcas de auditoría -->
+<div id="uploadAuditMarksModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 700px;">
+        <span class="close" onclick="closeAuditMarksModal()">&times;</span>
+
+        <div class="modal-header">Cargar Marcas de Auditoría</div>
+
+        <div class="modal-body">
+            <!-- Sección de descarga de plantilla -->
+            <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                <h6 style="color: #0c5460; margin-top: 0;">📥 ¿Primera vez? Descarga la plantilla</h6>
+                <p style="margin-bottom: 10px; color: #0c5460;">
+                    Descarga la plantilla MODELO con más de 100 marcas de auditoría pre-definidas.
+                </p>
+                <a href="{% url 'download_audit_mark_template' %}"
+                   class="download-button"
+                   style="display: inline-block; padding: 8px 16px; text-decoration: none;">
+                    📄 Descargar Plantilla MODELO (Excel)
+                </a>
+                <small style="display: block; margin-top: 8px; color: #0c5460;">
+                    Incluye: 3 columnas (Símbolo, Descripción, Papel de Trabajo)
+                </small>
+            </div>
+
+            <!-- ADVERTENCIA IMPORTANTE: MAYÚSCULAS -->
+            <div style="background-color: #fff3cd; border: 2px solid #ffc107; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                <h6 style="color: #856404; margin-top: 0;">
+                    ⚠️ IMPORTANTE: Papel de Trabajo en MAYÚSCULAS
+                </h6>
+                <p style="margin-bottom: 10px; color: #856404; font-weight: bold;">
+                    Los nombres en la columna "Papel de Trabajo" DEBEN escribirse en MAYÚSCULAS para que el sistema los reconozca.
+                </p>
+                <div style="margin-left: 20px; margin-bottom: 10px;">
+                    <p style="margin: 5px 0; color: #155724;">
+                        ✅ <strong>CORRECTO:</strong> <code style="background: #d4edda; padding: 2px 6px; border-radius: 3px;">SUMARIA CAJAS Y BANCOS</code>
+                    </p>
+                    <p style="margin: 5px 0; color: #721c24;">
+                        ❌ <strong>INCORRECTO:</strong> <code style="background: #f8d7da; padding: 2px 6px; border-radius: 3px;">sumaria cajas y bancos</code>
+                    </p>
+                </div>
+                <small style="display: block; color: #856404; font-style: italic;">
+                    Ejemplo: Si su plantilla se llama "2 SUMARIA CAJAS Y BANCOS.xlsx", escriba exactamente "SUMARIA CAJAS Y BANCOS" en la columna.
+                </small>
+            </div>
+
+            <!-- Leyenda de colores -->
+            <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                <h6 style="margin-top: 0;">🎨 Código de Colores</h6>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 20px; height: 20px; background-color: #C6EFCE; border: 1px solid #999;"></div>
+                        <span><strong>Verde:</strong> Importar</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 20px; height: 20px; background-color: #FFFFFF; border: 1px solid #999;"></div>
+                        <span><strong>Blanco:</strong> Omitir</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 20px; height: 20px; background-color: #FFF4CE; border: 1px solid #999;"></div>
+                        <span><strong>Amarillo:</strong> Ejemplos</span>
+                    </div>
+                </div>
+                <small style="display: block; margin-top: 10px; color: #6c757d;">
+                    Solo las filas con fondo verde se importarán al sistema.
+                </small>
+            </div>
+
+            <!-- Formulario de carga de archivo -->
+            <form id="uploadAuditMarksForm" enctype="multipart/form-data" onsubmit="submitAuditMarks(event)">
+                {% csrf_token %}
+
+                <div style="margin-bottom: 15px;">
+                    <label for="excelFile" style="display: block; margin-bottom: 5px; font-weight: bold;">
+                        Archivo Excel con Marcas
+                    </label>
+                    <input type="file"
+                           id="excelFile"
+                           name="excel_file"
+                           accept=".xlsx,.xls"
+                           required
+                           style="width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px;">
+                    <small style="display: block; margin-top: 5px; color: #6c757d;">
+                        Formato: .xlsx o .xls | Tamaño máximo: 5MB
+                    </small>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox"
+                               id="replaceExisting"
+                               name="replace_existing"
+                               checked
+                               style="width: 18px; height: 18px;">
+                        <span>Reemplazar todas las marcas existentes de esta auditoría</span>
+                    </label>
+                    <small style="display: block; margin-top: 5px; margin-left: 26px; color: #6c757d;">
+                        Si desmarca esto, las nuevas marcas se agregarán a las existentes
+                    </small>
+                </div>
+            </form>
+
+            <!-- Barra de progreso -->
+            <div id="uploadProgress" style="display: none; margin-top: 15px;">
+                <div style="background-color: #e9ecef; border-radius: 4px; overflow: hidden; height: 30px;">
+                    <div style="background-color: #007bff; width: 100%; height: 100%; animation: progress 1.5s ease-in-out infinite;"></div>
+                </div>
+                <p style="text-align: center; margin-top: 10px; color: #007bff;">Procesando archivo...</p>
+            </div>
+
+            <!-- Resultado de carga -->
+            <div id="uploadResult" style="display: none; margin-top: 15px;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="download-button" style="background-color: grey;" onclick="closeAuditMarksModal()">
+                Cancelar
+            </button>
+            <button type="button" class="download-button" id="uploadButton" onclick="document.getElementById('uploadAuditMarksForm').requestSubmit()">
+                Cargar Marcas
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes progress {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+</style>
+
+<script>
+function openAuditMarksModal() {
+    document.getElementById('uploadAuditMarksModal').style.display = 'block';
+    document.getElementById('uploadResult').style.display = 'none';
+    document.getElementById('uploadProgress').style.display = 'none';
+}
+
+function closeAuditMarksModal() {
+    document.getElementById('uploadAuditMarksModal').style.display = 'none';
+    document.getElementById('uploadAuditMarksForm').reset();
+}
+
+function submitAuditMarks(event) {
+    event.preventDefault();
+
+    const form = document.getElementById('uploadAuditMarksForm');
+    const formData = new FormData(form);
+    const auditId = window.AUDIT_CTX.audit_id;
+    const uploadButton = document.getElementById('uploadButton');
+
+    // Mostrar progreso
+    document.getElementById('uploadProgress').style.display = 'block';
+    document.getElementById('uploadResult').style.display = 'none';
+    uploadButton.disabled = true;
+
+    fetch(`/auditoria/audit/${auditId}/upload-marks/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('uploadProgress').style.display = 'none';
+        const resultDiv = document.getElementById('uploadResult');
+
+        if (data.success) {
+            resultDiv.style.cssText = 'background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 4px;';
+            resultDiv.innerHTML = `
+                <h6 style="color: #155724; margin-top: 0;">✅ ¡Importación Exitosa!</h6>
+                <hr style="border-top: 1px solid #c3e6cb;">
+                <p style="margin: 5px 0; color: #155724;">✅ <strong>Importadas:</strong> ${data.marks_imported} marcas</p>
+                <p style="margin: 5px 0; color: #155724;">⚪ <strong>Omitidas (blancas):</strong> ${data.marks_skipped_white}</p>
+                <p style="margin: 5px 0; color: #155724;">🟡 <strong>Omitidas (ejemplos):</strong> ${data.marks_skipped_yellow}</p>
+                <p style="margin: 5px 0; color: #155724;">❌ <strong>Omitidas (inválidas):</strong> ${data.marks_skipped_invalid}</p>
+            `;
+
+            if (data.errors && data.errors.length > 0) {
+                resultDiv.innerHTML += `
+                    <hr style="border-top: 1px solid #c3e6cb; margin: 10px 0;">
+                    <p style="margin: 5px 0; color: #155724;"><strong>Advertencias:</strong></p>
+                    <ul style="margin: 5px 0; padding-left: 20px; color: #155724;">
+                        ${data.errors.map(err => `<li>${err}</li>`).join('')}
+                    </ul>
+                `;
+            }
+
+            // Cerrar modal y recargar después de 3 segundos
+            setTimeout(() => {
+                closeAuditMarksModal();
+                location.reload();
+            }, 3000);
+        } else {
+            resultDiv.style.cssText = 'background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px;';
+            resultDiv.innerHTML = `
+                <h6 style="color: #721c24; margin-top: 0;">❌ Error en la Importación</h6>
+                <p style="margin: 0; color: #721c24;">${data.error || 'Error desconocido'}</p>
+            `;
+        }
+
+        resultDiv.style.display = 'block';
+        uploadButton.disabled = false;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('uploadProgress').style.display = 'none';
+        const resultDiv = document.getElementById('uploadResult');
+        resultDiv.style.cssText = 'background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 4px;';
+        resultDiv.innerHTML = `
+            <h6 style="color: #721c24; margin-top: 0;">❌ Error de Conexión</h6>
+            <p style="margin: 0; color: #721c24;">${error.message}</p>
+        `;
+        resultDiv.style.display = 'block';
+        uploadButton.disabled = false;
+    });
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modal = document.getElementById('uploadAuditMarksModal');
+    if (event.target == modal) {
+        closeAuditMarksModal();
+    }
+}
+</script>

@@ -9,7 +9,7 @@ from tools.forms import (
 from tools.models import (
     Activity,
     ActivityTotalDaysPerMonth,
-    AuditMarks,
+    # REMOVED: AuditMarks (deprecated)
     Country,
     CurrencyType,
     CurrentStatus,
@@ -168,7 +168,7 @@ admin.site.register(SummaryHoursWorked, SummaryHoursWorkedAdmin)
 admin.site.register(WorkingPapersStatus, WorkingPapersStatusesAdmin)
 admin.site.register(CurrentStatus)
 admin.site.register(Months)
-admin.site.register(AuditMarks)
+# REMOVED: admin.site.register(AuditMarks) - deprecated
 admin.site.register(Country)
 admin.site.register(Activity)
 admin.site.register(ActivityTotalDaysPerMonth)

@@ -91,6 +91,45 @@ Editar Usuario
                         </div>
                     </div>
                 </div>
+
+                {# 🔹 BLOQUE PARA MARCAS ESPECIALES — Solo visible para el superadmin #}
+                {% if is_superadmin %}
+                <div class="mt-4 mb-4 d-flex flex-column flex-md-row gap-3 align-items-start align-items-md-center">
+                    <div class="form-check m-0">
+                        <input 
+                            type="checkbox" 
+                            class="form-check-input" 
+                            id="id_socio" 
+                            name="socio"
+                            {% if user_to_edit.socio %}checked{% endif %}
+                        >
+                        <label class="form-check-label fw-semibold" for="id_socio">
+                            Marcar como socio
+                        </label>
+                        <p class="text-muted mb-0 ms-1" style="font-size: 0.9rem;">
+                            Con privilegios de creación de usuarios
+                        </p>
+                    </div>
+
+                    {# 🔹 NUEVO: marca Revisor Fiscal #}
+                    <div class="form-check m-0">
+                        <input 
+                            type="checkbox" 
+                            class="form-check-input" 
+                            id="id_revisor_fiscal" 
+                            name="revisor_fiscal"
+                            {% if user_to_edit.revisor_fiscal %}checked{% endif %}
+                        >
+                        <label class="form-check-label fw-semibold" for="id_revisor_fiscal">
+                            Marcar como Revisor Fiscal
+                        </label>
+                        <p class="text-muted mb-0 ms-1" style="font-size: 0.9rem;">
+                            Acceso al módulo de Revisoría Fiscal
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+                {# 🔹 FIN DEL BLOQUE #}
                 
                 <div class="mt-4">
                     <button type="submit" class="btn btn-primary">Guardar Cambios</button>

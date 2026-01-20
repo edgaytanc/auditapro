@@ -2,6 +2,10 @@ from typing import Iterable
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 import uuid
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+
 
 
 class Roles(models.Model):
@@ -26,10 +30,8 @@ class User(AbstractUser):
     
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
-
     signature = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     
-    # Campo para identificar la modalidad (individual o grupal)
     modalidad = models.CharField(
         max_length=1,
         choices=MODALIDAD_CHOICES,
@@ -37,14 +39,19 @@ class User(AbstractUser):
         help_text="Indica si el usuario pertenece a modalidad individual (I), grupal (G) o es superadmin (S)"
     )
     
-    # Campo para identificar el plan específico (letra)
     plan = models.CharField(
         max_length=2,  
         default='M',
         help_text="Letra que identifica el plan específico (M: mensual, NT: no tiene plan, etc.)"
     )
     
-    # Relación con el administrador (para usuarios en modalidad grupal)
+        #  Campo que indica si el Jefe de Auditoría es socio
+    socio = models.BooleanField(
+        default=False,
+        help_text="Indica si el Jefe de Auditoría tiene privilegios de socio para crear usuarios."
+    )
+
+    
     administrador = models.ForeignKey(
         'self',
         related_name='auditores',
@@ -60,6 +67,18 @@ class User(AbstractUser):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
+    )
+
+    # Nuevo campo, indica si un jefe de auditoría es “Socio”
+    socio = models.BooleanField(
+        default=False,
+        help_text="Define si el Jefe de Auditoría tiene privilegios de socio (puede crear usuarios)."
+    )
+    
+    # Nuevo campo, indica si un cliente puede entrar al modulo de revisoria fiscal
+    revisor_fiscal = models.BooleanField(
+        default=False,
+        help_text="Indica si el usuario tiene acceso al módulo de Revisoría Fiscal."
     )
 
     is_deleted = models.BooleanField(default=False)
@@ -78,64 +97,77 @@ class User(AbstractUser):
     
     def is_admin(self):
         """Verifica si el usuario es un administrador."""
-        return self.role.name == "audit_manager"
+        return self.role and self.role.name == "audit_manager"
     
     def get_auditores(self):
         """Obtiene todos los auditores asociados a este administrador."""
         if not self.is_admin():
             return User.objects.none()
-        
         return self.auditores.all()
 
     def deactivate_user(self, deactivation_date=None):
         """
         Da de baja a un usuario y a sus auditores asociados si es un administrador en modalidad grupal.
-        
-        Args:
-            deactivation_date: Fecha y hora de la baja. Si es None, se usa la fecha y hora actual.
         """
         from django.utils import timezone
         
         if deactivation_date is None:
             deactivation_date = timezone.now()
         
-        # Marcar como eliminado
         self.is_deleted = True
         self.deleted_at = deactivation_date
         self.save()
         
-        # Si es un administrador en modalidad grupal, dar de baja a todos sus auditores
         if self.is_admin() and self.modalidad == 'G':
-            auditores = self.get_auditores()
-            for auditor in auditores:
-                if not auditor.is_deleted:  # Evitar procesamiento redundante
+            for auditor in self.get_auditores():
+                if not auditor.is_deleted:
                     auditor.is_deleted = True
                     auditor.deleted_at = deactivation_date
                     auditor.save()
-        
         return True
     
     def reactivate_user(self):
-        """
-        Reactiva a un usuario y a sus auditores asociados si es un administrador en modalidad grupal.
-        
-        Returns:
-            int: Número de auditores reactivados
-        """
-        # Marcar como activo
+        """Reactiva un usuario y sus auditores si aplica."""
         self.is_deleted = False
         self.deleted_at = None
         self.save()
         
-        # Si es un administrador en modalidad grupal, reactivar a todos sus auditores
         auditores_reactivados = 0
         if self.is_admin() and self.modalidad == 'G':
-            auditores = self.get_auditores()
-            for auditor in auditores:
-                if auditor.is_deleted:  # Solo reactivar auditores inactivos
+            for auditor in self.get_auditores():
+                if auditor.is_deleted:
                     auditor.is_deleted = False
                     auditor.deleted_at = None
                     auditor.save()
                     auditores_reactivados += 1
-        
         return auditores_reactivados
+
+    #  NUEVO MÉTODO: determina si puede crear usuarios
+    @property
+    def can_create_users(self):
+        """
+        Retorna True si el usuario puede crear otros usuarios.
+        - Superadmin siempre puede.
+        - Jefe de Auditoría solo si tiene socio=True.
+        """
+        return self.is_superuser or (self.role and self.role.name == 'audit_manager' and self.socio)
+
+class RegistroInvitacion(models.Model):
+    """
+    Invitaciones que envía un socio para que otra persona se autoregistre.
+    El token se usa para construir el enlace de un solo uso.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField()
+    socio = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="invitaciones_enviadas",
+    )
+    token = models.CharField(max_length=64, unique=True)
+    usado = models.BooleanField(default=False)
+    creado_en = models.DateTimeField(default=timezone.now)
+    usado_en = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Invitación a {self.email} (usado={self.usado})"

@@ -20,13 +20,18 @@ from audits.utils import get_assigned_audits, get_selected_audit
 from tools.constants import AUDIT_TIME_SUMMARY_TOOLS, REPORT_ERROR_INSTANCES
 from tools.utils import get_table, get_table_to_pdf
 from users.decorators import superuser_required
-from weasyprint import HTML
+
+# Import WeasyPrint only when needed to avoid startup errors if dependencies are missing
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except (ImportError, OSError):
+    WEASYPRINT_AVAILABLE = False
+    HTML = None
 from .tables import (
     ActivitiesTable,
-    AuditMarksTable,
     AuditTimeSummaryTable,
     BaseActivitiesTable,
-    BaseAuditMarksTable,
     BaseAuditTimeSummaryTable,
     BaseCurrencyTypesTable,
     BaseSummaryHoursWorkedTable,
@@ -38,7 +43,6 @@ from .tables import (
 from .models import (
     Activity,
     ActivityTotalDaysPerMonth,
-    AuditMarks,
     AuditTimeSummary,
     Country,
     CurrencyType,
@@ -46,7 +50,6 @@ from .models import (
     SummaryHoursWorked,
     WorkingPapersStatus,
     CurrentStatus,
-    Months,
 )
 from .services import (
     create_audit_time_summary as create_audit_time_summary_func,
@@ -60,9 +63,6 @@ from .services import (
     update_audit_time_summary as update_audit_time_summary_func,
     update_summary_hours_worked as update_summary_hours_worked_func,
     update_status_of_work_papers as update_status_of_work_papers_func,
-    create_audit_mark as create_audit_mark_func,
-    update_audit_mark as update_audit_mark_func,
-    delete_audit_mark as delete_audit_mark_func,
     update_currency_type as update_currency_type_func,
     delete_currency_type as delete_currency_type_func,
     create_currency_type as create_currency_type_func,
@@ -70,6 +70,37 @@ from .services import (
     update_activity as update_activity_func,
     delete_activity as delete_activity_func,
 )
+
+
+# Helper function to generate PDF with proper error handling
+def generate_pdf_response(html_content: str, base_url: str, filename: str) -> HttpResponse:
+    """
+    Generate a PDF response from HTML content.
+    If WeasyPrint is not available, returns an error response.
+    """
+    if not WEASYPRINT_AVAILABLE:
+        return HttpResponse(
+            "PDF generation is not available. WeasyPrint dependencies are missing. "
+            "Please install GTK libraries for Windows or contact your administrator.",
+            status=503,
+            content_type="text/plain"
+        )
+
+    try:
+        res = HttpResponse(content_type="application/pdf")
+        res["Content-Disposition"] = f"attachment; filename={filename}"
+
+        html = HTML(string=html_content, base_url=base_url)
+        pdf_result = html.write_pdf()
+
+        res.write(pdf_result)
+        return res
+    except Exception as e:
+        return HttpResponse(
+            f"Error generating PDF: {str(e)}",
+            status=500,
+            content_type="text/plain"
+        )
 
 
 @login_required
@@ -137,12 +168,7 @@ def audit_time_summary(req: HttpRequest, id: int):
 
 @login_required
 @superuser_required
-def audit_mark(req: HttpRequest, id: int):
-    if req.method == "GET":
-        return audit_mark_page(req, id)
-    if req.method == "POST":
-        return update_audit_mark(req, id)
-
+# REMOVED: audit_mark() router function - tools.AuditMarks system deprecated
 
 @login_required
 @superuser_required
@@ -188,12 +214,7 @@ def audit_time_summary_create(req: HttpRequest):
 
 @login_required
 # @superuser_required
-def audit_mark_create(req: HttpRequest):
-    if req.method == "GET":
-        return create_audit_mark_page(req)
-    elif req.method == "POST":
-        return create_audit_mark(req)
-
+# REMOVED: audit_mark_create() router function - tools.AuditMarks system deprecated
 
 @login_required
 # @superuser_required
@@ -272,34 +293,7 @@ def create_audit_time_summary(req):
 
 @login_required
 # @superuser_required
-def create_audit_mark(req: HttpRequest):
-    name = req.POST.get("name")
-    description = req.POST.get("description")
-    image = req.POST.get("image")
-
-    try:
-        create_audit_mark_func(name=name, description=description, image=image)
-        messages.success(req, "Marca de Auditoría creada exitosamente.")
-        return redirect("audit_marks")
-
-    except ValueError as e:
-        messages.error(
-            req,
-            "Alguno de los valores ingresados es inválido, por favor, ingrese los valores correctamente.",
-        )
-        return redirect("create_audit_mark")
-
-    except Exception as e:
-        error_message = str(e)
-        if isinstance(e, REPORT_ERROR_INSTANCES):
-            messages.error(req, error_message)
-            return redirect("create_audit_mark")
-        else:
-            messages.error(
-                req, "Ocurrió un error inesperado, por favor inténtelo de nuevo."
-            )
-            return redirect("create_audit_mark")
-
+# REMOVED: create_audit_mark() function (28 lines) - tools.AuditMarks system deprecated
 
 @login_required
 # @superuser_required
@@ -502,36 +496,7 @@ def update_audit_time_summary(req: HttpRequest, id: int):
             return audit_time_summary_page(req, id)
 
 
-@login_required
-# @superuser_required
-def update_audit_mark(req: HttpRequest, id: int):
-    audit_mark_to_update = get_object_or_404(AuditMarks, pk=id)
-    name = req.POST.get("name")
-    description = req.POST.get("description")
-    image = req.POST.get("image")
-
-    try:
-        update_audit_mark_func(audit_mark_to_update, name, description, image)
-        messages.success(req, "Marca de Auditoría actualizada exitosamente.")
-        return audit_marks_page(req)
-    except ValueError as e:
-        messages.error(
-            req,
-            "Alguno de los valores ingresados es inválido, por favor, ingrese los valores correctamente.",
-        )
-        return audit_mark_page(req, id)
-
-    except Exception as e:
-        error_message = str(e)
-        if isinstance(e, REPORT_ERROR_INSTANCES):
-            messages.error(req, error_message)
-            return audit_mark_page(req, id)
-        else:
-            messages.error(
-                req, "Ocurrió un error inesperado, por favor inténtelo de nuevo."
-            )
-            return audit_mark_page(req, id)
-
+# REMOVED: update_audit_mark() function (28 lines) - tools.AuditMarks system deprecated
 
 @login_required
 # @superuser_required
@@ -782,31 +747,7 @@ def delete_audit_time_summary(req: HttpRequest, id: int):
 
 @login_required
 # @superuser_required
-def delete_audit_mark(req: HttpRequest, id: int):
-    audit_mark_to_delete = get_object_or_404(AuditMarks, pk=id)
-    try:
-        delete_audit_mark_func(audit_mark_to_delete)
-        messages.success(req, "Marca de Auditoría eliminada exitosamente.")
-        return redirect("audit_marks")
-
-    except ValueError as e:
-        messages.error(
-            req,
-            "Alguno de los valores ingresados es inválido, por favor, ingrese los valores correctamente.",
-        )
-        return redirect("audit_marks")
-
-    except Exception as e:
-        error_message = str(e)
-        if isinstance(e, REPORT_ERROR_INSTANCES):
-            messages.error(req, error_message)
-            return redirect("audit_marks")
-        else:
-            messages.error(
-                req, "Ocurrió un error inesperado, por favor inténtelo de nuevo."
-            )
-            return redirect("audit_marks")
-
+# REMOVED: delete_audit_mark() function (25 lines) - tools.AuditMarks system deprecated
 
 @login_required
 # @superuser_required
@@ -950,15 +891,8 @@ def audit_time_summary_table_page(req: HttpRequest):
         template = get_template("tools/audit-time-summaries_pdf.html")
         html_content = template.render(data)
 
-        res = HttpResponse(content_type="application/pdf")
         filename = f"resumen_de_tiempo_de_auditorías.pdf"
-        res["Content-Disposition"] = f"attachment; filename={filename}"
-
-        html = HTML(string=html_content, base_url=req.build_absolute_uri("/"))
-        pdf_result = html.write_pdf()
-
-        res.write(pdf_result)
-        return res
+        return generate_pdf_response(html_content, req.build_absolute_uri("/"), filename)
     else:
         # Aquí se tienen que pasar la request, el texto que ingresó el usuario para buscar, el modelo y el modelo de la tabla, luego se pasa una tupla los elementos que servirán para filtrarse, tienen que ser campos del primer modelo y, en caso de que sean relaciones, se tienen que pasar como tuplas adentro de la tupla con el campo de relación y el campo de la relación, en caso de que ese campo de relación que se busca también tenga como campo que se busca una relación solo se pone __ para indicar el campo. Luego se pasa la ruta para eliminar una fila, luego la ruta para ver los detalles de una fila, luego se pasa la auditoría seleccionada y de último se pasa el campo de confirmación que tendrá que ingresar el usuario a la hora de eliminar una fila, para asegurar. Opcionalmente se puede pasar un campo de tipo Literal['days', 'seconds', 'minutes', 'hours'] el cual servirá para mostrar el campo fecha o tiempo (si es el que el modelo de tabla lo tiene).
         table = get_table(
@@ -982,46 +916,7 @@ def audit_time_summary_table_page(req: HttpRequest):
     return render(req, "tools/audit-time-summary.html", data)
 
 
-@login_required
-def audit_marks_page(req: HttpRequest):
-    search_query = req.GET.get("q", "")
-    data = {"request": req}
-    if req.GET.get("generate_pdf") == "true":
-        table = get_table_to_pdf(
-            req,
-            AuditMarks,
-            BaseAuditMarksTable,
-        )
-
-        data["table"] = table
-
-        # Generamos el PDF
-        template = get_template("tools/audit-marks_pdf.html")
-        html_content = template.render(data)
-
-        res = HttpResponse(content_type="application/pdf")
-        filename = f"marcas-de-auditoría.pdf"
-        res["Content-Disposition"] = f"attachment; filename={filename}"
-
-        html = HTML(string=html_content, base_url=req.build_absolute_uri("/"))
-        pdf_result = html.write_pdf()
-
-        res.write(pdf_result)
-        return res
-
-    table = get_table(
-        req=req,
-        search_query=search_query,
-        Model=AuditMarks,
-        TableClass=AuditMarksTable if req.user.is_superuser else BaseAuditMarksTable,
-        filters=("name",),
-        confirmation_field="name" if req.user.is_superuser else None,
-        delete_url="delete_audit_mark" if req.user.is_superuser else None,
-        edit_url="audit_mark" if req.user.is_superuser else None,
-    )
-    context = {"table": table}
-    return render(req, "tools/audit-marks-page.html", context)
-
+# REMOVED: audit_marks_page() function (32 lines) - tools.AuditMarks system deprecated
 
 @login_required
 def currency_types_page(req: HttpRequest):
@@ -1040,15 +935,8 @@ def currency_types_page(req: HttpRequest):
         template = get_template("tools/currency-types_pdf.html")
         html_content = template.render(data)
 
-        res = HttpResponse(content_type="application/pdf")
         filename = f"tipos-de-moneda.pdf"
-        res["Content-Disposition"] = f"attachment; filename={filename}"
-
-        html = HTML(string=html_content, base_url=req.build_absolute_uri("/"))
-        pdf_result = html.write_pdf()
-
-        res.write(pdf_result)
-        return res
+        return generate_pdf_response(html_content, req.build_absolute_uri("/"), filename)
 
     table = get_table(
         req=req,
@@ -1085,15 +973,8 @@ def activities_page(req: HttpRequest):
         template = get_template("tools/activities_pdf.html")
         html_content = template.render(context)
 
-        res = HttpResponse(content_type="application/pdf")
         filename = f"activades.pdf"
-        res["Content-Disposition"] = f"attachment; filename={filename}"
-
-        html = HTML(string=html_content, base_url=req.build_absolute_uri("/"))
-        pdf_result = html.write_pdf()
-
-        res.write(pdf_result)
-        return res
+        return generate_pdf_response(html_content, req.build_absolute_uri("/"), filename)
 
     table = get_table(
         req=req,
@@ -1139,15 +1020,8 @@ def summary_hours_worked_table_page(req: HttpRequest):
         template = get_template("tools/summaries-hours-worked_pdf.html")
         html_content = template.render(data)
 
-        res = HttpResponse(content_type="application/pdf")
         filename = f"resumen_de_tiempo_de_auditorías.pdf"
-        res["Content-Disposition"] = f"attachment; filename={filename}"
-
-        html = HTML(string=html_content, base_url=req.build_absolute_uri("/"))
-        pdf_result = html.write_pdf()
-
-        res.write(pdf_result)
-        return res
+        return generate_pdf_response(html_content, req.build_absolute_uri("/"), filename)
     else:
         table = get_table(
             req=req,
@@ -1187,15 +1061,8 @@ def status_of_work_papers_table_page(req: HttpRequest):
         template = get_template("tools/summaries-hours-worked_pdf.html")
         html_content = template.render(data)
 
-        res = HttpResponse(content_type="application/pdf")
         filename = f"resumen_de_tiempo_de_auditorías.pdf"
-        res["Content-Disposition"] = f"attachment; filename={filename}"
-
-        html = HTML(string=html_content, base_url=req.build_absolute_uri("/"))
-        pdf_result = html.write_pdf()
-
-        res.write(pdf_result)
-        return res
+        return generate_pdf_response(html_content, req.build_absolute_uri("/"), filename)
     else:
         table = get_table(
             req=req,
@@ -1217,9 +1084,7 @@ def status_of_work_papers_table_page(req: HttpRequest):
 # Vistas para crear
 @login_required
 # @superuser_required
-def create_audit_mark_page(req: HttpRequest):
-    return render(req, "tools/create-audit-mark.html")
-
+# REMOVED: create_audit_mark_page() function (2 lines) - tools.AuditMarks system deprecated
 
 @login_required
 # @superuser_required
@@ -1299,16 +1164,8 @@ def audit_time_summary_page(req: HttpRequest, id: int):
         template = get_template("tools/audit-time-summary_pdf.html")
         html_content = template.render(data)
 
-        res = HttpResponse(content_type="application/pdf")
         filename = f"reporte_de_resumen_de_tiempo_de_auditoría-nombramiento_no_{audit_time_summary.appointment_number}.pdf"
-        res["Content-Disposition"] = f"attachment; filename={filename}"
-
-        # Convertimos el contenido HTML a PDF
-        html = HTML(string=html_content, base_url=req.build_absolute_uri("/"))
-        pdf_result = html.write_pdf()  # Corregido el typo aquí
-
-        res.write(pdf_result)
-        return res
+        return generate_pdf_response(html_content, req.build_absolute_uri("/"), filename)
 
     data["progress"] = int(
         (audit_time_summary.worked_days / audit_time_summary.scheduled_days) * 100
@@ -1316,13 +1173,7 @@ def audit_time_summary_page(req: HttpRequest, id: int):
     return render(req, "tools/audit-time-summary-page.html", data)
 
 
-@login_required
-@superuser_required
-def audit_mark_page(req: HttpRequest, id: int):
-    audit_mark = get_object_or_404(AuditMarks, pk=id)
-    context = {"audit_mark": audit_mark}
-    return render(req, "tools/audit-mark-page.html", context)
-
+# REMOVED: audit_mark_page() function (4 lines) - tools.AuditMarks system deprecated
 
 @login_required
 @superuser_required
@@ -1366,16 +1217,8 @@ def status_of_work_papers_page(req: HttpRequest, id: int):
         template = get_template("tools/status-of-work-papers_pdf.html")
         html_content = template.render(data)
 
-        res = HttpResponse(content_type="application/pdf")
         filename = f"reporte_de_estado_de_papeles_de_trabajo-referencia_{status_of_work_papers.reference}.pdf"
-        res["Content-Disposition"] = f"attachment; filename={filename}"
-
-        # Convertimos el contenido HTML a PDF
-        html = HTML(string=html_content, base_url=req.build_absolute_uri("/"))
-        pdf_result = html.write_pdf()  # Corregido el typo aquí
-
-        res.write(pdf_result)
-        return res
+        return generate_pdf_response(html_content, req.build_absolute_uri("/"), filename)
 
     time_line = get_working_papers_time_line_dic(
         status_of_work_papers.current_status.name
@@ -1400,15 +1243,8 @@ def summary_hours_worked_page(req: HttpRequest, id: int):
         template = get_template("tools/summary-hours-worked_pdf.html")
         html_content = template.render(data)
 
-        res = HttpResponse(content_type="application/pdf")
         filename = f"reporte_de_resumen_de_horas_trabajadas_del_mes-{summary_hours_worked.month.name.lower()}.pdf"
-        res["Content-Disposition"] = f"attachment; filename={filename}"
-
-        html = HTML(string=html_content, base_url=req.build_absolute_uri("/"))
-        pdf_result = html.write_pdf()
-
-        res.write(pdf_result)
-        return res
+        return generate_pdf_response(html_content, req.build_absolute_uri("/"), filename)
 
     data["progress"] = int(
         (

@@ -183,14 +183,8 @@ class AuditTimeSummary(models.Model):
         super().save(*args, **kwargs)
 
 
-class AuditMarks(models.Model):
-    image = models.CharField(max_length=255)
-    description = models.TextField()
-    name = models.CharField(max_length=255)
-
-    def __str__(self):
-        return self.name
-
+# REMOVED: AuditMarks model (7 lines) - deprecated, use auditoria.models.AuditMark instead
+# Database table will be removed in next migration
 
 class Country(models.Model):
     name = models.CharField(max_length=255)

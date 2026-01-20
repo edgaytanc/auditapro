@@ -43,12 +43,7 @@ from .errors import (
     InvalidMonthError,
     InvalidScheduledHoursError,
     InvalidWorkedHoursError,
-    AuditMarkWithThatDescriptionAlredyExits,
-    AuditMarkWithThatImageAlredyExits,
-    AuditMarkWithThatNameAlredyExits,
-    NullDescriptionAuditMarkError,
-    NullImageAuditMarkError,
-    NullNameAuditMarkError,
+    # REMOVED: 6 unused AuditMark exceptions
     CurrencyCodeAlredyAssignedError,
     CurrencyNameAlredyAssignedError,
     InvalidCountryError,
@@ -59,7 +54,7 @@ from .errors import (
 from .models import (
     Activity,
     ActivityTotalDaysPerMonth,
-    AuditMarks,
+    # REMOVED: AuditMarks model (deprecated)
     AuditTimeSummary,
     Country,
     CurrencyType,
@@ -526,75 +521,8 @@ def update_status_of_work_papers(
         raise e
 
 
-def create_audit_mark(name: str, description: str, image: str):
-    try:
-        if not name:
-            raise NullNameAuditMarkError()
-        if not description:
-            raise NullDescriptionAuditMarkError()
-        if not image:
-            raise NullImageAuditMarkError()
-
-        if AuditMarks.objects.filter(name=name).exists():
-            raise AuditMarkWithThatNameAlredyExits()
-
-        if AuditMarks.objects.filter(description=description).exists():
-            raise AuditMarkWithThatDescriptionAlredyExits()
-        if AuditMarks.objects.filter(image=image).exists():
-            raise AuditMarkWithThatImageAlredyExits()
-
-        new_audit_mark = AuditMarks.objects.create(
-            name=name, description=description, image=image
-        )
-        new_audit_mark.save()
-    except Exception as e:
-        raise e
-
-
-def update_audit_mark(
-    audit_mark_to_update: AuditMarks, name: str, description: str, image: str
-):
-    try:
-        if not name:
-            raise NullNameAuditMarkError()
-        if not description:
-            raise NullDescriptionAuditMarkError()
-        if not image:
-            raise NullImageAuditMarkError()
-
-        if (
-            AuditMarks.objects.filter(name=name).exists()
-            and audit_mark_to_update.name != name
-        ):
-            raise AuditMarkWithThatNameAlredyExits()
-
-        if (
-            AuditMarks.objects.filter(description=description).exists()
-            and audit_mark_to_update.description != description
-        ):
-            raise AuditMarkWithThatDescriptionAlredyExits()
-        if (
-            AuditMarks.objects.filter(image=image).exists()
-            and audit_mark_to_update.image != image
-        ):
-            raise AuditMarkWithThatImageAlredyExits()
-
-        audit_mark_to_update.name = name
-        audit_mark_to_update.description = description
-        audit_mark_to_update.image = image
-
-        audit_mark_to_update.save()
-    except Exception as e:
-        raise e
-
-
-def delete_audit_mark(audit_mark_to_delete: AuditMarks):
-    try:
-        audit_mark_to_delete.delete()
-    except AuditMarks.DoesNotExist:
-        raise UserUnauthorized()
-    except Exception as e:
-        raise e
+# REMOVED: 3 unused audit mark service functions (70 lines)
+# tools.AuditMarks system is deprecated - use auditoria.models.AuditMark instead
 
 
 def create_currency_type(name: str, currency: str, code: str, country_id: str):

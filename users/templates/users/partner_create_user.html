@@ -1,0 +1,111 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+{% block title %}
+  Crear Usuario
+{% endblock title %}
+
+{% block content %}
+<main class="text-center min-vw-100 min-vh-100">
+
+   
+    <div class="header-gradient"></div> <!--Tentativo a cambio-->
+        <style>
+        .header-gradient {
+        height: 220px;
+        background: linear-gradient(135deg, #003366 0%, #0072ff 100%);
+        border-bottom-left-radius: 80px;
+        border-bottom-right-radius: 80px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        </style>
+
+
+  <div class="container">
+    <!--Tarjeta centrada -->
+    <div class="card mx-auto shadow-lg border-0 bg-body-tertiary"
+         style="margin-top: -120px; max-width: 720px; border-radius: 15px;">
+      <div class="card-body py-5 px-md-5">
+
+        <!--  Encabezado con logo -->
+        <div class="text-center mb-4">
+          <h2 class="fw-bold text-dark mb-0">AuditaPro</h2>
+          <p class="text-muted mb-4" style="font-size: 0.95rem;">Gestión profesional de auditorías</p>
+        </div>
+
+        <!-- Título del formulario -->
+        <h3 class="fw-semibold mb-4 text-center text-dark">Crear Usuario</h3>
+
+        <!-- FORMULARIO -->
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="row mb-3 text-start">
+            <div class="col-md-6 mb-3 mb-md-0">
+              <label class="form-label fw-medium" for="id_first_name">Nombre:</label>
+              {{ form.first_name }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium" for="id_last_name">Apellido:</label>
+              {{ form.last_name }}
+            </div>
+          </div>
+
+          <div class="mb-3 text-start">
+            <label class="form-label fw-medium" for="id_email">Correo Electrónico:</label>
+            {{ form.email }}
+          </div>
+
+          <div class="row mb-3 text-start">
+            <div class="col-md-6 mb-3 mb-md-0">
+              <label class="form-label fw-medium" for="id_role">Rol:</label>
+              {{ form.role }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-medium" for="id_modalidad">Modalidad:</label>
+              {{ form.modalidad }}
+            </div>
+          </div>
+
+          <div class="mb-4 text-start">
+            <label class="form-label fw-medium" for="id_plan">Plan:</label>
+            {{ form.plan }}
+          </div>
+
+          <!-- BOTONES -->
+          <div class="d-flex flex-column gap-3">
+            <button type="submit" class="btn btn-primary btn-lg w-100" style="background-color: #0055aa; border: none;">
+              Crear Usuario
+            </button>
+
+            <!-- 🔹 NUEVO BOTÓN: Autoregistro -->
+            <a href="{% url 'socio_autoregistro' %}" class="btn btn-outline-primary btn-lg w-100">
+              Enviar enlace de autoregistro
+            </a>
+            <!-- 🔹 FIN NUEVO BOTÓN -->
+
+            <a href="{% url 'logout' %}" class="btn btn-outline-secondary btn-lg w-100">
+              Cerrar sesión
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if messages %}
+  <div class="mb-3">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} text-center" role="alert">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!--  Pie de página -->
+  <div class="text-center mt-4 text-muted small">
+    © {{ now|date:"Y" }} AuditaPro. Todos los derechos reservados.
+  </div>
+</main>
+{% endblock content %}

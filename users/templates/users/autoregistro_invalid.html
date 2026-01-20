@@ -1,0 +1,27 @@
+{% extends "common/base.html" %}
+
+{% block title %}Enlace no disponible{% endblock title %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center py-5">
+          <h3 class="mb-3">Enlace no disponible</h3>
+          {% if messages %}
+            {% for message in messages %}
+              <p class="text-muted mb-1">{{ message }}</p>
+            {% endfor %}
+          {% else %}
+            <p class="text-muted">
+              Este enlace de invitación no es válido, ya fue utilizado o ha expirado.
+            </p>
+          {% endif %}
+          <a href="{% url 'login' %}" class="btn btn-primary mt-3">Ir al inicio de sesión</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}

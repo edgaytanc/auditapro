@@ -5,6 +5,7 @@ Contiene funciones para descargar documentos por carpeta/archivo y por patrón.
 
 import os
 import urllib.parse
+import logging
 from .config import (
     get_object_or_404, HttpResponse, FileResponse, mark_safe,
     Audit, login_required, io,
@@ -12,6 +13,9 @@ from .config import (
     get_file_info_from_pattern
 )
 from .utils import get_template_path, crear_mensaje_error
+from auditoria.services.audit_mark_processor import AuditMarkProcessor
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def download_document(request, audit_id, folder, filename):
@@ -24,23 +28,58 @@ def download_document(request, audit_id, folder, filename):
     # Determinar si es auditoría interna
     is_internal = audit.tipoAuditoria == 'I'
     
-    template_path = get_template_path(folder, filename, is_internal=is_internal)
+    template_path = get_template_path(folder, filename, is_internal=is_internal, audit_type=audit.tipoAuditoria)
     if not template_path or not os.path.exists(template_path):
         return HttpResponse(f'Plantilla no encontrada: {folder}/{filename}', status=404)
     try:
         buffer = io.BytesIO()
         if filename.lower().endswith('.docx'):
+            # Aplicar reemplazos estándar
             doc = modify_document_word(template_path, audit)
+
+            # Aplicar marcas de auditoría (NUEVO)
+            try:
+                processor = AuditMarkProcessor(audit_id, filename)
+                doc = processor.process_word_document(doc)
+            except Exception as e:
+                logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
+                # Continuar con la descarga incluso si las marcas fallan
+
             doc.save(buffer)
             content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         elif filename.lower().endswith('.xlsx'):
+            # Aplicar reemplazos estándar
             wb = modify_document_excel(template_path, audit)
+
+            # Aplicar marcas de auditoría (NUEVO)
+            try:
+                processor = AuditMarkProcessor(audit_id, filename)
+                wb = processor.process_excel_document(wb)
+            except Exception as e:
+                logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
+                # Continuar con la descarga incluso si las marcas fallan
+
+            # Integración Revisoria
+            if getattr(audit, 'activa_revisoria', False) and "CENTRALIZADORA" in filename.upper():
+                try:
+                    from auditoria.revisoria.activo import update_dynamic_excel
+                    # Verificar si existe "Hoja1"
+                    target_sheet = "Hoja1"
+                    if target_sheet in wb.sheetnames:
+                        wb = update_dynamic_excel(wb, target_sheet, audit.id)
+                    else:
+                        logger.warning(f"⚠️ 'Hoja1' no encontrada en {filename}. Hojas: {wb.sheetnames}. Se omite update_dynamic_excel.")
+                except Exception as e:
+                    logger.warning(f"⚠️ Error en update_dynamic_excel (Revisoria): {e}")
+
             wb.save(buffer)
             content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         elif filename.lower().endswith('.xlsm'):
             # modify_document_excel_with_macros devuelve una ruta de archivo, no un objeto workbook
             processed_file_path = modify_document_excel_with_macros(template_path, audit)
             # Leer el contenido del archivo procesado en el buffer
+            # NOTA: Los archivos XLSM NO obtienen marcas de auditoría (demasiado riesgoso para macros)
+            logger.info(f"Archivo XLSM: {filename} - Omitiendo procesamiento de marcas de auditoría")
             with open(processed_file_path, 'rb') as f:
                 buffer.write(f.read())
             buffer.seek(0)
@@ -111,7 +150,7 @@ def download_document_by_pattern(request, audit_id, pattern):
         is_internal = audit.tipoAuditoria == 'I'
         
         # Obtener información del archivo a partir del patrón
-        file_info = get_file_info_from_pattern(pattern, is_internal=is_internal)
+        file_info = get_file_info_from_pattern(pattern, is_internal=is_internal, audit_type=audit.tipoAuditoria)
         
         if not file_info:
             mensaje_error = crear_mensaje_error(
@@ -137,11 +176,31 @@ def download_document_by_pattern(request, audit_id, pattern):
         try:
             buffer = io.BytesIO()
             if filename.lower().endswith('.docx'):
+                # Aplicar reemplazos estándar
                 doc = modify_document_word(template_path, audit)
+
+                # Aplicar marcas de auditoría (NUEVO)
+                try:
+                    processor = AuditMarkProcessor(audit_id, filename)
+                    doc = processor.process_word_document(doc)
+                except Exception as e:
+                    logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
+                    # Continuar con la descarga incluso si las marcas fallan
+
                 doc.save(buffer)
                 content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             elif filename.lower().endswith('.xlsx'):
+                # Aplicar reemplazos estándar
                 wb = modify_document_excel(template_path, audit)
+
+                # Aplicar marcas de auditoría (NUEVO)
+                try:
+                    processor = AuditMarkProcessor(audit_id, filename)
+                    wb = processor.process_excel_document(wb)
+                except Exception as e:
+                    logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
+                    # Continuar con la descarga incluso si las marcas fallan
+
                 wb.save(buffer)
                 content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             else:

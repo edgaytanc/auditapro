@@ -177,35 +177,8 @@ class StartDateAfterEndDateError(Exception):
         )
 
 
-class NullNameAuditMarkError(Exception):
-    def __init__(self):
-        super().__init__("El nombre de la marca no puede estar vacío.")
-
-
-class NullDescriptionAuditMarkError(Exception):
-    def __init__(self):
-        super().__init__("La descripción de la marca no puede estar vacía.")
-
-
-class NullImageAuditMarkError(Exception):
-    def __init__(self):
-        super().__init__("La imagen de la marca no puede estar vacía.")
-
-
-class AuditMarkWithThatNameAlredyExits(Exception):
-    def __init__(self):
-        super().__init__("Ya existe una marca con ese nombre asociado.")
-
-
-class AuditMarkWithThatDescriptionAlredyExits(Exception):
-    def __init__(self):
-        super().__init__("Ya existe una marca con esa descripción asociada.")
-
-
-class AuditMarkWithThatImageAlredyExits(Exception):
-    def __init__(self):
-        super().__init__("Ya existe una marca con esa imagen asociada")
-
+# REMOVED: 6 unused AuditMark exception classes (tools.AuditMarks system is deprecated)
+# The audit mark system was moved to auditoria.models.AuditMark
 
 class InvalidCurrencyCodeError(Exception):
     def __init__(self):

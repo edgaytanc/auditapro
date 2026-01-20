@@ -1,6 +1,7 @@
 from django.urls import path
 from users import views
 from django.contrib.auth import views as auth_views
+from . import views
 
 urlpatterns = [
     path("", views.index_page, name="home"),
@@ -12,6 +13,14 @@ urlpatterns = [
     path("logout/", views.logout, name="logout"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("delete_account/", views.delete_account, name="delete_account"),
+    path('socios/ingreso/', views.login_audit_manager, name='login_audit_manager'),
+    path('socios/crear-usuario/', views.partner_create_user, name='partner_create_user'),
+    path('activate/<uidb64>/<token>/', views.activate_account, name='activate_account'),
+    path('autoregistro/', views.socio_autoregistro, name='socio_autoregistro'),
+    path('autoregistro/registro/<str:token>/', views.autoregistro_registro, name='autoregistro_registro'),
+
+
+
 
     # URLs para restablecer la contraseña
     path('reset_password/', 

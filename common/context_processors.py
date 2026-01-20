@@ -122,6 +122,41 @@ def aside_navbar_processor(req: HttpRequest):
             "url": "manage_auditors",
         })
     
+    # =========================
+    # Bloque del menú Auditorías
+    # =========================
+    collapse_values_auditorias = [
+        {
+            "active": get_is_active_route("auditoria_financiera", req),
+            "name": "Financiera",
+            "type": "anchor",
+            "url": "auditoria_financiera",
+        },
+        {
+            "active": get_is_active_route("auditoria_interna", req),
+            "name": "Interna",
+            "type": "anchor",
+            "url": "auditoria_interna",
+        },
+    ]
+
+    # 🔒 Solo añadir Revisoría Fiscal si el usuario tiene la marca y es jefe de auditoría o auditor
+    user = getattr(req, "user", None)
+    role_name = getattr(getattr(user, "role", None), "name", None)
+
+    if (
+        user
+        and user.is_authenticated
+        and getattr(user, "revisor_fiscal", False)
+        and role_name in ("audit_manager", "auditor")
+    ):
+        collapse_values_auditorias.append({
+            "active": get_is_active_route("auditoria_revisoria", req),
+            "name": "Revisoría Fiscal",
+            "type": "anchor",
+            "url": "auditoria_revisoria",
+        })
+    
     # Continuar con el resto de enlaces
     nav_bar_links.extend([
         {
@@ -173,20 +208,7 @@ def aside_navbar_processor(req: HttpRequest):
             "name": "Auditorías",
             "type": "collapse",
             "url": "auditorias",
-            "collapse_values": [
-                {
-                    "active": get_is_active_route("auditoria_financiera", req),
-                    "name": "Financiera",
-                    "type": "anchor",
-                    "url": "auditoria_financiera",
-                },
-                {
-                    "active": get_is_active_route("auditoria_interna", req),
-                    "name": "Interna",
-                    "type": "anchor",
-                    "url": "auditoria_interna",
-                },
-            ],
+            "collapse_values": collapse_values_auditorias,
         },
     ])
 
