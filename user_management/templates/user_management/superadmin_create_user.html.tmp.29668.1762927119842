@@ -1,0 +1,261 @@
+{% extends "user_management/superadmin-base.html" %}
+
+{% block title %}
+Crear Usuario
+{% endblock title %}
+
+{% block main_content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col d-flex align-items-center gap-3">
+            <span>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 12C17.21 12 19 10.21 19 8C19 5.79 17.21 4 15 4C12.79 4 11 5.79 11 8C11 10.21 12.79 12 15 12ZM15 6C16.1 6 17 6.9 17 8C17 9.1 16.1 10 15 10C13.9 10 13 9.1 13 8C13 6.9 13.9 6 15 6ZM15 14C12.33 14 7 15.34 7 18V20H23V18C23 15.34 17.67 14 15 14ZM9 18C9.22 17.28 12.31 16 15 16C17.7 16 20.8 17.29 21 18H9ZM6 15V12H9V10H6V7H4V10H1V12H4V15H6Z" fill="currentColor"/>
+                </svg>
+            </span>
+            <h1 class="fs-3 fw-semibold m-0">Crear Usuario</h1>
+        </div>
+        <div class="col-auto d-flex align-items-center">
+            <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-1">
+                    <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Ir a Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h3 class="card-title fs-5 fw-semibold">Información del Usuario</h3>
+            <p class="card-text">Complete el formulario para crear un nuevo usuario.</p>
+            
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">Nombre de Usuario</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.username.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Correo Electrónico</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.email.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label">Nombre</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.first_name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label">Apellido</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.last_name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">Contraseña</label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.password.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.role.id_for_label }}" class="form-label">Rol</label>
+                            {{ form.role }}
+                            {% if form.role.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.role.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.plan.id_for_label }}" class="form-label">Plan</label>
+                            {{ form.plan }}
+                            {% if form.plan.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.plan.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="{{ form.modalidad.id_for_label }}" class="form-label">Modalidad</label>
+                            {{ form.modalidad }}
+                            {% if form.modalidad.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.modalidad.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <a href="{% url 'superadmin_dashboard' %}" class="btn btn-secondary">Ir al Dashboard</a>
+        </div>
+    </div>
+</div>
+{% endblock main_content %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Obtener referencia al select de rol
+        const roleSelect = document.getElementById('{{ form.role.id_for_label }}');
+        
+        // Obtener referencia al select de plan
+        const planSelect = document.getElementById('{{ form.plan.id_for_label }}');
+        
+        // Obtener referencia al select de modalidad
+        const modalidadSelect = document.getElementById('{{ form.modalidad.id_for_label }}');
+        
+        // Obtener referencias a los divs que contienen los campos de modalidad, plan y rol
+        const modalidadDiv = document.querySelector('label[for="{{ form.modalidad.id_for_label }}"]').closest('.col-md-6');
+        const planDiv = document.querySelector('label[for="{{ form.plan.id_for_label }}"]').closest('.col-md-6');
+        const roleDiv = document.querySelector('label[for="{{ form.role.id_for_label }}"]').closest('.col-md-6');
+        
+        // Ocultar las opciones de Superadmin y No Tiene
+        function hideSpecialOptions() {
+            // Ocultar la opción 'S' (Superadmin) en el select de modalidad
+            for (let i = 0; i < modalidadSelect.options.length; i++) {
+                if (modalidadSelect.options[i].value === 'S') {
+                    modalidadSelect.options[i].style.display = 'none';
+                    break;
+                }
+            }
+            
+            // Ocultar la opción 'NT' (No Tiene) en el select de plan
+            for (let i = 0; i < planSelect.options.length; i++) {
+                if (planSelect.options[i].value === 'NT') {
+                    planSelect.options[i].style.display = 'none';
+                    break;
+                }
+            }
+        }
+        
+        // Función para manejar el cambio de rol
+        function handleRoleChange() {
+            // Verificar si el rol seleccionado es "superadmin"
+            const selectedOption = roleSelect.options[roleSelect.selectedIndex];
+            const selectedValue = selectedOption.value;
+            const selectedText = selectedOption.text;
+
+            // Obtener el objeto option seleccionado y verificar si contiene "superadmin" en su texto
+            const isSuperadmin = selectedText.toLowerCase().includes('super') ||
+                               selectedText.toLowerCase().includes('administrador') ||
+                               selectedOption.getAttribute('data-name') === 'superadmin';
+            
+            if (isSuperadmin) {
+                // Ocultar los campos de modalidad y plan
+                modalidadDiv.style.display = 'none';
+                planDiv.style.display = 'none';
+                
+                // Asignar valores por defecto para superadmin
+                document.getElementById('{{ form.modalidad.id_for_label }}').value = 'S';
+                document.getElementById('{{ form.plan.id_for_label }}').value = 'NT';
+            } else {
+                // Mostrar los campos de modalidad y plan
+                modalidadDiv.style.display = 'block';
+                planDiv.style.display = 'block';
+                
+                // Verificar si el plan es Demo
+                handlePlanChange();
+            }
+        }
+        
+        // Función para manejar el cambio de plan
+        function handlePlanChange() {
+            // Verificar si el plan seleccionado es "Demo"
+            const selectedPlan = planSelect.options[planSelect.selectedIndex].value;
+
+            if (selectedPlan === 'D') {
+                // Si el plan es Demo, ocultar modalidad y rol, y asignar valores por defecto
+                modalidadDiv.style.display = 'none';
+                roleDiv.style.display = 'none';
+                
+                document.getElementById('{{ form.modalidad.id_for_label }}').value = 'I';
+                
+                // Buscar y seleccionar el rol "audit_manager"
+                for (let i = 0; i < roleSelect.options.length; i++) {
+                    const option = roleSelect.options[i];
+                    if (option.text.toLowerCase().includes('audit_manager') || 
+                        option.text.toLowerCase().includes('jefe') || 
+                        option.getAttribute('data-name') === 'audit_manager') {
+                        roleSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            } else {
+                // Si no es superadmin y no es plan Demo, mostrar modalidad y rol
+                const selectedRole = roleSelect.options[roleSelect.selectedIndex].text;
+                const isSuperadmin = selectedRole.toLowerCase().includes('super') || 
+                                   selectedRole.toLowerCase().includes('administrador');
+                
+                if (!isSuperadmin) {
+                    modalidadDiv.style.display = 'block';
+                    roleDiv.style.display = 'block';
+                }
+            }
+        }
+        
+        // Ocultar las opciones especiales al cargar la página
+        hideSpecialOptions();
+        
+        // Ejecutar las funciones al cargar la página
+        handleRoleChange();
+        
+        // Agregar eventos para detectar cambios
+        roleSelect.addEventListener('change', handleRoleChange);
+        planSelect.addEventListener('change', handlePlanChange);
+    });
+</script>
+{% endblock extra_js %}

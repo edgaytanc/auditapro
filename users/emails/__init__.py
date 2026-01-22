@@ -9,8 +9,6 @@ from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.tokens import default_token_generator
-
-
 import os
 import logging
 
@@ -24,7 +22,7 @@ ATTACH_DIR = getattr(
 )
 NOTIFY_EMAIL = getattr(
     settings, "AUDITA_NOTIFICATIONS_EMAIL", "sistemaaudita@gmail.com"
-)  
+)
 
 # Archivos a adjuntar al usuario nuevo
 DEFAULT_ATTACHMENTS = [
@@ -53,7 +51,6 @@ def send_activation_email_html(user, password, request):
     Envía correo HTML de activación + adjuntos + texto alternativo.
     Incluye credenciales del usuario y enlace de activación.
     """
-
     # 1) Construir enlace de activación
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
@@ -61,9 +58,7 @@ def send_activation_email_html(user, password, request):
         reverse("activate_account", kwargs={"uidb64": uid, "token": token})
     )
 
-    # 2) Construir URL del sistema de forma **dinámica** y segura:
-    #    - En producción usa settings.BASE_URL si está definido
-    #    - En desarrollo genera desde la request (evita URLs locales en prod)
+    # 2) Construir URL del sistema
     base_url = getattr(settings, "BASE_URL", None)
     if base_url:
         base_url = base_url.rstrip("/")
@@ -73,22 +68,20 @@ def send_activation_email_html(user, password, request):
 
     subject = "Acceso al Sistema Audita"
 
-    # 3) Contexto que espera la plantilla HTML de bienvenida
     context = {
-        "user": user,                   # opcional por si se usa en el template
-        "first_name": user.first_name,  # usado en encabezado
-        "last_name": user.last_name,    # usado en encabezado
-        "username": user.email,         # muestra “Usuario:”
-        "password": password,           # muestra “Contraseña:”
+        "user": user,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "username": user.email,
+        "password": password,
         "activation_link": activation_link,
         "video_url": VIDEO_URL,
         "support_email": SUPPORT_EMAIL,
-        "system_url": system_url,       # botón/hipervínculo “Ingresar al sistema”
+        "system_url": system_url,
     }
 
-    # 4) Render de la plantilla y armado del mensaje
     html_body = render_to_string("users/welcome_email.html", context)
-    text_body = strip_tags(html_body)  # fallback de texto plano
+    text_body = strip_tags(html_body)
 
     msg = EmailMultiAlternatives(
         subject=subject,
@@ -98,10 +91,7 @@ def send_activation_email_html(user, password, request):
     )
     msg.attach_alternative(html_body, "text/html")
 
-    # 5) Adjuntar archivos (si existen)
     _safe_attach_files(msg, DEFAULT_ATTACHMENTS)
-
-    # 6) Enviar
     msg.send(fail_silently=False)
     return True
 
@@ -129,3 +119,7 @@ def send_admin_notification_email(creator, new_user):
         fail_silently=False,
     )
     return True
+
+
+# 🔹 Reexportamos la función de autoregistro definida en otro archivo
+from .autoregistro_email import send_autoregistro_email

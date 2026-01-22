@@ -17,28 +17,32 @@ def normalize_text(text):
     # Convertir a minúsculas y remover espacios extras
     return ' '.join(text.lower().split())
 
-def get_template_path(folder, filename, is_internal=False):
+def get_template_path(folder, filename, is_internal=False, audit_type=None):
     """
-    Obtiene la ruta completa de una plantilla
+    Obtiene la ruta completa de una plantilla según el tipo de auditoría.
+    Compatible con: Interna (I), Financiera (F) y Revisoria Fiscal (R)
     """
     # Determinar qué carpeta base usar según el tipo de auditoría
-    if is_internal:
+    if audit_type == 'I' or is_internal:
         base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_interna')
-    else:
+    elif audit_type == 'F':
         base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_financiera')
-        
+    elif audit_type == 'R':
+        base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_revisoria')
+    else:
+        base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_financiera')  # Fallback
+
     if folder:
         # Normalizar la ruta usando os.path
         folder = folder.replace('/', os.path.sep).replace('\\', os.path.sep)
         current_path = base_path
-        # Dividir la ruta usando el separador correcto del sistema
         folder_components = folder.split(os.path.sep)
+
         # Navegar por cada componente de la carpeta
         for component in folder_components:
             if component:
                 current_path = os.path.join(current_path, component)
                 if not os.path.exists(current_path):
-                    # Buscar de forma case-insensitive y sin tildes
                     parent_dir = os.path.dirname(current_path)
                     if os.path.exists(parent_dir):
                         found = False
@@ -50,20 +54,19 @@ def get_template_path(folder, filename, is_internal=False):
                                 break
                         if not found:
                             return None
+
         if os.path.exists(current_path):
-            # Primero intentar encontrar una coincidencia exacta
+            # Primero intentar coincidencia exacta
             exact_path = os.path.join(current_path, filename)
             if os.path.exists(exact_path):
                 return exact_path
+
             # Si no hay coincidencia exacta, buscar de forma más flexible
             filename_normalized = normalize_text(filename)
-            # Buscar recursivamente en la carpeta actual y subcarpetas
             for root, dirs, files in os.walk(current_path):
                 for file in files:
-                    # Comparar nombres normalizados (sin tildes y case insensitive)
                     if normalize_text(file) == filename_normalized:
-                        return os.path.join(root, file)        
-                    # Si aún no hay coincidencia, intentar comparar sin extensión
+                        return os.path.join(root, file)
                     filename_base = os.path.splitext(filename_normalized)[0]
                     file_base = os.path.splitext(normalize_text(file))[0]
                     if file_base == filename_base:

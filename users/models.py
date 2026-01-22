@@ -2,6 +2,9 @@ from typing import Iterable
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 import uuid
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
 
 
 class Roles(models.Model):
@@ -13,7 +16,8 @@ class Roles(models.Model):
 
 
 def get_default_role():
-    role, _ = Roles.objects.get_or_create(name="auditor", verbose_name="Auditor")
+    role, _ = Roles.objects.get_or_create(
+        name="auditor", verbose_name="Auditor")
     return role
 
 
@@ -21,33 +25,33 @@ class User(AbstractUser):
     MODALIDAD_CHOICES = [
         ('I', 'Modalidad Individual'),
         ('G', 'Modalidad Grupal'),
-        ('S', 'Superadmin'),  
+        ('S', 'Superadmin'),
     ]
-    
+
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
-    signature = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    
+    signature = models.UUIDField(
+        default=uuid.uuid4, editable=False, unique=True)
+
     modalidad = models.CharField(
         max_length=1,
         choices=MODALIDAD_CHOICES,
         default='I',
         help_text="Indica si el usuario pertenece a modalidad individual (I), grupal (G) o es superadmin (S)"
     )
-    
+
     plan = models.CharField(
-        max_length=2,  
+        max_length=2,
         default='M',
         help_text="Letra que identifica el plan específico (M: mensual, NT: no tiene plan, etc.)"
     )
-    
-        #  Campo que indica si el Jefe de Auditoría es socio
+
+    #  Campo que indica si el Jefe de Auditoría es socio
     socio = models.BooleanField(
         default=False,
         help_text="Indica si el Jefe de Auditoría tiene privilegios de socio para crear usuarios."
     )
 
-    
     administrador = models.ForeignKey(
         'self',
         related_name='auditores',
@@ -71,6 +75,12 @@ class User(AbstractUser):
         help_text="Define si el Jefe de Auditoría tiene privilegios de socio (puede crear usuarios)."
     )
 
+    # Nuevo campo, indica si un cliente puede entrar al modulo de revisoria fiscal
+    revisor_fiscal = models.BooleanField(
+        default=False,
+        help_text="Indica si el usuario tiene acceso al módulo de Revisoría Fiscal."
+    )
+
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
@@ -84,11 +94,11 @@ class User(AbstractUser):
         if not self.role:  # Si no se ha asignado un rol
             self.role = get_default_role()  # Asignamos el rol por defecto
         super().save(*args, **kwargs)
-    
+
     def is_admin(self):
         """Verifica si el usuario es un administrador."""
         return self.role and self.role.name == "audit_manager"
-    
+
     def get_auditores(self):
         """Obtiene todos los auditores asociados a este administrador."""
         if not self.is_admin():
@@ -100,14 +110,14 @@ class User(AbstractUser):
         Da de baja a un usuario y a sus auditores asociados si es un administrador en modalidad grupal.
         """
         from django.utils import timezone
-        
+
         if deactivation_date is None:
             deactivation_date = timezone.now()
-        
+
         self.is_deleted = True
         self.deleted_at = deactivation_date
         self.save()
-        
+
         if self.is_admin() and self.modalidad == 'G':
             for auditor in self.get_auditores():
                 if not auditor.is_deleted:
@@ -115,13 +125,13 @@ class User(AbstractUser):
                     auditor.deleted_at = deactivation_date
                     auditor.save()
         return True
-    
+
     def reactivate_user(self):
         """Reactiva un usuario y sus auditores si aplica."""
         self.is_deleted = False
         self.deleted_at = None
         self.save()
-        
+
         auditores_reactivados = 0
         if self.is_admin() and self.modalidad == 'G':
             for auditor in self.get_auditores():
@@ -141,3 +151,24 @@ class User(AbstractUser):
         - Jefe de Auditoría solo si tiene socio=True.
         """
         return self.is_superuser or (self.role and self.role.name == 'audit_manager' and self.socio)
+
+
+class RegistroInvitacion(models.Model):
+    """
+    Invitaciones que envía un socio para que otra persona se autoregistre.
+    El token se usa para construir el enlace de un solo uso.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    email = models.EmailField()
+    socio = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="invitaciones_enviadas",
+    )
+    token = models.CharField(max_length=64, unique=True)
+    usado = models.BooleanField(default=False)
+    creado_en = models.DateTimeField(default=timezone.now)
+    usado_en = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Invitación a {self.email} (usado={self.usado})"

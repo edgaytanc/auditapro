@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -11,6 +12,7 @@ from users.emails import send_activation_email_html as send_welcome_email_html, 
 # Configurar el logger
 logger = logging.getLogger(__name__)
 
+
 @login_required
 @admin_or_superadmin_required
 def user_list(request):
@@ -18,13 +20,13 @@ def user_list(request):
     Vista para mostrar la lista de todos los usuarios en el sistema.
     """
     users = User.objects.all()
-    
+
     # Seleccionar la plantilla según el rol del usuario
     if request.user.role and request.user.role.name == 'superadmin':
         template = 'user_management/superadmin_user_list.html'
     else:
         template = 'user_management/user_list.html'
-    
+
     return render(request, template, {
         'users': users,
     })
@@ -36,29 +38,29 @@ def user_details(request, user_id):
     Vista para mostrar los detalles de un usuario específico.
     """
     user_to_view = get_object_or_404(User, id=user_id)
-    
+
     # Obtener información adicional según el tipo de usuario
     is_auditor = user_to_view.role.name == "auditor"
     is_admin = user_to_view.is_admin()
-    
+
     # Para auditores en modalidad grupal, mostrar a qué administrador está asignado
     assigned_to_admin = None
     if is_auditor and user_to_view.modalidad == 'G' and user_to_view.administrador:
         assigned_to_admin = user_to_view.administrador
-    
+
     # Para administradores, mostrar sus auditores asignados
     assigned_auditors = []
     if is_admin:
         assigned_auditors = user_to_view.get_auditores()
-    
+
     # Para todos los usuarios, mostrar quién los creó (no tenemos esta info en el modelo actual)
     # Esto requeriría añadir un campo 'created_by' al modelo User
-    
+
     # Seleccionar la plantilla según el rol del usuario
     template = 'user_management/user_details.html'
     if request.user.role and request.user.role.name == 'superadmin':
         template = 'user_management/superadmin_user_details.html'
-    
+
     return render(request, template, {
         'user_to_view': user_to_view,
         'is_auditor': is_auditor,
@@ -70,22 +72,27 @@ def user_details(request, user_id):
 
 class UserCreationForm(forms.Form):
     username = forms.CharField(
-        max_length=150, 
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre de usuario'})
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={'class': 'form-control', 'placeholder': 'Nombre de usuario'})
     )
     email = forms.EmailField(
-        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'})
+        widget=forms.EmailInput(
+            attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'})
     )
     first_name = forms.CharField(
-        max_length=150, 
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre'})
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={'class': 'form-control', 'placeholder': 'Nombre'})
     )
     last_name = forms.CharField(
-        max_length=150, 
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellido'})
+        max_length=150,
+        widget=forms.TextInput(
+            attrs={'class': 'form-control', 'placeholder': 'Apellido'})
     )
     password = forms.CharField(
-        widget=forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Contraseña'})
+        widget=forms.PasswordInput(
+            attrs={'class': 'form-control', 'placeholder': 'Contraseña'})
     )
     role = forms.ModelChoiceField(
         queryset=Roles.objects.filter(name__in=["audit_manager", "auditor"]),
@@ -96,7 +103,8 @@ class UserCreationForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-select'})
     )
     plan = forms.ChoiceField(
-        choices=[('M', 'Mensual'), ('A', 'Anual'), ('D', 'Demo'), ('NT', 'No Tiene')],
+        choices=[('M', 'Mensual'), ('A', 'Anual'),
+                 ('D', 'Demo'), ('NT', 'No Tiene')],
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
@@ -112,32 +120,37 @@ class UserCreationForm(forms.Form):
                 cls = field.widget.attrs.get('class', '')
                 if self.errors.get(name):
                     field.widget.attrs['class'] = f'{cls} is-invalid'
-                else: field.widget.attrs['class'] = f'{cls} is-valid'
-    
+                else:
+                    field.widget.attrs['class'] = f'{cls} is-valid'
+
     def clean(self):
         cleaned_data = super().clean()
         role = cleaned_data.get('role')
         plan = cleaned_data.get('plan')
-        
+
         # Si el rol es superadmin, asignar valores específicos
         if role and role.name == 'superadmin':
             cleaned_data['modalidad'] = 'S'
             cleaned_data['plan'] = 'NT'
-            logger.info(f"Asignando valores para superadmin: modalidad=S, plan=NT")
-        
+            logger.info(
+                f"Asignando valores para superadmin: modalidad=S, plan=NT")
+
         # Si el plan es Demo, asignar modalidad Individual y rol audit_manager
         elif plan == 'D':
             cleaned_data['modalidad'] = 'I'
             # Buscar y asignar el rol audit_manager
-            audit_manager_role = Roles.objects.filter(name='audit_manager').first()
+            audit_manager_role = Roles.objects.filter(
+                name='audit_manager').first()
             if audit_manager_role:
                 cleaned_data['role'] = audit_manager_role
-                logger.info(f"Plan Demo seleccionado: asignando modalidad=I (Individual), rol=audit_manager")
+                logger.info(
+                    f"Plan Demo seleccionado: asignando modalidad=I (Individual), rol=audit_manager")
             else:
-                logger.error("No se encontró el rol audit_manager en la base de datos")
-            
+                logger.error(
+                    "No se encontró el rol audit_manager en la base de datos")
+
         return cleaned_data
-    
+
     def clean_email(self):
         """
         Valida que el correo electrónico no exista previamente
@@ -147,17 +160,18 @@ class UserCreationForm(forms.Form):
 
         # Validar duplicado de correo
         if User.objects.filter(email__iexact=email).exists():
-            raise forms.ValidationError("El correo electrónico ya está en uso.")
+            raise forms.ValidationError(
+                "El correo electrónico ya está en uso.")
 
         # Validar duplicado de username (como el username es igual al email en Audita)
         if User.objects.filter(username__iexact=email).exists():
-            raise forms.ValidationError("Ya existe un usuario registrado con este correo electrónico.")
+            raise forms.ValidationError(
+                "Ya existe un usuario registrado con este correo electrónico.")
 
         # Forzar coherencia username=email
         self.cleaned_data['username'] = email
 
         return email
-
 
     def clean_username(self):
         """
@@ -167,9 +181,7 @@ class UserCreationForm(forms.Form):
         if User.objects.filter(username__iexact=username).exists():
             raise forms.ValidationError("El nombre de usuario ya está en uso.")
         return username
-    
 
-from django.http import Http404
 
 @login_required
 def create_user(request):
@@ -209,16 +221,26 @@ def create_user(request):
             email = form.cleaned_data['email']
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
-            password = form.cleaned_data['password']  # ⚠️ Guarda antes de encriptar
+            # ⚠️ Guarda antes de encriptar
+            password = form.cleaned_data['password']
             role = form.cleaned_data['role']
             modalidad = form.cleaned_data['modalidad']
             plan_type = form.cleaned_data['plan']
 
-            logger.info(f"Datos del formulario: username={username}, role={role.name}, modalidad={modalidad}, plan={plan_type}")
+            logger.info(
+                f"Datos del formulario: username={username}, role={role.name}, modalidad={modalidad}, plan={plan_type}")
+            # 🔹 Nuevo: leer la marca de Revisor Fiscal desde el checkbox
+            revisor_fiscal = request.POST.get("revisor_fiscal") == "on"
+
+            logger.info(
+                f"Datos del formulario: username={username}, role={role.name}, "
+                f"modalidad={modalidad}, plan={plan_type}, revisor_fiscal={revisor_fiscal}"
+            )
 
             # --- Validaciones de duplicados ---
             if User.objects.filter(email__iexact=email).exists():
-                messages.error(request, "El correo electrónico ya está en uso.")
+                messages.error(
+                    request, "El correo electrónico ya está en uso.")
                 return render(
                     request,
                     'user_management/superadmin_create_user.html' if role_name == 'superadmin' or u.is_superuser else 'user_management/create_user.html',
@@ -241,7 +263,8 @@ def create_user(request):
                     last_name=last_name,
                     email=email,
                     password=make_password(password),
-                    role=role
+                    role=role,
+                    revisor_fiscal=revisor_fiscal,  # 🔹 NUEVO: guardar la marca
                 )
 
                 # --- Asignar modalidad y plan ---
@@ -253,16 +276,23 @@ def create_user(request):
                     user.plan = plan_type
 
                 # --- Si es auditor grupal, asignar al administrador creador ---
-                if role.name == "auditor" and modalidad == 'G' and hasattr(request.user, "is_admin") and request.user.is_admin():
+                if (
+                    role.name == "auditor"
+                    and modalidad == 'G'
+                    and hasattr(request.user, "is_admin")
+                    and request.user.is_admin()
+                ):
                     user.administrador = request.user
 
                 # --- Marcar como socio si se seleccionó ---
-                user.socio = True if request.POST.get('socio') == 'on' else False
+                user.socio = True if request.POST.get(
+                    'socio') == 'on' else False
 
                 # --- Guardar usuario ---
                 user.save()
                 logger.info(f"Usuario {username} guardado con éxito.")
-                messages.success(request, f"Usuario {username} creado exitosamente.")
+                messages.success(
+                    request, f"Usuario {username} creado exitosamente.")
 
                 # --- Envío de correos solo si el usuario se guardó correctamente ---
                 if user.id:
@@ -273,31 +303,42 @@ def create_user(request):
                         # Correo resumen interno (quién creó a quién)
                         send_admin_summary_email(request.user, user)
 
-                        logger.info("Correos enviados correctamente al usuario %s.", user.email)
+                        logger.info(
+                            "Correos enviados correctamente al usuario %s.", user.email)
 
                     except Exception as e:
-                        logger.error(f"Error al enviar correos de bienvenida o notificación: {e}", exc_info=True)
+                        logger.error(
+                            f"Error al enviar correos de bienvenida o notificación: {e}", exc_info=True)
                         messages.warning(
                             request,
                             "El usuario fue creado correctamente, pero hubo un problema al enviar los correos de notificación."
                         )
                 else:
-                    logger.error("El usuario no tiene ID asignado tras guardarse. No se enviaron correos.")
+                    logger.error(
+                        "El usuario no tiene ID asignado tras guardarse. No se enviaron correos.")
                     messages.warning(
                         request,
                         "El usuario fue creado, pero no se pudo confirmar el envío de correos de bienvenida."
                     )
 
-
                 # --- Volver a mostrar formulario limpio ---
                 empty_form = UserCreationForm()
-                template = 'user_management/superadmin_create_user.html' if (role_name == 'superadmin' or u.is_superuser) else 'user_management/create_user.html'
+                template = (
+                    'user_management/superadmin_create_user.html'
+                    if (role_name == 'superadmin' or u.is_superuser)
+                    else 'user_management/create_user.html'
+                )
                 return render(request, template, {'form': empty_form, 'roles': Roles.objects.all()})
 
             except Exception as e:
-                logger.error(f"ERROR al crear usuario: {str(e)}", exc_info=True)
+                logger.error(
+                    f"ERROR al crear usuario: {str(e)}", exc_info=True)
                 messages.error(request, f"Error al crear el usuario: {str(e)}")
-                template = 'user_management/superadmin_create_user.html' if (role_name == 'superadmin' or u.is_superuser) else 'user_management/create_user.html'
+                template = (
+                    'user_management/superadmin_create_user.html'
+                    if (role_name == 'superadmin' or u.is_superuser)
+                    else 'user_management/create_user.html'
+                )
                 return render(request, template, {'form': form, 'roles': Roles.objects.all()})
         else:
             # --- Errores del formulario ---
@@ -309,18 +350,23 @@ def create_user(request):
         form = UserCreationForm()
 
     # --- Render final ---
-    template = 'user_management/superadmin_create_user.html' if (role_name == 'superadmin' or u.is_superuser) else 'user_management/create_user.html'
+    template = (
+        'user_management/superadmin_create_user.html'
+        if (role_name == 'superadmin' or u.is_superuser)
+        else 'user_management/create_user.html'
+    )
     return render(request, template, {
         'form': form,
         'roles': Roles.objects.all(),
     })
+
 
 @login_required
 @admin_or_superadmin_required
 def edit_user(request, user_id):
     """
     Vista para editar un usuario existente.
-    Permite al superadmin modificar el campo 'socio'.
+    Permite al superadmin modificar los campos 'socio' y 'revisor_fiscal'.
     """
     user_to_edit = get_object_or_404(User, id=user_id)
 
@@ -330,16 +376,19 @@ def edit_user(request, user_id):
         last_name = request.POST.get('last_name')
         email = request.POST.get('email')
         password = request.POST.get('password')
-        socio = request.POST.get('socio')  # 🟩 Nuevo campo checkbox
+        socio = request.POST.get('socio')              # checkbox socio
+        revisor_fiscal = request.POST.get(
+            'revisor_fiscal')  # 🔹 checkbox revisor fiscal
 
         # Actualizar datos básicos
         user_to_edit.first_name = first_name
         user_to_edit.last_name = last_name
         user_to_edit.email = email
 
-        # Si el superadmin está editando → puede cambiar el campo 'socio'
+        # Si el superadmin está editando → puede cambiar 'socio' y 'revisor_fiscal'
         if request.user.role and request.user.role.name == 'superadmin':
-            user_to_edit.socio = True if socio == 'on' else False  # 🟩 Guarda el valor real
+            user_to_edit.socio = (socio == 'on')
+            user_to_edit.revisor_fiscal = (revisor_fiscal == 'on')
 
         # Actualizar contraseña solo si se proporciona una nueva
         if password:
@@ -347,7 +396,8 @@ def edit_user(request, user_id):
 
         # Guardar cambios
         user_to_edit.save()
-        messages.success(request, f"Usuario {user_to_edit.username} actualizado exitosamente.")
+        messages.success(
+            request, f"Usuario {user_to_edit.username} actualizado exitosamente.")
         return redirect('user_details', user_id=user_id)
 
     # Seleccionar plantilla según el rol
@@ -358,9 +408,9 @@ def edit_user(request, user_id):
     # Renderizar vista de edición con datos actuales
     return render(request, template, {
         'user_to_edit': user_to_edit,
-        'is_superadmin': request.user.role.name == 'superadmin',  # Lo mandamos al template
+        # Para mostrar los checks en el template
+        'is_superadmin': request.user.role.name == 'superadmin',
     })
-
 
 
 @login_required
@@ -371,37 +421,41 @@ def deactivate_user(request, user_id):
     Si el usuario es un administrador en modalidad grupal, también se darán de baja todos sus auditores asociados.
     """
     user_to_deactivate = get_object_or_404(User, id=user_id)
-    
+
     # Verificar si el usuario ya está dado de baja
     if user_to_deactivate.is_deleted:
-        messages.warning(request, f"El usuario {user_to_deactivate.username} ya está dado de baja.")
+        messages.warning(
+            request, f"El usuario {user_to_deactivate.username} ya está dado de baja.")
         return redirect('user_details', user_id=user_id)
-    
+
     # Verificar si es un auditor en modalidad grupal (solo se pueden dar de baja a través de su administrador)
     if user_to_deactivate.role.name == "auditor" and user_to_deactivate.modalidad == 'G' and user_to_deactivate.administrador:
         messages.error(
-            request, 
+            request,
             f"No se puede dar de baja directamente a un auditor en modalidad grupal. "
             f"Debe dar de baja al administrador {user_to_deactivate.administrador.username}."
         )
         return redirect('user_details', user_id=user_id)
-    
+
     # Proceder con la baja
     user_to_deactivate.deactivate_user()
-    
+
     # Mensaje de éxito con información adicional si se dieron de baja auditores asociados
     if user_to_deactivate.is_admin() and user_to_deactivate.modalidad == 'G':
-        auditores_count = user_to_deactivate.auditores.filter(is_deleted=True).count()
+        auditores_count = user_to_deactivate.auditores.filter(
+            is_deleted=True).count()
         if auditores_count > 0:
             messages.success(
-                request, 
+                request,
                 f"Usuario {user_to_deactivate.username} y {auditores_count} auditores asociados dados de baja exitosamente."
             )
         else:
-            messages.success(request, f"Usuario {user_to_deactivate.username} dado de baja exitosamente.")
+            messages.success(
+                request, f"Usuario {user_to_deactivate.username} dado de baja exitosamente.")
     else:
-        messages.success(request, f"Usuario {user_to_deactivate.username} dado de baja exitosamente.")
-    
+        messages.success(
+            request, f"Usuario {user_to_deactivate.username} dado de baja exitosamente.")
+
     return redirect('user_list')
 
 
@@ -412,24 +466,26 @@ def reactivate_user(request, user_id):
     Vista para reactivar a un usuario que ha sido dado de baja.
     """
     user_to_reactivate = get_object_or_404(User, id=user_id)
-    
+
     # Verificar si el usuario ya está activo
     if not user_to_reactivate.is_deleted:
-        messages.warning(request, f"El usuario {user_to_reactivate.username} ya está activo.")
+        messages.warning(
+            request, f"El usuario {user_to_reactivate.username} ya está activo.")
         return redirect('user_details', user_id=user_id)
-    
+
     # Reactivar usuario y sus auditores asociados si corresponde
     auditores_reactivados = user_to_reactivate.reactivate_user()
-    
+
     # Mostrar mensaje apropiado según el resultado
     if user_to_reactivate.is_admin() and user_to_reactivate.modalidad == 'G' and auditores_reactivados > 0:
         messages.success(
-            request, 
+            request,
             f"Usuario {user_to_reactivate.username} y {auditores_reactivados} auditores asociados reactivados exitosamente."
         )
     else:
-        messages.success(request, f"Usuario {user_to_reactivate.username} reactivado exitosamente.")
-    
+        messages.success(
+            request, f"Usuario {user_to_reactivate.username} reactivado exitosamente.")
+
     return redirect('user_details', user_id=user_id)
 
 
@@ -447,16 +503,15 @@ def superadmin_dashboard(request):
     if not (user.is_superuser or role_name == "superadmin"):
         return redirect('dashboard')
 
-    
-    #if not request.user.role or request.user.role.name != "superadmin":
+    # if not request.user.role or request.user.role.name != "superadmin":
      #   return redirect('dashboard')  # Redirigir a dashboard normal si no es superAdmin
-    
+
     # Obtener estadísticas básicas de usuarios
     total_users = User.objects.count()
     admin_users = User.objects.filter(role__name="audit_manager").count()
     auditor_users = User.objects.filter(role__name="auditor").count()
     superadmin_users = User.objects.filter(role__name="superadmin").count()
-    
+
     return render(request, 'user_management/superadmin_dashboard.html', {
         'total_users': total_users,
         'admin_users': admin_users,

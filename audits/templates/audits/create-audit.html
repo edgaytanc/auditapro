@@ -1,160 +1,170 @@
 {% extends "common/system-base.html" %}
 
 {% block title %}
-  Crear Auditoria
+Crear Auditoria
 {% endblock title %}
 {% block page_title %}
-  Crear Auditoría
+Crear Auditoría
 {% endblock page_title %}
 {% block page_subtitle %}
 {% endblock page_subtitle %}
 {% block main_content %}
-  <section class="card w-100 bg-body-tertiary shadow">
-    <header class="card-body p-4">
-      <h3 class="card-title text-2xl font-semibold">Crear Auditoría</h3>
-      <p class="text-muted">Llene los detalles de la auditoría para crearla.</p>
-    </header>
-    <article class="card-body p-4">
-      <form class="row g-3" action="{% url 'create_audit' %}" method="post">
-        {% csrf_token %}
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="title" class="form-label">Título</label>
-            <input type="text"
-                   class="form-control"
-                   id="audit_title"
-                   name="audit_title"
-                   placeholder="Enter audit title"
-                   required />
+<section class="card w-100 bg-body-tertiary shadow">
+  <header class="card-body p-4">
+    <h3 class="card-title text-2xl font-semibold">Crear Auditoría</h3>
+    <p class="text-muted">Llene los detalles de la auditoría para crearla.</p>
+  </header>
+  <article class="card-body p-4">
+    <form class="row g-3" action="{% url 'create_audit' %}" method="post">
+      {% csrf_token %}
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label for="title" class="form-label">Título</label>
+          <input type="text" class="form-control" id="audit_title" name="audit_title" placeholder="Enter audit title"
+            required />
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label for="identidad" class="form-label">Entidad</label>
+          <input type="text" class="form-control" id="audit_identidad" name="audit_identidad"
+            placeholder="Ingrese la Entidad" required />
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label for="fechaInit" class="form-label">Fecha de Inicio</label>
+          <input type="date" class="form-control" id="audit_fechaInit" name="audit_fechaInit" required />
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label for="fechaEnd" class="form-label">Fecha Final</label>
+          <input type="date" class="form-control" id="audit_fechaEnd" name="audit_fechaEnd" required />
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label class="form-label">Tipo de Auditoría</label>
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="audit_financial" name="audit_financial"
+              onclick="toggleAuditType(this)" />
+            <label class="form-check-label" for="audit_financial">Auditoría Financiera</label>
+          </div>
+          <div class="form-check mt-2">
+            <input type="checkbox" class="form-check-input" id="activa_revisoria" name="activa_revisoria"
+              onclick="toggleAuditType(this)" />
+            <label class="form-check-label" for="activa_revisoria">Activar Revisoría</label>
           </div>
         </div>
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="identidad" class="form-label">Entidad</label>
-            <input type="text"
-                   class="form-control"
-                   id="audit_identidad"
-                   name="audit_identidad"
-                   placeholder="Ingrese la Entidad"
-                   required />
-          </div>
+      </div>
+      <div class="col-md-6">
+        <div class="mb-3">
+          <label for="audit_moneda" class="form-label">Moneda</label>
+          <select class="form-select" id="audit_moneda" name="audit_moneda" required>
+            <option value="">--- Seleccionar Moneda ---</option>
+            <optgroup label="🌎 América del Norte">
+              <option value="USD">Estados Unidos - USD</option>
+              <option value="CAD">Canadá - CAD</option>
+            </optgroup>
+            <optgroup label="🌍 América Central y Caribe">
+              <option value="MXN">México - MXN</option>
+              <option value="GTQ" selected>Guatemala - GTQ</option>
+              <option value="BZD">Belice - BZD</option>
+              <option value="USD">El Salvador - USD</option>
+              <option value="HNL">Honduras - HNL</option>
+              <option value="NIO">Nicaragua - NIO</option>
+              <option value="CRC">Costa Rica - CRC</option>
+              <option value="PAB">Panamá - PAB</option>
+              <option value="USD">Panamá - USD</option>
+              <option value="CUP">Cuba - CUP</option>
+              <option value="JMD">Jamaica - JMD</option>
+              <option value="HTG">Haití - HTG</option>
+              <option value="DOP">República Dominicana - DOP</option>
+              <option value="USD">Puerto Rico - USD</option>
+              <option value="TTD">Trinidad y Tobago - TTD</option>
+              <option value="BBD">Barbados - BBD</option>
+              <option value="BSD">Bahamas - BSD</option>
+            </optgroup>
+            <optgroup label="🌎 América del Sur">
+              <option value="ARS">Argentina - ARS</option>
+              <option value="BOB">Bolivia - BOB</option>
+              <option value="BRL">Brasil - BRL</option>
+              <option value="CLP">Chile - CLP</option>
+              <option value="COP">Colombia - COP</option>
+              <option value="USD">Ecuador - USD</option>
+              <option value="GYD">Guyana - GYD</option>
+              <option value="PYG">Paraguay - PYG</option>
+              <option value="PEN">Perú - PEN</option>
+              <option value="SRD">Suriname - SRD</option>
+              <option value="UYU">Uruguay - UYU</option>
+              <option value="VES">Venezuela - VES</option>
+              <option value="EUR">Guyana Francesa - EUR</option>
+            </optgroup>
+            <optgroup label="🌎 Europa - Zona Euro">
+              <option value="EUR">Alemania - EUR</option>
+              <option value="EUR">Austria - EUR</option>
+              <option value="EUR">Bélgica - EUR</option>
+              <option value="EUR">Chipre - EUR</option>
+              <option value="EUR">Croacia - EUR</option>
+              <option value="EUR">Eslovaquia - EUR</option>
+              <option value="EUR">Eslovenia - EUR</option>
+              <option value="EUR">España - EUR</option>
+              <option value="EUR">Estonia - EUR</option>
+              <option value="EUR">Finlandia - EUR</option>
+              <option value="EUR">Francia - EUR</option>
+              <option value="EUR">Grecia - EUR</option>
+              <option value="EUR">Irlanda - EUR</option>
+              <option value="EUR">Italia - EUR</option>
+              <option value="EUR">Letonia - EUR</option>
+              <option value="EUR">Lituania - EUR</option>
+              <option value="EUR">Luxemburgo - EUR</option>
+              <option value="EUR">Malta - EUR</option>
+              <option value="EUR">Países Bajos - EUR</option>
+              <option value="EUR">Portugal - EUR</option>
+            </optgroup>
+          </select>
         </div>
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="fechaInit" class="form-label">Fecha de Inicio</label>
-            <input type="date"
-                   class="form-control"
-                   id="audit_fechaInit"
-                   name="audit_fechaInit"
-                   required />
-          </div>
+      </div>
+
+      {% if show_assignment %}
+      <div class="col-12">
+        <div class="mb-3">
+          <label class="form-label">Asignar a</label>
+          {% with select_options=select_options %}
+          {% include "common/_select-input.html" with select_id="audit_assigned_users_ids" select_options=select_options
+          option_value="username" text_to_show1="get_full_name" text_to_show2="role" select_placeholder="Asignar
+          usuarios para la auditoria" %}
+          {% endwith %}
         </div>
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="fechaEnd" class="form-label">Fecha Final</label>
-            <input type="date"
-                   class="form-control"
-                   id="audit_fechaEnd"
-                   name="audit_fechaEnd"
-                   required />
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label class="form-label">Tipo de Auditoría</label>
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="audit_financial" name="audit_financial" />
-              <label class="form-check-label" for="audit_financial">Auditoría Financiera</label>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="audit_moneda" class="form-label">Moneda</label>
-            <select class="form-select" id="audit_moneda" name="audit_moneda" required>
-              <option value="">--- Seleccionar Moneda ---</option>
-              <optgroup label="🌎 América del Norte">
-                <option value="USD">Estados Unidos - USD</option>
-                <option value="CAD">Canadá - CAD</option>
-              </optgroup>
-              <optgroup label="🌍 América Central y Caribe">
-                <option value="MXN">México - MXN</option>
-                <option value="GTQ" selected>Guatemala - GTQ</option>
-                <option value="BZD">Belice - BZD</option>
-                <option value="USD">El Salvador - USD</option>
-                <option value="HNL">Honduras - HNL</option>
-                <option value="NIO">Nicaragua - NIO</option>
-                <option value="CRC">Costa Rica - CRC</option>
-                <option value="PAB">Panamá - PAB</option>
-                <option value="USD">Panamá - USD</option>
-                <option value="CUP">Cuba - CUP</option>
-                <option value="JMD">Jamaica - JMD</option>
-                <option value="HTG">Haití - HTG</option>
-                <option value="DOP">República Dominicana - DOP</option>
-                <option value="USD">Puerto Rico - USD</option>
-                <option value="TTD">Trinidad y Tobago - TTD</option>
-                <option value="BBD">Barbados - BBD</option>
-                <option value="BSD">Bahamas - BSD</option>
-              </optgroup>
-              <optgroup label="🌎 América del Sur">
-                <option value="ARS">Argentina - ARS</option>
-                <option value="BOB">Bolivia - BOB</option>
-                <option value="BRL">Brasil - BRL</option>
-                <option value="CLP">Chile - CLP</option>
-                <option value="COP">Colombia - COP</option>
-                <option value="USD">Ecuador - USD</option>
-                <option value="GYD">Guyana - GYD</option>
-                <option value="PYG">Paraguay - PYG</option>
-                <option value="PEN">Perú - PEN</option>
-                <option value="SRD">Suriname - SRD</option>
-                <option value="UYU">Uruguay - UYU</option>
-                <option value="VES">Venezuela - VES</option>
-                <option value="EUR">Guyana Francesa - EUR</option>
-              </optgroup>
-              <optgroup label="🌎 Europa - Zona Euro">
-                <option value="EUR">Alemania - EUR</option>
-                <option value="EUR">Austria - EUR</option>
-                <option value="EUR">Bélgica - EUR</option>
-                <option value="EUR">Chipre - EUR</option>
-                <option value="EUR">Croacia - EUR</option>
-                <option value="EUR">Eslovaquia - EUR</option>
-                <option value="EUR">Eslovenia - EUR</option>
-                <option value="EUR">España - EUR</option>
-                <option value="EUR">Estonia - EUR</option>
-                <option value="EUR">Finlandia - EUR</option>
-                <option value="EUR">Francia - EUR</option>
-                <option value="EUR">Grecia - EUR</option>
-                <option value="EUR">Irlanda - EUR</option>
-                <option value="EUR">Italia - EUR</option>
-                <option value="EUR">Letonia - EUR</option>
-                <option value="EUR">Lituania - EUR</option>
-                <option value="EUR">Luxemburgo - EUR</option>
-                <option value="EUR">Malta - EUR</option>
-                <option value="EUR">Países Bajos - EUR</option>
-                <option value="EUR">Portugal - EUR</option>
-              </optgroup>
-            </select>
-          </div>
-        </div>
-        
-        {% if show_assignment %}
-        <div class="col-12">
-          <div class="mb-3">
-            <label class="form-label">Asignar a</label>
-            {% with select_options=select_options %}
-              {% include "common/_select-input.html" with select_id="audit_assigned_users_ids" select_options=select_options option_value="username" text_to_show1="get_full_name" text_to_show2="role" select_placeholder="Asignar usuarios para la auditoria" %}
-            {% endwith %}
-          </div>
-        </div>
-        {% endif %}
-        
-        <div class="col-12 d-flex justify-content-end">
-          <button type="submit" class="btn btn-primary">Crear auditoria</button>
-        </div>
-      </form>
-    </article>
-  </section>
+      </div>
+      {% endif %}
+
+      <div class="col-12 d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary">Crear auditoria</button>
+      </div>
+    </form>
+  </article>
+</section>
 {% endblock main_content %}
 {% block extra_scripts %}
-  {{ block.super }}
+{{ block.super }}
+<script>
+  function toggleAuditType(clicked) {
+    const checkboxes = document.querySelectorAll('input[name="audit_financial"], input[name="activa_revisoria"]');
+    checkboxes.forEach(cb => {
+      if (cb !== clicked) cb.checked = false;
+    });
+  }
+
+  // Validación opcional: asegurar que se elija al menos uno antes de enviar
+  document.querySelector('form').addEventListener('submit', function (e) {
+    const financial = document.getElementById('audit_financial').checked;
+    const revisoria = document.getElementById('activa_revisoria').checked;
+    if (!financial && !revisoria) {
+      e.preventDefault();
+      alert('Debe seleccionar al menos un tipo de auditoría.');
+    }
+  });
+</script>
 {% endblock extra_scripts %}

@@ -28,7 +28,7 @@ def download_document(request, audit_id, folder, filename):
     # Determinar si es auditoría interna
     is_internal = audit.tipoAuditoria == 'I'
     
-    template_path = get_template_path(folder, filename, is_internal=is_internal)
+    template_path = get_template_path(folder, filename, is_internal=is_internal, audit_type=audit.tipoAuditoria)
     if not template_path or not os.path.exists(template_path):
         return HttpResponse(f'Plantilla no encontrada: {folder}/{filename}', status=404)
     try:
@@ -58,6 +58,19 @@ def download_document(request, audit_id, folder, filename):
             except Exception as e:
                 logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
                 # Continuar con la descarga incluso si las marcas fallan
+
+            # Integración Revisoria
+            if getattr(audit, 'activa_revisoria', False) and "CENTRALIZADORA" in filename.upper():
+                try:
+                    from auditoria.revisoria.activo import update_dynamic_excel
+                    # Verificar si existe "Hoja1"
+                    target_sheet = "Hoja1"
+                    if target_sheet in wb.sheetnames:
+                        wb = update_dynamic_excel(wb, target_sheet, audit.id)
+                    else:
+                        logger.warning(f"⚠️ 'Hoja1' no encontrada en {filename}. Hojas: {wb.sheetnames}. Se omite update_dynamic_excel.")
+                except Exception as e:
+                    logger.warning(f"⚠️ Error en update_dynamic_excel (Revisoria): {e}")
 
             wb.save(buffer)
             content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -137,7 +150,7 @@ def download_document_by_pattern(request, audit_id, pattern):
         is_internal = audit.tipoAuditoria == 'I'
         
         # Obtener información del archivo a partir del patrón
-        file_info = get_file_info_from_pattern(pattern, is_internal=is_internal)
+        file_info = get_file_info_from_pattern(pattern, is_internal=is_internal, audit_type=audit.tipoAuditoria)
         
         if not file_info:
             mensaje_error = crear_mensaje_error(

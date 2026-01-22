@@ -77,16 +77,7 @@ urlpatterns = [
         views.delete_status_of_work_papers,
         name="delete_status_of_work_papers",
     ),
-    path("marcas-de-auditoria/", views.audit_marks_page, name="audit_marks"),
-    path(
-        "marcas-de-auditoria/crear/", views.audit_mark_create, name="create_audit_mark"
-    ),
-    path("marcas-de-auditoria/<int:id>/", views.audit_mark, name="audit_mark"),
-    path(
-        "marcas-de-auditoria/delete/<int:id>/",
-        views.delete_audit_mark,
-        name="delete_audit_mark",
-    ),
+    # REMOVED: 4 audit mark URL patterns - tools.AuditMarks system deprecated
     path("tipos-de-monedas/", views.currency_types_page, name="currency_types"),
     path("tipos-de-monedas/<int:id>/", views.currency_type, name="currency_type"),
     path(

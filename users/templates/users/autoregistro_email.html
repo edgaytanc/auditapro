@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Invitación AuditaPro</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color:#f5f7fa; color:#333; padding:20px;">
+  <div style="max-width:600px; margin:auto; background:#ffffff; border-radius:8px; padding:24px; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+    
+    <h2 style="text-align:center; color:#0056b3; margin-top:0;">
+      Invitación para crear tu usuario en AuditaPro
+    </h2>
+
+    <p>
+      Hola,
+    </p>
+
+    <p>
+      Has sido invitado a unirte a <strong>AuditaPro</strong>, la plataforma de gestión profesional de auditorías.
+    </p>
+
+    <p>
+      El socio 
+      <strong>
+        {% if socio %}
+          {{ socio.first_name }} {{ socio.last_name }}
+        {% else %}
+          de tu firma
+        {% endif %}
+      </strong>
+      ha generado un enlace único para que puedas crear tu usuario.
+    </p>
+
+    <p style="margin: 24px 0; text-align:center;">
+      <a href="{{ url_registro }}" 
+         style="display:inline-block; padding:12px 24px; background-color:#0056b3; color:#ffffff; text-decoration:none; border-radius:4px; font-weight:bold;">
+        Crear mi usuario
+      </a>
+    </p>
+
+    <p style="font-size:14px; color:#555;">
+      Este enlace es de un solo uso y tiene una vigencia limitada. Si ya creaste tu usuario o el enlace ha expirado,
+      comunícate con tu socio o con el equipo de soporte.
+    </p>
+
+    <p style="font-size:13px; color:#777; margin-top:28px;">
+      Si el botón no funciona, copia y pega este enlace en tu navegador:
+      <br>
+      <span style="word-break:break-all;">{{ url_registro }}</span>
+    </p>
+
+    <p style="font-size:12px; color:#777; text-align:center; margin-top:30px;">
+      — Equipo AuditaPro<br>
+      <i>Correo enviado automáticamente – no responder</i>
+    </p>
+  </div>
+</body>
+</html>

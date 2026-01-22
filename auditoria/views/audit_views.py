@@ -55,6 +55,30 @@ def auditoria_interna_view(request):
         'auditorias': auditorias_internas
     })
 
+
+#Vista de revisoria    
+@login_required
+def auditoria_revisoria_view(request):
+    user_role = request.user.role.name
+
+    # Filtrado según el rol del usuario
+    if user_role == "audit_manager":
+        # Los administradores ven todas las auditorías de tipo Revisoría Fiscal que crearon
+        auditorias_revisorias = Audit.objects.filter(audit_manager=request.user, tipoAuditoria='R')
+    else:
+        # Los auditores regulares solo ven las auditorías asignadas a ellos
+        auditorias_revisorias = Audit.objects.filter(assigned_users=request.user, tipoAuditoria='R')
+
+    # Redirección al detalle si el usuario selecciona una auditoría
+    if request.method == 'POST':
+        audit_id = request.POST.get('audit_id')
+        return redirect('auditoria_detalle', audit_id=audit_id)
+
+    # Renderizar la vista
+    return render(request, 'auditoria/revisoria-fiscal/revisoria.html', {
+        'auditorias': auditorias_revisorias
+    })
+
 @login_required
 def auditoria_detalle_view(request, audit_id):
     user_role = request.user.role.name
@@ -75,8 +99,11 @@ def auditoria_detalle_view(request, audit_id):
         return HttpResponse(mark_safe(mensaje_error), status=404)
     
     # Leer la estructura desde el archivo JSON correspondiente al tipo de auditoría
+    # Leer la estructura desde el archivo JSON correspondiente al tipo de auditoría
     if audit.tipoAuditoria == 'I':
         json_path = os.path.join(settings.BASE_DIR, 'auditoria', 'config', 'folder_structure_interna.json')
+    elif audit.tipoAuditoria == 'R':
+        json_path = os.path.join(settings.BASE_DIR, 'auditoria', 'config', 'folder_structure_revisoria.json')
     else:
         json_path = os.path.join(settings.BASE_DIR, 'auditoria', 'config', 'folder_structure_financiera.json')
     

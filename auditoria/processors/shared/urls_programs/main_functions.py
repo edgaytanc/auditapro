@@ -14,21 +14,14 @@ from .special_patterns import SPECIAL_PATTERNS, PREFIX_TO_PROGRAM
 
 logger = logging.getLogger(__name__)
 
-def get_file_info_from_pattern(pattern, is_internal=False):
+def get_file_info_from_pattern(pattern, is_internal=False, audit_type=None):
     """
     Convierte un patrón (ej: 'A-1', 'R-10') en información necesaria para descargar el archivo.
     
     Args:
         pattern: El patrón de nomenclatura (ej: 'A-1')
         is_internal: Si es True, se busca en templates_base_interna, si no, en templates_base_financiera
-        
-    Returns:
-        dict: Diccionario con la información del archivo o None si no se encuentra
-            {
-                'folder': Carpeta relativa donde se encuentra el archivo,
-                'filename': Nombre del archivo,
-                'full_path': Ruta completa del archivo en el sistema de archivos
-            }
+        audit_type: Tipo de auditoría (I, F, R)
     """
     if not pattern or '-' not in pattern:
         logger.warning(f"Patrón inválido: {pattern}")
@@ -70,6 +63,8 @@ def get_file_info_from_pattern(pattern, is_internal=False):
     # Construir la ruta completa según el tipo de auditoría
     if is_internal:
         base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_interna')
+    elif audit_type == 'R':
+        base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_revisoria')
     else:
         base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_financiera')
     
@@ -80,7 +75,7 @@ def get_file_info_from_pattern(pattern, is_internal=False):
         logger.warning(f"El archivo no existe en la ruta: {full_path}")
         # Intentar buscar el archivo de forma más flexible
         from auditoria.views import normalize_text, get_template_path
-        template_path = get_template_path(folder, filename, is_internal=is_internal)
+        template_path = get_template_path(folder, filename, is_internal=is_internal, audit_type=audit_type)
         if template_path:
             full_path = template_path
         else:

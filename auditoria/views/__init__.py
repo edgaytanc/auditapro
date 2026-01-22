@@ -14,7 +14,8 @@ from .audit_views import (
     auditorias_view,
     auditoria_financiera_view,
     auditoria_interna_view,
-    auditoria_detalle_view
+    auditoria_detalle_view,
+    auditoria_revisoria_view
 )
 
 # Importar utilidades (disponibles para uso interno)
@@ -36,6 +37,7 @@ __all__ = [
     'auditoria_financiera_view',
     'auditoria_interna_view',
     'auditoria_detalle_view',
+    'auditoria_revisoria_view',
     
     # Utilidades
     'normalize_text',

@@ -16,7 +16,8 @@ urlpatterns = [
     path('socios/ingreso/', views.login_audit_manager, name='login_audit_manager'),
     path('socios/crear-usuario/', views.partner_create_user, name='partner_create_user'),
     path('activate/<uidb64>/<token>/', views.activate_account, name='activate_account'),
-
+    path('autoregistro/', views.socio_autoregistro, name='socio_autoregistro'),
+    path('autoregistro/registro/<str:token>/', views.autoregistro_registro, name='autoregistro_registro'),
 
     # URLs para restablecer la contraseña
     path('reset_password/', 

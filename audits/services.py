@@ -113,6 +113,8 @@ def update_audit(
     audit_title: str,
     audit_description: str,
     audit_company: str,
+    activa_revisoria: bool,
+    audit_financial: bool, # Nuevo parámetro
     audit_manager_id,
 ):
     try:
@@ -135,6 +137,22 @@ def update_audit(
         audit_to_update.title = audit_title
         audit_to_update.description = audit_description
         audit_to_update.company = audit_company
+        if audit_financial:
+            audit_to_update.tipoAuditoria = 'F'
+            audit_to_update.activa_revisoria = False # Asegurar que no esté activo si es financiera
+        elif activa_revisoria:
+             audit_to_update.tipoAuditoria = 'R'
+             audit_to_update.activa_revisoria = True
+        else:
+             # Si no es ninguna, asumimos Interna o mantenemos el estado anterior?
+             # Siguiendo la lógica de create_audit:
+             audit_to_update.tipoAuditoria = 'I'
+             audit_to_update.activa_revisoria = False
+
+        audit_to_update.title = audit_title
+        audit_to_update.description = audit_description
+        audit_to_update.company = audit_company
+        # audit_to_update.activa_revisoria = activa_revisoria # Ya se manejó arriba
         audit_to_update.save()
 
     except Audit.DoesNotExist:
@@ -150,6 +168,7 @@ def create_audit(
     audit_fechaInit: str,
     audit_fechaEnd: str,
     audit_financial: bool,
+    activa_revisoria: bool,
     audit_moneda: str,
     audit_assigned_users_ids: list[str],
 ):
@@ -177,8 +196,9 @@ def create_audit(
             identidad=audit_identidad,
             fechaInit=audit_fechaInit,
             fechaEnd=audit_fechaEnd,
-            tipoAuditoria='F' if audit_financial else 'I',
+            tipoAuditoria='F' if audit_financial else ('R' if activa_revisoria else 'I'),
             moneda=audit_moneda or 'GTQ',
+            activa_revisoria=activa_revisoria,
             audit_manager=audit_manager,
         )
 

@@ -1,0 +1,44 @@
+{
+  "1 PLANEACION": {
+    "1 FASE1_PLANEACION_AUDITORIA_AUTOMATIZADA.xlsx": []
+  },
+  "2 EJECUCION": {
+    "1 CUESTIONARIOS.xlsx": [],
+    "2 CENTRALIZADORA BALANCE.xlsx": [],
+    "3 CENTRALIZADORA DEL ACTIVO.xlsx": [],
+    "3.1 EFECTIVO_Y_EQUIVALENTES.xlsx": [],
+    "3.2 INVERSIONES.xlsx": [],
+    "3.3 CUENTAS_POR_COBRAR.xlsx": [],
+    "3.4 INVENTARIOS.xlsx": [],
+    "3.5 PROPIEDAD, PLANTA Y EQUIPO.xlsx": [],
+    "3.6 OTRAS CEDULAS SUMARIAS.xlsx": [],
+    "4 CENTRALIZADORA DEL PASIVO.xlsx": [],
+    "4.1 PASIVOS.xlsx": [],
+    "4.1.1 OTRAS CEDULAS SUMARIAS.xlsx": [],
+    "4.2 PATRIMONIO.xlsx": [],
+    "4.2.1 OTRAS CEDULAS SUMARIAS.xlsx": [],
+    "5 CENTRALIZADORA DEL ESTADO DE RESULTADOS.xlsx": [],
+    "5.1 INGRESOS.xlsx": [],
+    "5.2 COSTOS_Y_GASTOS.xlsx": [],
+    "5.3 AREA_TRIBUTARIA.xlsx": [],
+    "5.4 OTRAS CEDULAS SUMARIAS.xlsx": []
+  },
+    "3 PRUEBAS DETECCIÓN DE FRAUDES": {
+      "1 Deteccion_Fraudes_Efectivo.xlsx": [],
+      "2 Deteccion_Fraudes_Cuentas por Cobrar.xlsx": [],
+      "3 Deteccion_Fraudes_Inventarios.xlsx": [],
+      "4 Deteccion_Propiedad, Planta y Equipo.xlsx": [],
+      "5 Deteccion_Cuentas por Pagar.xlsx": [],
+      "6 Deteccion_Fraudes_Obligaciones Financieras.xlsx": [],
+      "7 Deteccion_Ingresos.xlsx": [],
+      "8 Deteccion_Costos_Gastos.xlsx": [],
+      "9 Deteccion_Nomina_Beneficios_Empleados.xlsx": [],
+      "10 Deteccion_Cuentas por Cobrar_Empleados.xlsx": []
+    },
+  "4 COMUNICACION": {
+    "3_COMUNICACION.xlsx": []
+  },
+  "5 SEGUIMIENTO": {
+    "4_SEGUIMIENTO.xlsx": []
+  }
+}

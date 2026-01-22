@@ -1,6 +1,6 @@
 # Archivo: users/views.py
 
-from django.http import HttpRequest
+from django.http import HttpRequest, Http404
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, logout as logout_func, login as login_func
@@ -17,14 +17,44 @@ from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import login as auth_login
 from users.utils import send_admin_notification_email
+from users.emails import send_admin_notification_email
 
 from .const import USER_ERROR_INSTANCES, USER_CLIENT_FIELDS
 from .services import create_user as create_user_func, delete_user as delete_user_func, update_user as update_user_func
 from mfa.utils import send_2fa_code
 from django.contrib.auth.decorators import user_passes_test
+from .models import RegistroInvitacion
+from users.emails import send_autoregistro_email
+from datetime import timedelta
+import uuid
+from django.utils import timezone
+import logging
+from users.emails.autoregistro_email import (
+    send_autoregistro_email,
+    send_autoregistro_admin_notification,
+    send_autoregistro_success_admin_notification,
+)
 
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
+
+#  NUEVO: Función auxiliar para validar permisos
+
+def socio_o_superadmin(user):
+    """
+    Permite acceso solo a:
+    - Superadmin (user.is_superuser == True)
+    - Jefe de auditoría con 'socio' = True
+    """
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    if getattr(user, "role", None) and user.role.name == "audit_manager" and getattr(user, "socio", False):
+        return True
+    return False
+
 
 
 #  NUEVO: Función auxiliar para validar permisos
@@ -420,3 +450,241 @@ def activate_account(request, uidb64, token):
     else:
         messages.error(request, " El enlace de activación no es válido o ha expirado.")
         return redirect("login")
+
+
+class SocioAutoRegistroForm(forms.Form):
+    email = forms.EmailField(
+        label="Correo de la persona",
+        widget=forms.EmailInput(attrs={
+            "class": "form-control",
+            "placeholder": "correo@ejemplo.com",
+        })
+    )
+
+
+@login_required
+def socio_autoregistro(request):
+    """
+    Pantalla donde el socio escribe el correo del cliente
+    para enviarle un enlace único de autoregistro.
+    """
+    # Solo socios (y si quieres, superadmin) pueden usar esto
+    if not (getattr(request.user, "socio", False) or request.user.is_superuser):
+        raise Http404("Página no encontrada")
+
+    if request.method == "POST":
+        form = SocioAutoRegistroForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data["email"].strip().lower()
+
+            # 1) Si ya existe un usuario con ese correo, no tiene sentido invitarlo
+            if User.objects.filter(email__iexact=email).exists():
+                messages.error(
+                    request,
+                    "Ya existe un usuario registrado con ese correo. No se envió invitación."
+                )
+                return redirect("socio_autoregistro")
+
+            # 2) Invalidar invitaciones anteriores NO usadas para ese correo
+            RegistroInvitacion.objects.filter(
+                email__iexact=email,
+                usado=False,
+            ).update(usado=True, usado_en=timezone.now())
+
+            # 3) Crear token único y registro de invitación
+            token = uuid.uuid4().hex
+            invitacion = RegistroInvitacion.objects.create(
+                email=email,
+                token=token,
+                socio=request.user,   # el socio que invita
+                usado=False,          # por si el default cambia en el futuro
+            )
+
+            # 4) Enviar el correo con el enlace + notificar al dueño (admin)
+            try:
+                send_autoregistro_email(invitacion, request)
+
+                # ✅ Notificación informativa al dueño/administrador
+                try:
+                    send_autoregistro_admin_notification(invitacion)
+                except Exception as e:
+                    logger.error(
+                        f"[AUTOREGISTRO] Error notificando al dueño: {e}",
+                        exc_info=True
+                    )
+
+                messages.success(
+                    request,
+                    f"Se ha enviado un enlace de autoregistro a {email}."
+                )
+            except Exception as e:
+                messages.error(
+                    request,
+                    "Ocurrió un error al enviar el correo de invitación. Intenta de nuevo."
+                )
+                logger.error(f"[AUTOREGISTRO] Error enviando correo: {e}", exc_info=True)
+
+            # Volver a la pantalla de creación de usuarios del socio
+            return redirect("partner_create_user")
+    else:
+        form = SocioAutoRegistroForm()
+
+    return render(request, "users/partner_autoregistro.html", {"form": form})
+
+
+class AutoRegistroSignupForm(forms.Form):
+    first_name = forms.CharField(
+        max_length=150,
+        label="Nombre",
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Nombre",
+        })
+    )
+    last_name = forms.CharField(
+        max_length=150,
+        label="Apellido",
+        widget=forms.TextInput(attrs={
+            "class": "form-control",
+            "placeholder": "Apellido",
+        })
+    )
+    password1 = forms.CharField(
+        label="Contraseña",
+        widget=forms.PasswordInput(attrs={
+            "class": "form-control",
+            "placeholder": "Contraseña",
+        })
+    )
+    password2 = forms.CharField(
+        label="Confirmar contraseña",
+        widget=forms.PasswordInput(attrs={
+            "class": "form-control",
+            "placeholder": "Repite la contraseña",
+        })
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        p1 = cleaned.get("password1")
+        p2 = cleaned.get("password2")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("Las contraseñas no coinciden.")
+        return cleaned
+
+
+def autoregistro_registro(request, token):
+    """
+    Vista que recibe el token de invitación, muestra el formulario
+    y crea el usuario una sola vez.
+    """
+    # 1) Buscar invitación
+    try:
+        invitacion = RegistroInvitacion.objects.get(token=token)
+    except RegistroInvitacion.DoesNotExist:
+        messages.error(request, "El enlace de invitación no es válido.")
+        return render(request, "users/autoregistro_invalid.html")
+
+    now = timezone.now()
+
+    # 2) Validar si ya fue usada
+    if invitacion.usado:
+        messages.error(request, "Este enlace ya fue utilizado.")
+        return render(request, "users/autoregistro_invalid.html")
+
+    # 3) Expirar después de 7 días usando creado_en
+    if invitacion.creado_en and invitacion.creado_en < now - timedelta(days=7):
+        invitacion.usado = True
+        invitacion.usado_en = now
+        invitacion.save()
+        messages.error(request, "Este enlace ha expirado.")
+        return render(request, "users/autoregistro_invalid.html")
+
+    # 4) Validar si ya existe un usuario con ese correo (por seguridad)
+    if User.objects.filter(email__iexact=invitacion.email).exists():
+        invitacion.usado = True
+        invitacion.usado_en = now
+        invitacion.save()
+        messages.error(
+            request,
+            "Ya existe un usuario registrado con este correo. No es posible usar esta invitación."
+        )
+        return render(request, "users/autoregistro_invalid.html")
+
+    if request.method == "POST":
+        form = AutoRegistroSignupForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            password = cd["password1"]
+
+            # Rol por defecto para el invitado: audit_manager
+            try:
+                role = Roles.objects.get(name="audit_manager")
+            except Roles.DoesNotExist:
+                role = None
+
+            # Crear usuario
+            user = User(
+                username=invitacion.email,
+                email=invitacion.email,
+                first_name=cd["first_name"],
+                last_name=cd["last_name"],
+                password=make_password(password),
+                modalidad="I",  # Individual
+                plan="A",       # Anual
+            )
+            if role:
+                user.role = role
+
+            # Guardar quién lo invitó (el socio)
+            if invitacion.socio_id:
+                user.created_by_id = invitacion.socio_id
+
+            # Si el socio que invitó es revisor fiscal → marcar también al nuevo usuario
+            if invitacion.socio and getattr(invitacion.socio, "revisor_fiscal", False):
+                user.revisor_fiscal = True
+
+            user.save()
+
+            # Marcar la invitación como usada
+            invitacion.usado = True
+            invitacion.usado_en = now
+            invitacion.save()
+
+            # ✅ Notificar al dueño que el autoregistro fue exitoso y se creó el usuario
+            try:
+                send_autoregistro_success_admin_notification(invitacion, user)
+            except Exception as e:
+                logger.error(
+                    f"[AUTOREGISTRO] Error notificando éxito al dueño: {e}",
+                    exc_info=True
+                )
+
+            # Autenticar y loguear al usuario recién creado
+            from django.contrib.auth import authenticate
+            auth_user = authenticate(request=request, email=user.email, password=password)
+
+            if auth_user is not None:
+                login_func(request, auth_user)
+                messages.success(
+                    request,
+                    "Tu cuenta ha sido creada correctamente. ¡Bienvenido a AuditaPro!"
+                )
+                return redirect("dashboard")
+            else:
+                messages.success(
+                    request,
+                    "Tu cuenta ha sido creada correctamente. Ahora puedes iniciar sesión con tu correo y contraseña."
+                )
+                return redirect("login")
+    else:
+        form = AutoRegistroSignupForm()
+
+    return render(
+        request,
+        "users/autoregistro_signup.html",
+        {
+            "form": form,
+            "email_destino": invitacion.email,  # solo para mostrarlo en el template
+        },
+    )
