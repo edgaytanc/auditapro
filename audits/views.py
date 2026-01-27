@@ -121,7 +121,7 @@ def create_audit(req):
         if isinstance(e, AUDIT_ERROR_INSTANCES):
             messages.error(req, error_message)
             return redirect("create_audit")
-        else:
+        else: 
             messages.error(req, "Ocurrió un error inesperado, por favor inténtelo de nuevo.")
             return redirect("create_audit")
 
