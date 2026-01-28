@@ -132,9 +132,7 @@ Crear Auditoría
         <div class="mb-3">
           <label class="form-label">Asignar a</label>
           {% with select_options=select_options %}
-          {% include "common/_select-input.html" with select_id="audit_assigned_users_ids" select_options=select_options
-          option_value="username" text_to_show1="get_full_name" text_to_show2="role" select_placeholder="Asignar
-          usuarios para la auditoria" %}
+          {% include "common/_select-input.html" with select_id="audit_assigned_users_ids" select_options=select_options select_placeholder="Asignar usuarios para la auditoria" %}
           {% endwith %}
         </div>
       </div>

@@ -63,3 +63,29 @@ def verify_2fa_view(request):
             return render(request, "mfa/verify_2fa.html")
 
     return render(request, "mfa/verify_2fa.html")
+
+def resend_2fa_code(request):
+    """
+    Reenvía el código de verificación al usuario.
+    """
+    user_id = request.session.get('pre_2fa_user_id')
+
+    if not user_id:
+        return redirect('login')
+
+    try:
+        user = User.objects.get(id=user_id)
+        from .utils import send_2fa_code
+        try:
+            send_2fa_code(user)
+            messages.success(request, "Se ha enviado un nuevo código de verificación a su correo.")
+        except Exception as e:
+            # En entorno local/desarrollo es común que falle el envío de correos si no está configurado SMTP.
+            # Capturamos el error para no mostrar una pantalla de error 500.
+            messages.error(request, "No se pudo enviar el correo de verificación. Por favor, intente más tarde o contacte a soporte.")
+            print(f"Error al enviar correo 2FA: {e}")
+            
+    except User.DoesNotExist:
+        pass
+    
+    return redirect('verify_2fa')
