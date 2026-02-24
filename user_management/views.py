@@ -7,6 +7,9 @@ from .decorators import admin_or_superadmin_required
 from django import forms
 import logging
 from users.emails import send_activation_email_html as send_welcome_email_html, send_admin_notification_email as send_admin_summary_email
+from django.views.decorators.http import require_POST
+from django.db import transaction
+from audits.models import Audit
 
 # Configurar el logger
 logger = logging.getLogger(__name__)
@@ -14,20 +17,32 @@ logger = logging.getLogger(__name__)
 @login_required
 @admin_or_superadmin_required
 def user_list(request):
-    """
-    Vista para mostrar la lista de todos los usuarios en el sistema.
-    """
     users = User.objects.all()
-    
-    # Seleccionar la plantilla según el rol del usuario
+    total_count = User.objects.count()
+    active_count = User.objects.filter(is_deleted=False).count()
+    inactive_count = User.objects.filter(is_deleted=True).count()
+
+
+    # ✅ Filtro por estado (querystring ?status=active|inactive|all)
+    status = request.GET.get("status", "active")
+    if status == "active":
+        users = users.filter(is_deleted=False)
+    elif status == "inactive":
+        users = users.filter(is_deleted=True)
+
+    # Mantén tu lógica de template por rol
     if request.user.role and request.user.role.name == 'superadmin':
         template = 'user_management/superadmin_user_list.html'
     else:
         template = 'user_management/user_list.html'
-    
+
     return render(request, template, {
-        'users': users,
-    })
+    "users": users,
+    "status": status,
+    "total_count": total_count,
+    "active_count": active_count,
+    "inactive_count": inactive_count,
+})
 
 
 @login_required
@@ -39,7 +54,8 @@ def user_details(request, user_id):
     
     # Obtener información adicional según el tipo de usuario
     is_auditor = user_to_view.role.name == "auditor"
-    is_admin = user_to_view.is_admin()
+    is_admin = user_to_view.role and user_to_view.role.name == "audit_manager"
+
     
     # Para auditores en modalidad grupal, mostrar a qué administrador está asignado
     assigned_to_admin = None
@@ -49,7 +65,7 @@ def user_details(request, user_id):
     # Para administradores, mostrar sus auditores asignados
     assigned_auditors = []
     if is_admin:
-        assigned_auditors = user_to_view.get_auditores()
+        assigned_auditors = User.objects.filter(administrador=user_to_view)
     
     # Para todos los usuarios, mostrar quién los creó (no tenemos esta info en el modelo actual)
     # Esto requeriría añadir un campo 'created_by' al modelo User
@@ -343,50 +359,84 @@ def create_user(request):
 
 @login_required
 @admin_or_superadmin_required
+@login_required
+@admin_or_superadmin_required
 def edit_user(request, user_id):
     """
     Vista para editar un usuario existente.
-    Permite al superadmin modificar los campos 'socio' y 'revisor_fiscal'.
+    Permite al superadmin modificar campos básicos + socio/revisor_fiscal + modalidad/plan + cupos.
     """
     user_to_edit = get_object_or_404(User, id=user_id)
 
-    if request.method == 'POST':
-        # Obtener datos del formulario
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        email = request.POST.get('email')
-        password = request.POST.get('password')
-        socio = request.POST.get('socio')              # checkbox socio
-        revisor_fiscal = request.POST.get('revisor_fiscal')  # 🔹 checkbox revisor fiscal
+    if request.method == "POST":
+        # Datos básicos
+        first_name = request.POST.get("first_name")
+        last_name = request.POST.get("last_name")
+        email = request.POST.get("email")
+        password = request.POST.get("password")
 
-        # Actualizar datos básicos
+        # 🔥 Nuevo
+        auditor_slots = request.POST.get("auditor_slots")
+
+        # Checks
+        socio = request.POST.get("socio")
+        revisor_fiscal = request.POST.get("revisor_fiscal")
+
+        # Selects
+        modalidad = request.POST.get("modalidad")   # I / G
+        plan_type = request.POST.get("plan_type")   # mensual / anual
+
+        # Actualizar básicos
         user_to_edit.first_name = first_name
         user_to_edit.last_name = last_name
         user_to_edit.email = email
 
-        # Si el superadmin está editando → puede cambiar 'socio' y 'revisor_fiscal'
-        if request.user.role and request.user.role.name == 'superadmin':
-            user_to_edit.socio = (socio == 'on')
-            user_to_edit.revisor_fiscal = (revisor_fiscal == 'on')
+        # Solo superadmin puede cambiar estructura comercial
+        if request.user.role and request.user.role.name == "superadmin":
+            user_to_edit.socio = (socio == "on")
+            user_to_edit.revisor_fiscal = (revisor_fiscal == "on")
 
-        # Actualizar contraseña solo si se proporciona una nueva
+            # Modalidad
+            if modalidad in ("I", "G"):
+                user_to_edit.modalidad = modalidad
+
+            # Plan
+            plan_map = {
+                "mensual": "M",
+                "anual": "A",
+            }
+            if plan_type in plan_map:
+                user_to_edit.plan = plan_map[plan_type]
+
+            # 🔥🔥🔥 GUARDAR CUPOS
+            if modalidad == "G":
+                try:
+                    auditor_slots_int = int(auditor_slots or 3)
+                    if auditor_slots_int < 3:
+                        auditor_slots_int = 3
+                    user_to_edit.auditor_slots = auditor_slots_int
+                except ValueError:
+                    user_to_edit.auditor_slots = 3
+
+        # Password solo si cambia
         if password:
             user_to_edit.password = make_password(password)
 
-        # Guardar cambios
         user_to_edit.save()
-        messages.success(request, f"Usuario {user_to_edit.username} actualizado exitosamente.")
-        return redirect('user_details', user_id=user_id)
 
-    # Seleccionar plantilla según el rol
-    template = 'user_management/edit_user.html'
-    if request.user.role and request.user.role.name == 'superadmin':
-        template = 'user_management/superadmin_edit_user.html'
+        messages.success(
+            request,
+            f"Usuario {user_to_edit.username} actualizado exitosamente."
+        )
+        return redirect("user_details", user_id=user_id)
 
-    # Renderizar vista de edición con datos actuales
+    template = "user_management/edit_user.html"
+    if request.user.role and request.user.role.name == "superadmin":
+        template = "user_management/superadmin_edit_user.html"
+
     return render(request, template, {
-        'user_to_edit': user_to_edit,
-        'is_superadmin': request.user.role.name == 'superadmin',  # Para mostrar los checks en el template
+        "user_to_edit": user_to_edit,
+        "is_superadmin": request.user.role.name == "superadmin",
     })
 
 
@@ -491,3 +541,51 @@ def superadmin_dashboard(request):
         'auditor_users': auditor_users,
         'superadmin_users': superadmin_users,
     })
+
+@login_required
+@admin_or_superadmin_required
+@require_POST
+def hard_delete_users(request):
+    """
+    Borra definitivamente (DELETE) usuarios seleccionados,
+    pero SOLO si están dados de baja (is_deleted=True)
+    y cumpliendo reglas de seguridad (blindaje).
+    """
+    ids = request.POST.getlist("selected_user_ids")
+
+    if not ids:
+        messages.error(request, "No seleccionaste usuarios.")
+        return redirect("user_list")
+
+    qs = User.objects.filter(id__in=ids)
+
+    # 1) Nunca permitir hard-delete de superusers
+    if qs.filter(is_superuser=True).exists():
+        messages.error(request, "No puedes eliminar definitivamente cuentas superusuario.")
+        return redirect("user_list")
+
+    # 2) Solo permitir hard-delete de usuarios dados de baja
+    if qs.filter(is_deleted=False).exists():
+        messages.error(request, "Solo puedes eliminar definitivamente usuarios que estén dados de baja.")
+        return redirect("user_list")
+
+    # 3) Evitar borrar usuarios con auditorías asociadas como audit_manager (evita CASCADE)
+    user_ids = list(qs.values_list("id", flat=True))
+    if Audit.objects.filter(audit_manager_id__in=user_ids).exists():
+        messages.error(
+            request,
+            "No puedes eliminar definitivamente usuarios que tengan auditorías asociadas. "
+            "Reasigna o cierra esas auditorías primero."
+        )
+        return redirect("user_list")
+
+    # 4) (Opcional recomendado) Evitar borrar rol superadmin aunque NO sea is_superuser
+    if qs.filter(role__name__iexact="superadmin").exists():
+        messages.error(request, "No puedes eliminar definitivamente cuentas con rol Super Admin.")
+        return redirect("user_list")
+
+    with transaction.atomic():
+        deleted_count, _ = qs.delete()
+
+    messages.success(request, f"Se eliminaron definitivamente {deleted_count} usuarios.")
+    return redirect("user_list")

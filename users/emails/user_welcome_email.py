@@ -6,9 +6,11 @@ import logging, smtplib
 logger = logging.getLogger("email_light_final")
 
 # URLs Drive — actualízalas con los enlaces reales
-GUIDE_URL = "https://drive.google.com/file/d/1HE227HHUmvqCHjXVLFrr2SlKYwkriaiB/view?usp=sharing"
+GUIDE_URL = "https://drive.google.com/file/d/1bROWJIfRgMdZHNMopsnkMGvN_g8s8_CD/view"
 EXCEL_URL = "https://docs.google.com/spreadsheets/d/1uZj1A00koYzBIz_WcsdGlFFK5a9T8HCi/edit?usp=sharing&ouid=104027925243269597712&rtpof=true&sd=true"
 VIDEO_URL = "https://drive.google.com/file/d/106fD9D6sVN1IwZTFlNfZdkZ5aUdfWr21/view"
+REVISORIA_GUIDE = "https://drive.google.com/file/d/1ExzqPbiZR52Q-10N50lz35N5RvanH3lm/view?usp=drive_link"
+
 
 def send_activation_email_light(user, password):
     """
@@ -34,8 +36,8 @@ def send_activation_email_light(user, password):
         <h4 style="margin-top:25px; color:#0056b3;">Recursos importantes:</h4>
         <ul style="line-height:1.8;">
           <li>📘 <a href="{GUIDE_URL}" target="_blank">Guía de uso del sistema Audita</a></li>
-          <li>📊 <a href="{EXCEL_URL}" target="_blank">Plantilla Excel para importar estados financieros</a></li>
           <li>🎥 <a href="{VIDEO_URL}" target="_blank">Video de introducción al sistema</a></li>
+          <li>🎥 <a href="{REVISORIA_GUIDE}" target="_blank">Video de introducción al sistema</a></li>
         </ul>
 
         <p>Si necesitas soporte, puedes escribirnos a <a href="mailto:sistemaaudita@gmail.com">sistemaaudita@gmail.com</a>.</p>

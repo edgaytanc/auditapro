@@ -25,21 +25,76 @@ Lista de Usuarios
         </div>
     </div>
 
+    <!-- ✅ FILTROS: buscador client-side + filtro por estado server-side -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <h3 class="card-title fs-5 fw-semibold">Filtrar Usuarios</h3>
-            <div class="row">
+
+            <!-- ✅ Filtro por estado (GET) -->
+            <form method="get" class="row g-2 align-items-center mb-3">
                 <div class="col-md-8">
+                    <!-- Nota: este input es para búsqueda client-side, NO se manda al server -->
                     <div class="input-group">
                         <input type="text" id="searchInput" class="form-control" placeholder="Buscar por nombre, usuario o email...">
-                        <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Limpiar búsqueda">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="currentColor"/>
                             </svg>
                         </button>
                     </div>
                 </div>
+
+                <div class="col-12">
+                    <ul class="nav nav-tabs">
+                    <li class="nav-item">
+                        <a class="nav-link {% if status == 'active' %}active{% endif %}"
+                        href="?status=active">
+                        Activos <span class="badge bg-secondary">{{ active_count }}</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if status == 'inactive' %}active{% endif %}"
+                        href="?status=inactive">
+                        Dados de baja <span class="badge bg-secondary">{{ inactive_count }}</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link {% if status == 'all' %}active{% endif %}"
+                        href="?status=all">
+                        Todos <span class="badge bg-secondary">{{ total_count }}</span>
+                        </a>
+                    </li>
+                    </ul>
+
+                    </div>
+
+            </form>
+
+            <!-- ✅ Acciones masivas: seleccionar + eliminar definitivo -->
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="selectAll">
+                    <label class="form-check-label" for="selectAll">Seleccionar todos</label>
+                </div>
+
+                <!-- Botón submit que borra en DB SOLO si todos seleccionados están dados de baja -->
+                {% if status == "inactive" %}
+                <button type="submit" form="bulkDeleteForm" class="btn btn-danger" id="bulkDeleteBtn" disabled>
+                    Eliminar definitivamente
+                </button>
+                {% else %}
+                <button type="button" class="btn btn-danger" disabled title="Ve a 'Dados de baja' para gestionar eliminaciones">
+                    Eliminar definitivamente
+                </button>
+                {% endif %}
+
             </div>
+
+            <small class="text-muted d-block mt-2">
+                * Eliminar definitivamente solo está permitido para usuarios <b>dados de baja</b>.
+            </small>
         </div>
     </div>
 
@@ -47,64 +102,95 @@ Lista de Usuarios
         <div class="card-body">
             <h3 class="card-title fs-5 fw-semibold">Usuarios del Sistema</h3>
             <p class="card-text">Listado completo de usuarios registrados en el sistema.</p>
-            
+
             {% if users %}
-            <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
-                <table class="table table-hover" id="usersTable">
-                    <thead>
-                        <tr>
-                            <th>Usuario</th>
-                            <th>Email</th>
-                            <th>Tipo de Usuario</th>
-                            <th>Modalidad</th>
-                            <th>Plan</th>
-                            <th>Estado</th>
-                            <th class="text-end">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for user in users %}
-                        <tr>
-                            <td>{{ user.username }}</td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ user.role.verbose_name }}</td>
-                            <td>
-                                {% if user.modalidad == 'I' %}
-                                Individual
-                                {% elif user.modalidad == 'S' %}
-                                Superadmin
+            <!-- ✅ Form POST para borrado definitivo -->
+            <form method="post" action="{% url 'hard_delete_users' %}" id="bulkDeleteForm">
+                {% csrf_token %}
+
+                <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-hover" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 44px;"></th>
+                                <th>Usuario</th>
+                                <th>Email</th>
+                                <th>Tipo de Usuario</th>
+                                <th>Modalidad</th>
+                                <th>Plan</th>
+                                <th>Estado</th>
+                                <th class="text-end">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <!-- ✅ Checkbox para selección -->
+                                <td>
+                                {% if not user.is_superuser and user.role and user.role.name != "superadmin" %}
+                                    <input
+                                        type="checkbox"
+                                        class="form-check-input row-check"
+                                        name="selected_user_ids"
+                                        value="{{ user.id }}"
+                                        data-is-deleted="{% if user.is_deleted %}1{% else %}0{% endif %}"
+                                        aria-label="Seleccionar usuario {{ user.username }}"
+                                    >
                                 {% else %}
-                                Grupal
+                                    <span class="text-muted" title="Cuenta protegida">
+                                        —
+                                    </span>
                                 {% endif %}
                             </td>
-                            <td>
-                                {% if user.plan == 'M' %}
-                                Mensual
-                                {% elif user.plan == 'A' %}
-                                Anual
-                                {% elif user.plan == 'D' %}
-                                Demo
-                                {% elif user.plan == 'NT' %}
-                                No Tiene
-                                {% else %}
-                                {{ user.plan }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if user.is_deleted %}
-                                <span class="badge bg-danger">Dado de baja</span>
-                                {% else %}
-                                <span class="badge bg-success">Activo</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end">
-                                <a href="{% url 'user_details' user.id %}" class="btn btn-outline-secondary btn-sm">Ver Detalles</a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+
+
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% if user.role %}
+                                        {{ user.role.verbose_name }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.modalidad == 'I' %}
+                                    Individual
+                                    {% elif user.modalidad == 'S' %}
+                                    Superadmin
+                                    {% else %}
+                                    Grupal
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.plan == 'M' %}
+                                    Mensual
+                                    {% elif user.plan == 'A' %}
+                                    Anual
+                                    {% elif user.plan == 'D' %}
+                                    Demo
+                                    {% elif user.plan == 'NT' %}
+                                    No Tiene
+                                    {% else %}
+                                    {{ user.plan }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_deleted %}
+                                    <span class="badge bg-danger">Dado de baja</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Activo</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'user_details' user.id %}" class="btn btn-outline-secondary btn-sm">Ver Detalles</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
             {% else %}
             <div class="text-center py-4">
                 <p class="mb-0">No hay usuarios registrados en el sistema.</p>
@@ -112,7 +198,7 @@ Lista de Usuarios
             {% endif %}
         </div>
     </div>
-    
+
     <div class="row mt-4">
         <div class="col-12 text-center">
             <a href="{% url 'superadmin_dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
@@ -120,22 +206,31 @@ Lista de Usuarios
     </div>
 </div>
 
+
+
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // ============================
+        // 1) Buscador client-side
+        // ============================
         const searchInput = document.getElementById('searchInput');
         const clearSearch = document.getElementById('clearSearch');
         const table = document.getElementById('usersTable');
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        
-        // Función para filtrar la tabla
+
+        // Si no hay tabla (no hay users), salir
+        if (!table) return;
+
+        const tbody = table.getElementsByTagName('tbody')[0];
+        const rows = tbody.getElementsByTagName('tr');
+
         function filterTable() {
-            const filter = searchInput.value.toLowerCase();
-            
+            const filter = (searchInput.value || '').toLowerCase();
+
             for (let i = 0; i < rows.length; i++) {
-                const username = rows[i].getElementsByTagName('td')[0].textContent.toLowerCase();
-                const email = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
-                
+                const username = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase(); // col 1 porque col 0 es checkbox
+                const email = rows[i].getElementsByTagName('td')[2].textContent.toLowerCase();
+
                 if (username.includes(filter) || email.includes(filter)) {
                     rows[i].style.display = '';
                 } else {
@@ -143,14 +238,73 @@ Lista de Usuarios
                 }
             }
         }
-        
-        // Eventos
+
         searchInput.addEventListener('keyup', filterTable);
-        
         clearSearch.addEventListener('click', function() {
             searchInput.value = '';
             filterTable();
         });
+
+        // ============================
+        // 2) Selección + borrado definitivo
+        // ============================
+        const selectAll = document.getElementById("selectAll");
+        const checks = Array.from(document.querySelectorAll(".row-check"));
+        const deleteBtn = document.getElementById("bulkDeleteBtn");
+        const form = document.getElementById("bulkDeleteForm");
+
+        function updateDeleteButtonState() {
+            const selected = checks.filter(c => c.checked);
+
+            if (selected.length === 0) {
+                deleteBtn.disabled = true;
+                return;
+            }
+
+            // Solo habilitar si TODOS están dados de baja
+            const anyActive = selected.some(c => c.dataset.isDeleted === "0");
+            deleteBtn.disabled = anyActive;
+        }
+
+        if (selectAll) {
+            selectAll.addEventListener("change", () => {
+                checks.forEach(c => c.checked = selectAll.checked);
+                updateDeleteButtonState();
+            });
+        }
+
+        checks.forEach(c => {
+            c.addEventListener("change", () => {
+                if (selectAll) {
+                    selectAll.checked = checks.every(x => x.checked);
+                }
+                updateDeleteButtonState();
+            });
+        });
+
+        if (form) {
+            form.addEventListener("submit", (e) => {
+                const selected = checks.filter(c => c.checked);
+
+                if (selected.length === 0) {
+                    e.preventDefault();
+                    return;
+                }
+
+                const anyActive = selected.some(c => c.dataset.isDeleted === "0");
+                if (anyActive) {
+                    e.preventDefault();
+                    alert("Solo puedes eliminar definitivamente usuarios dados de baja.");
+                    return;
+                }
+
+                const ok = confirm("¿Seguro? Esto eliminará definitivamente los usuarios seleccionados (no se puede deshacer).");
+                if (!ok) e.preventDefault();
+            });
+        }
+
+        // Init
+        updateDeleteButtonState();
     });
 </script>
 {% endblock extra_js %}

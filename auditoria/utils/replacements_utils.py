@@ -119,6 +119,14 @@ def build_replacements_dict(
         # Aplicar a todos los placeholders
         for placeholder in moneda_config['placeholders']:
             replacements[placeholder] = moneda_texto
+            
+        # Reemplazos adicionales para casos específicos en plantillas XLSX
+        replacements['[MONEDA]'] = moneda_nombre
+        replacements['[MONEDA_EXPRESION]'] = moneda_nombre
+
+        # Variantes del texto completo
+        replacements['Cifras expresadas en [MONEDA]'] = moneda_texto
+        replacements['Cifras expresadas en [MONEDA_EXPRESION]'] = moneda_texto
 
     # Nota: El procesamiento de balance ha sido eliminado
     logger.debug(f"Total de reemplazos generados: {len(replacements)}")
@@ -127,5 +135,7 @@ def build_replacements_dict(
         logger.debug(f"Ejemplos de reemplazos: {sample_keys}")
         for key in sample_keys:
             logger.debug(f"  {key}: {replacements[key]}")
+            
+    
 
     return replacements

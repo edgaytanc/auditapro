@@ -97,14 +97,19 @@ def _obtener_cuentas_activo(audit_id):
         slot = None
 
         # 🔗 Mapeo 1:1 contra las fechas clasificadas
+        tc = (bc.tipo_cuenta or "").strip().upper()
         if d1 and f == d1:
             slot = "d1"
         elif d2 and f == d2:
             slot = "d2"
+        # ✅ Si d3 y d4 son la MISMA fecha, distinguir por tipo_cuenta
+        elif d3 and d4 and d3 == d4 and f == d3:
+            slot = "d4" if tc == "NT_ACT" else "d3"
         elif d3 and f == d3:
             slot = "d3"
         elif d4 and f == d4:
             slot = "d4"
+
 
         if not slot:
             # Fecha que no coincide con ninguno de los cortes oficiales

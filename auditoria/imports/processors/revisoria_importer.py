@@ -200,17 +200,26 @@ def process_revisoria_sheet(sheet, audit_id):
                 except Exception:
                     continue
 
+                # ✅ SOLO para E (idx=4) y H (idx=7): las fechas pueden ser iguales,
+                # así que distinguimos por tipo_cuenta para que NO se pisen.
+                tipo_cuenta = "NT"
+                if col_idx == 4:      # Columna E (año anterior 31/12)
+                    tipo_cuenta = "NT_ANT"
+                elif col_idx == 7:    # Columna H (año actual 31/12)
+                    tipo_cuenta = "NT_ACT"
+
                 BalanceCuentas.objects.update_or_create(
                     audit=audit_instance,
                     tipo_balance="ANUAL",
                     fecha_corte=fecha,
                     seccion=current_section,
                     nombre_cuenta=nombre_cuenta,
+                    tipo_cuenta=tipo_cuenta,  # 👈 clave para evitar “agrupación”
                     defaults={
                         "valor": valor,
-                        "tipo_cuenta": "NT",
                     },
                 )
+
 
             # ------------------------------------------------------------------
             # 2.b) AJUSTES / RECLASIFICACIONES (Debe / Haber)
