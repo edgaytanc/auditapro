@@ -92,6 +92,29 @@ Editar Usuario
                     </div>
                 </div>
 
+                <div class="mb-3">
+                <label class="form-label">Cantidad de auditores</label>
+
+                <div class="input-group" style="max-width:200px;">
+                    <button class="btn btn-outline-secondary" type="button" id="minusSlots">-</button>
+
+                    <input type="number"
+                        class="form-control text-center"
+                        name="auditor_slots"
+                        id="auditorSlotsInput"
+                        value="{{ user_to_edit.auditor_slots|default:3 }}"
+                        min="3">
+
+                    <button class="btn btn-outline-secondary" type="button" id="plusSlots">+</button>
+                </div>
+
+                <small class="text-muted">
+                    El valor base es 3 auditores. Solo aplica para modalidad grupal.
+                </small>
+            </div>
+
+
+
                 {# 🔹 BLOQUE PARA MARCAS ESPECIALES — Solo visible para el superadmin #}
                 {% if is_superadmin %}
                 <div class="mt-4 mb-4 d-flex flex-column flex-md-row gap-3 align-items-start align-items-md-center">
@@ -139,4 +162,36 @@ Editar Usuario
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const modalidadSelect = document.querySelector('select[name="modalidad"]');
+    const input = document.getElementById("auditorSlotsInput");
+    const minus = document.getElementById("minusSlots");
+    const plus = document.getElementById("plusSlots");
+
+    function toggleState() {
+        const isGrupal = modalidadSelect.value === "G";
+        input.disabled = !isGrupal;
+        minus.disabled = !isGrupal;
+        plus.disabled = !isGrupal;
+    }
+
+    minus.addEventListener("click", () => {
+        let val = parseInt(input.value || "3");
+        val = Math.max(3, val - 1);
+        input.value = val;
+    });
+
+    plus.addEventListener("click", () => {
+        let val = parseInt(input.value || "3");
+        input.value = val + 1;
+    });
+
+    modalidadSelect.addEventListener("change", toggleState);
+    toggleState();
+});
+</script>
+
+
 {% endblock main_content %}

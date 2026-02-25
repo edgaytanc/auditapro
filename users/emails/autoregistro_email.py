@@ -8,6 +8,12 @@ from django.conf import settings
 
 logger = logging.getLogger("email_autoregistro")
 
+# URLs Drive — actualízalas con los enlaces reales
+GUIDE_URL = "https://drive.google.com/file/d/1bROWJIfRgMdZHNMopsnkMGvN_g8s8_CD/view"
+EXCEL_URL = "https://docs.google.com/spreadsheets/d/1uZj1A00koYzBIz_WcsdGlFFK5a9T8HCi/edit?usp=sharing&ouid=104027925243269597712&rtpof=true&sd=true"
+VIDEO_URL = "https://drive.google.com/file/d/106fD9D6sVN1IwZTFlNfZdkZ5aUdfWr21/view"
+REVISORIA_GUIDE = "https://drive.google.com/file/d/1ExzqPbiZR52Q-10N50lz35N5RvanH3lm/view?usp=drive_link"
+
 
 def send_autoregistro_email(invitacion, request):
     path = reverse("autoregistro_registro", kwargs={"token": invitacion.token})
@@ -16,10 +22,17 @@ def send_autoregistro_email(invitacion, request):
     subject = "Invitación para crear tu usuario en AuditaPro"
 
     context = {
-        "url_registro": url_registro,
-        "socio": invitacion.socio,      # o invitacion.creado_por si así se llama
-        "email_destino": invitacion.email,
+    "url_registro": url_registro,
+    "socio": invitacion.socio,
+    "email_destino": invitacion.email,
+
+    # 👇 enlaces Drive
+    "guide_url": GUIDE_URL,
+    #"excel_url": EXCEL_URL,
+    "video_url": VIDEO_URL,
+    "revisoria_guide": REVISORIA_GUIDE,
     }
+
 
     # ⬅️ AQUÍ EL CAMBIO
     html_body = render_to_string("users/autoregistro_email.html", context)

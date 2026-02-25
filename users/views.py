@@ -358,6 +358,8 @@ class PartnerUserForm(forms.Form):
 
 @login_required
 @user_passes_test(socio_o_superadmin)
+@login_required
+@user_passes_test(socio_o_superadmin)
 def partner_create_user(request):
     """
     Formulario para que socios creen usuarios (auditor o audit_manager).
@@ -371,9 +373,23 @@ def partner_create_user(request):
         form = PartnerUserForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            random_password = get_random_string(length=8, allowed_chars=string.ascii_letters + string.digits)
+            random_password = get_random_string(
+                length=8, allowed_chars=string.ascii_letters + string.digits
+            )
 
             try:
+                # 🔥🔥🔥 VALIDACIÓN DE CUPOS
+                if request.user.modalidad == "G":
+                    actuales = request.user.auditores.filter(is_deleted=False).count()
+                    limite = request.user.auditor_slots or 3
+
+                    if actuales >= limite:
+                        messages.error(
+                            request,
+                            f"Has alcanzado el límite de {limite} auditores para tu plan."
+                        )
+                        return redirect("partner_create_user")
+
                 user = User(
                     username=cd['email'],
                     first_name=cd['first_name'],
@@ -400,13 +416,12 @@ def partner_create_user(request):
 
                 user.save()
 
-                # ✅ Import local (evita errores de carga en tiempo de ejecución)
+                # ✅ Import local
                 from users.emails.user_welcome_email import send_activation_email_light
 
-                # Enviar correo liviano
                 send_activation_email_light(user, random_password)
 
-                # Enviar notificación interna si el creador es socio
+                # Notificación interna
                 if getattr(request.user, "socio", False):
                     send_admin_notification_email(request.user, user)
 
@@ -419,7 +434,6 @@ def partner_create_user(request):
             except Exception as e:
                 messages.error(request, f"Ocurrió un error al crear el usuario: {e}")
         else:
-            # 🔍 Mostrar errores específicos (por ejemplo: "El usuario con este correo ya existe.")
             error_messages = " ".join(
                 [str(e) for errs in form.errors.values() for e in errs]
             )

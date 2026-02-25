@@ -89,12 +89,32 @@ def create_audit(req):
     audit_identidad = req.POST.get("audit_identidad")
     audit_fecha_inicio = req.POST.get("audit_fechaInit")
     audit_fecha_final = req.POST.get("audit_fechaEnd")
-    audit_financial = 'audit_financial' in req.POST
-    activa_revisoria = 'activa_revisoria' in req.POST
+
+    audit_financial = "audit_financial" in req.POST
+    activa_revisoria = "activa_revisoria" in req.POST
+    audit_internal = "audit_internal" in req.POST
+
     audit_moneda = req.POST.get("audit_moneda")
-    
+
+    # ✅ Validación: debe elegir exactamente 1 tipo
+    selected_count = sum([audit_financial, activa_revisoria, audit_internal])
+
+    if selected_count == 0:
+        messages.error(req, "Por favor seleccione 1 tipo de auditoría.")
+        return redirect("create_audit")
+
+    if selected_count > 1:
+        messages.error(req, "Por favor seleccione solo 1 tipo de auditoría.")
+        return redirect("create_audit")
+
+    # ✅ Si es interna, se fuerza a que no sea financiera ni revisoria
+    # (tu servicio ya la tratará como Interna por descarte)
+    if audit_internal:
+        audit_financial = False
+        activa_revisoria = False
+
     # Si el usuario es de modalidad Individual, asignar la auditoría automáticamente a él mismo
-    if req.user.modalidad == 'I':
+    if req.user.modalidad == "I":
         audit_assigned_users_ids = [str(req.user.id)]
     else:
         audit_assigned_users_ids = req.POST.getlist("audit_assigned_users_ids")
@@ -109,19 +129,24 @@ def create_audit(req):
             audit_financial,
             activa_revisoria,
             audit_moneda,
-            audit_assigned_users_ids
+            audit_assigned_users_ids,
         )
         messages.success(req, "Auditoría creada exitosamente.")
         return redirect("create_audit")
-    except ValueError as e:
-        messages.error(req, "Alguno de los valores ingresados es inválido, por favor, ingrese los valores correctamente.")
+
+    except ValueError:
+        messages.error(
+            req,
+            "Alguno de los valores ingresados es inválido, por favor, ingrese los valores correctamente."
+        )
         return redirect("create_audit")
+
     except Exception as e:
         error_message = str(e)
         if isinstance(e, AUDIT_ERROR_INSTANCES):
             messages.error(req, error_message)
             return redirect("create_audit")
-        else: 
+        else:
             messages.error(req, "Ocurrió un error inesperado, por favor inténtelo de nuevo.")
             return redirect("create_audit")
 
