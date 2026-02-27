@@ -7,6 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('users', '0002_user_socio'),
+        ('users', '0006_merge_20260122_0458'),
         ('users', '0007_alter_user_auditor_slots_alter_user_modalidad_and_more'),
     ]
 
