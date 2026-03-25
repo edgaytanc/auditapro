@@ -1,0 +1,144 @@
+<!-- =================================================== -->
+<!-- 🔹 BLOQUE DE ENVÍO DE CORREO AUTOMÁTICO (con detección inteligente) -->
+<!-- =================================================== -->
+<div class="mb-3">
+  <label class="form-label">Archivos diligenciados</label>
+  <input type="file" id="archivos" class="form-control" multiple>
+  <small class="text-muted d-block mt-1">
+    Estos archivos no se subirán al sistema. Solo se adjuntarán manualmente en el correo.
+  </small>
+  <ul id="archivosLista" class="mt-2" style="font-size: 0.9rem;"></ul>
+</div>
+
+<!-- 🔹 Botones inteligentes -->
+<div class="d-flex flex-wrap align-items-center gap-2 mb-4">
+  <button type="button" id="btnPrincipalCorreo" class="btn btn-primary">
+    ✉️ Enviar correo
+  </button>
+
+  <div class="dropdown">
+    <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+      Usar otro método
+    </button>
+    <ul class="dropdown-menu">
+      <li><a class="dropdown-item" href="#" id="btnGmail">Enviar con Gmail</a></li>
+      <li><a class="dropdown-item" href="#" id="btnOutlookWeb">Enviar con Outlook Web</a></li>
+      <li><a class="dropdown-item" href="#" id="btnMailto">Abrir en cliente de correo</a></li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  // Elementos del DOM
+  const inputArchivos = document.getElementById("archivos");
+  const listaArchivos = document.getElementById("archivosLista");
+  const btnPrincipal  = document.getElementById("btnPrincipalCorreo");
+  const btnGmail      = document.getElementById("btnGmail");
+  const btnOutlookWeb = document.getElementById("btnOutlookWeb");
+  const btnMailto     = document.getElementById("btnMailto");
+
+  // Mostrar archivos seleccionados
+  inputArchivos?.addEventListener("change", () => {
+    listaArchivos.innerHTML = "";
+    Array.from(inputArchivos.files || []).forEach(f => {
+      const li = document.createElement("li");
+      li.textContent = f.name;
+      listaArchivos.appendChild(li);
+    });
+  });
+
+  // Construcción del asunto y cuerpo
+  function construirAsunto() {
+    const auditSel = $("#audit_id option:selected").text() || "Auditoría";
+    return `Entrega de documentos diligenciados — ${auditSel}`;
+  }
+
+  function construirCuerpo() {
+    const nota = $("#note").val() || "";
+    const archivos = Array.from(inputArchivos.files || []).map(f => `• ${f.name}`).join("\n");
+    return (
+`Estimado/a,
+
+Adjunto los archivos diligenciados correspondientes a ${$("#audit_id option:selected").text()}.
+${nota ? `\nNota: ${nota}\n` : ""}
+
+Por favor, confirmar recepción.
+
+Archivos a adjuntar (desde mi equipo):
+${archivos || "• (sin archivos seleccionados)"}
+
+Saludos,
+{{ request.user.get_full_name }}`
+    );
+  }
+
+  // Obtener destinatario
+  function getDestinatario() {
+    const selected = $("#notifieds_users option:selected").first().text();
+    return selected ? selected.split(" - ")[0] : "";
+  }
+
+  // Métodos de apertura
+  function abrirMailto() {
+    const to = getDestinatario();
+    const subject = encodeURIComponent(construirAsunto());
+    const body = encodeURIComponent(construirCuerpo());
+    window.location.href = `mailto:${to}?subject=${subject}&body=${body}`;
+    alert("El correo se abrirá en tu cliente de correo. Adjunta los archivos antes de enviarlo.");
+  }
+
+  function abrirGmail() {
+    const to = getDestinatario();
+    const subject = encodeURIComponent(construirAsunto());
+    const body = encodeURIComponent(construirCuerpo());
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${to}&su=${subject}&body=${body}`, "_blank");
+  }
+
+  function abrirOutlookWeb() {
+    const to = getDestinatario();
+    const subject = encodeURIComponent(construirAsunto());
+    const body = encodeURIComponent(construirCuerpo());
+    window.open(`https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`, "_blank");
+  }
+
+  // ===================================================
+  // 🔹 Detección inteligente según el correo del usuario
+  // ===================================================
+  const emailUser = "{{ request.user.email|default:'' }}".toLowerCase();
+  let metodo = "mailto";
+
+  if (emailUser.includes("@gmail.com") || emailUser.includes("@google")) {
+    metodo = "gmail";
+    btnPrincipal.innerHTML = "📧 Enviar con Gmail";
+    btnPrincipal.classList.replace("btn-primary", "btn-danger");
+  } else if (
+    emailUser.includes("@outlook") ||
+    emailUser.includes("@hotmail") ||
+    emailUser.includes("@office") ||
+    emailUser.includes("@bbva.com") ||  // dominio corporativo común
+    emailUser.includes("@audita.com")   // ejemplo de dominio empresarial
+  ) {
+    metodo = "outlook";
+    btnPrincipal.innerHTML = "📨 Enviar con Outlook Web";
+    btnPrincipal.classList.replace("btn-primary", "btn-info");
+  } else {
+    metodo = "mailto";
+    btnPrincipal.innerHTML = "✉️ Abrir cliente de correo";
+    btnPrincipal.classList.replace("btn-primary", "btn-secondary");
+  }
+
+  // ===================================================
+  // 🔹 Asignación de eventos
+  // ===================================================
+  btnPrincipal?.addEventListener("click", () => {
+    if (metodo === "gmail") abrirGmail();
+    else if (metodo === "outlook") abrirOutlookWeb();
+    else abrirMailto();
+  });
+
+  btnGmail?.addEventListener("click", e => { e.preventDefault(); abrirGmail(); });
+  btnOutlookWeb?.addEventListener("click", e => { e.preventDefault(); abrirOutlookWeb(); });
+  btnMailto?.addEventListener("click", e => { e.preventDefault(); abrirMailto(); });
+})();
+</script>
