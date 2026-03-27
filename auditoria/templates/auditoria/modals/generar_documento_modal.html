@@ -1,0 +1,209 @@
+<div class="modal fade" id="generarDocumentoModal" tabindex="-1" aria-hidden="true" data-user-role="{{ request.user.role.name|default:'auditor' }}">
+
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold">Generar Documento Word</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <form id="formGenerarDocumento">
+          <div class="mb-3">
+            <label class="form-label">Carpeta:</label>
+            <select class="form-select" name="carpeta">
+              <option value="">Seleccione una carpeta</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Documento:</label>
+            <select class="form-select" name="documento">
+              <option value="">Seleccione un documento</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Auditor:</label>
+            <input type="text" class="form-control no-edit" value="{{ auditor_nombre }}" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Supervisor:</label>
+            <input type="text" class="form-control no-edit" value="{{ supervisor_nombre }}" readonly>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Fecha de Elaboración:</label>
+            <input type="date" class="form-control" name="fecha_elaboracion">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Fecha de Aprobación:</label>
+            <input type="date" class="form-control" name="fecha_aprobacion">
+          </div>
+
+          <div class="d-flex justify-content-end mt-4">
+            <button type="button" id="btnDescargar" class="btn btn-primary me-2">Generar y Descargar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div> <!-- 👈 CIERRA AQUÍ el modal completamente -->
+
+
+<!-- ==================== SCRIPTS ==================== -->
+
+<!-- Script para cargar carpetas -->
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const selectCarpeta = document.querySelector("select[name='carpeta']");
+  const auditId = "{{ audit.id }}";  // el id de la auditoría ya se pasa en el contexto
+
+  try {
+    const response = await fetch(`/auditoria/detalle/${auditId}/obtener-carpetas/`);
+    const data = await response.json();
+
+    if (data.carpetas && data.carpetas.length > 0) {
+      selectCarpeta.innerHTML = `<option value="">Seleccione una carpeta</option>`;
+      data.carpetas.forEach(carpeta => {
+        const option = document.createElement("option");
+        const depth = carpeta.split("/").length - 1; // identación si hay subcarpetas
+        option.value = carpeta;
+        option.textContent = `${" ".repeat(depth)}${carpeta}`;
+        selectCarpeta.appendChild(option);
+      });
+    } else {
+      selectCarpeta.innerHTML = `<option value="">No hay carpetas disponibles</option>`;
+    }
+  } catch (err) {
+    console.error("Error al cargar carpetas:", err);
+    selectCarpeta.innerHTML = `<option value="">Error al cargar carpetas</option>`;
+  }
+});
+</script>
+
+<!-- Script para cargar documentos según carpeta -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const selectCarpeta = document.querySelector("select[name='carpeta']");
+  const selectDocumento = document.querySelector("select[name='documento']");
+  const auditId = "{{ audit.id }}";
+
+  selectCarpeta.addEventListener("change", async () => {
+    const carpetaSeleccionada = selectCarpeta.value;
+    selectDocumento.innerHTML = `<option value="">Cargando...</option>`;
+
+    if (!carpetaSeleccionada) {
+      selectDocumento.innerHTML = `<option value="">Seleccione una carpeta primero</option>`;
+      return;
+    }
+
+    try {
+      const encodedCarpeta = encodeURIComponent(carpetaSeleccionada);
+      const response = await fetch(`/auditoria/detalle/${auditId}/obtener-documentos/${encodedCarpeta}/`);
+      const data = await response.json();
+
+      if (data.documentos && data.documentos.length > 0) {
+        selectDocumento.innerHTML = `<option value="">Seleccione un documento</option>`;
+        data.documentos.forEach(doc => {
+          const option = document.createElement("option");
+          option.value = doc;
+          option.textContent = doc;
+          selectDocumento.appendChild(option);
+        });
+      } else {
+        selectDocumento.innerHTML = `<option value="">No hay documentos disponibles</option>`;
+      }
+    } catch (err) {
+      console.error("Error al cargar documentos:", err);
+      selectDocumento.innerHTML = `<option value="">Error al cargar documentos</option>`;
+    }
+  });
+});
+</script>
+
+
+<!-- Script para descargar el documento con datos del modal -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const auditId = "{{ audit.id }}";
+  const selectCarpeta = document.querySelector("select[name='carpeta']");
+  const selectDocumento = document.querySelector("select[name='documento']");
+  const btnDescargar = document.getElementById("btnDescargar");
+
+  btnDescargar.addEventListener("click", () => {
+    const carpeta = selectCarpeta.value;
+    const documento = selectDocumento.value;
+    const fechaElaboracion = document.querySelector("input[name='fecha_elaboracion']").dataset.formatted || "";
+    const fechaAprobacion = document.querySelector("input[name='fecha_aprobacion']").dataset.formatted || "";
+
+    if (!carpeta || !documento) {
+      alert("Seleccione una carpeta y un documento antes de continuar.");
+      return;
+    }
+
+    const url = `/auditoria/detalle/${auditId}/descargar-documento/?carpeta=${encodeURIComponent(carpeta)}&documento=${encodeURIComponent(documento)}&fecha_elaboracion=${encodeURIComponent(fechaElaboracion)}&fecha_aprobacion=${encodeURIComponent(fechaAprobacion)}`;
+
+    window.location.href = url;
+  });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("generarDocumentoModal");
+  const role = (modal?.dataset?.userRole || "auditor").trim();
+
+  const inpElab  = document.querySelector("input[name='fecha_elaboracion']");
+  const inpAprob = document.querySelector("input[name='fecha_aprobacion']");
+  const selectCarpeta = document.querySelector("select[name='carpeta']");
+  const selectDocumento = document.querySelector("select[name='documento']");
+  const btnDescargar = document.getElementById("btnDescargar");
+  const auditId = "{{ audit.id }}";
+
+  // ======================================================
+  // 🔹 BLOQUEO DE CAMPOS SEGÚN ROL
+  // ======================================================
+  if (role === "audit_manager") {
+    // SUPERVISOR → puede editar solo la fecha de aprobación
+    if (inpElab)  { inpElab.readOnly = true;  inpElab.classList.add("no-edit"); }
+    if (inpAprob) { inpAprob.readOnly = false; inpAprob.classList.remove("no-edit"); }
+  } else {
+    // AUDITOR → puede editar solo la fecha de elaboración
+    if (inpElab)  { inpElab.readOnly = false; inpElab.classList.remove("no-edit"); }
+    if (inpAprob) { inpAprob.readOnly = true;  inpAprob.classList.add("no-edit"); }
+  }
+
+  // ======================================================
+  // 🔹 DESCARGAR DOCUMENTO CON FECHAS
+  // ======================================================
+  if (btnDescargar) {
+    btnDescargar.addEventListener("click", () => {
+      const carpeta = selectCarpeta.value;
+      const documento = selectDocumento.value;
+      const fechaElaboracion = inpElab ? inpElab.value : "";
+      const fechaAprobacion  = inpAprob ? inpAprob.value : "";
+
+      if (!carpeta || !documento) {
+        alert("Seleccione una carpeta y un documento antes de continuar.");
+        return;
+      }
+
+      // Construimos la URL con los parámetros
+      const params = new URLSearchParams({
+        carpeta: carpeta,
+        documento: documento,
+        fecha_elaboracion: fechaElaboracion || "",
+        fecha_aprobacion: fechaAprobacion || ""
+      });
+
+      const url = `/auditoria/detalle/${auditId}/descargar-documento/?${params.toString()}`;
+      console.log("📥 Generando y descargando:", url); // útil para verificar que se envíen los datos
+      window.location.href = url; // Forzar la descarga
+    });
+  }
+});
+</script>

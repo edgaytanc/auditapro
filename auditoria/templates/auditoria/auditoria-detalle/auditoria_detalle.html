@@ -13,6 +13,10 @@
 
     <!-- Toolbar -->
     <div class="toolbar">
+        <button class="btn btn-primary" onclick="abrirModalGenerarDocumento({{ audit.id }})">
+            📄 Generar documento
+        </button>
+
         <button onclick="handleExportCuentas()" class="download-button">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-img" fill="currentColor" viewBox="0 0 16 16">
                 <path
@@ -100,4 +104,24 @@ window.AUDIT_CTX = {
 };
 </script>
 <script src="{% static 'js/auditoria_detalle.js' %}"></script>
+
+<!-- Script para boton generar documento -->
+<script>
+function abrirModalGenerarDocumento(auditId) {
+  fetch(`/auditoria/detalle/${auditId}/generar-modal/`)
+    .then(response => response.json())
+    .then(data => {
+      const modalDiv = document.createElement("div");
+      modalDiv.innerHTML = data.html;
+      document.body.appendChild(modalDiv);
+
+      const modal = new bootstrap.Modal(document.getElementById("generarDocumentoModal"));
+      modal.show();
+    })
+    .catch(err => console.error("Error al cargar modal:", err));
+}
+</script>
+
+{% include 'auditoria/modals/generar_documento_modal.html' with audit=audit auditor_nombre=auditor_nombre supervisor_nombre=supervisor_nombre %}
+
 {% endblock main_content %}

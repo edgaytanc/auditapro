@@ -1,11 +1,18 @@
 {% extends "common/system-base.html" %}
+{% load static %}
 
 {% block title %}
   Audita
 {% endblock title %}
+
 {% block page_title %}
   Inicio
 {% endblock page_title %}
+
+{% block main_header_content %}
+  {% include "users/partials/audita_ia_button.html" %}
+{% endblock main_header_content %}
+
 {% block main_content %}
   <div class="card" style="border-radius: 15px">
     <div class="card-body p-5">

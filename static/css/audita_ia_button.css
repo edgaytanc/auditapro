@@ -1,0 +1,305 @@
+.audita-ia-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 22px;
+  border-radius: 16px;
+  text-decoration: none;
+  background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 45%, #00c2ff 100%);
+  color: #fff;
+  font-weight: 700;
+  box-shadow:
+    0 10px 30px rgba(13, 110, 253, 0.35),
+    0 0 18px rgba(111, 66, 193, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.28s ease;
+  min-width: 220px;
+  justify-content: center;
+  cursor: pointer;
+  animation: auditaPulse 2.2s infinite ease-in-out;
+}
+
+.audita-ia-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 55%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.35) 50%,
+    rgba(255,255,255,0) 100%
+  );
+  transform: skewX(-25deg);
+  transition: left 0.7s ease;
+}
+
+.audita-ia-btn:hover::before {
+  left: 130%;
+}
+
+.audita-ia-btn:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow:
+    0 16px 38px rgba(13, 110, 253, 0.45),
+    0 0 24px rgba(111, 66, 193, 0.5);
+  color: #fff;
+  text-decoration: none;
+}
+
+.audita-ia-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(6px);
+  font-size: 1.2rem;
+  box-shadow: inset 0 0 10px rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+
+.audita-ia-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.audita-ia-text small {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  opacity: 0.9;
+  margin-bottom: 2px;
+}
+
+.audita-ia-text strong {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.audita-ia-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 16, 30, 0.55);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.28s ease;
+  z-index: 9999;
+  padding: 20px;
+}
+
+.audita-ia-modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.audita-ia-modal-box {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 30px 26px 24px;
+  box-shadow:
+    0 25px 60px rgba(15, 23, 42, 0.25),
+    0 0 30px rgba(13, 110, 253, 0.10);
+  transform: translateY(30px) scale(0.95);
+  opacity: 0;
+  transition: all 0.30s ease;
+  text-align: center;
+  overflow: hidden;
+}
+
+.audita-ia-modal-overlay.show .audita-ia-modal-box {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+
+.audita-ia-modal-box::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(111, 66, 193, 0.08) 0%,
+    rgba(13, 110, 253, 0.08) 50%,
+    rgba(0, 194, 255, 0.08) 100%
+  );
+  pointer-events: none;
+}
+
+.audita-ia-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  font-size: 1.8rem;
+  line-height: 1;
+  color: #6c757d;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.audita-ia-close:hover {
+  transform: scale(1.1);
+  color: #212529;
+}
+
+.audita-ia-modal-badge {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(13, 110, 253, 0.10);
+  color: #0d6efd;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.audita-ia-modal-icon {
+  position: relative;
+  z-index: 1;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 18px;
+  border-radius: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: #fff;
+  background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 45%, #00c2ff 100%);
+  box-shadow:
+    0 16px 35px rgba(13, 110, 253, 0.25),
+    0 0 22px rgba(111, 66, 193, 0.18);
+  animation: auditaFloat 2.6s ease-in-out infinite;
+}
+
+.audita-ia-modal-title {
+  position: relative;
+  z-index: 1;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #172033;
+  margin-bottom: 12px;
+}
+
+.audita-ia-modal-description {
+  position: relative;
+  z-index: 1;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #4f5b6b;
+  margin-bottom: 24px;
+  padding: 0 8px;
+}
+
+.audita-ia-modal-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.audita-ia-primary-btn,
+.audita-ia-secondary-btn {
+  min-width: 140px;
+  border-radius: 14px;
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: all 0.25s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.audita-ia-primary-btn {
+  background: linear-gradient(135deg, #6f42c1 0%, #0d6efd 45%, #00c2ff 100%);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(13, 110, 253, 0.25);
+}
+
+.audita-ia-primary-btn:hover {
+  transform: translateY(-2px);
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 16px 28px rgba(13, 110, 253, 0.32);
+}
+
+.audita-ia-secondary-btn {
+  background: #eef3f8;
+  color: #334155;
+}
+
+.audita-ia-secondary-btn:hover {
+  background: #e2e8f0;
+  transform: translateY(-2px);
+}
+
+@keyframes auditaFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes auditaPulse {
+  0%, 100% {
+    box-shadow:
+      0 10px 30px rgba(13, 110, 253, 0.35),
+      0 0 18px rgba(111, 66, 193, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 14px 34px rgba(13, 110, 253, 0.45),
+      0 0 26px rgba(111, 66, 193, 0.45);
+  }
+}
+
+@media (max-width: 576px) {
+  .audita-ia-btn {
+    min-width: auto;
+    padding: 10px 16px;
+  }
+
+  .audita-ia-text strong {
+    font-size: 0.92rem;
+  }
+
+  .audita-ia-modal-box {
+    padding: 28px 18px 22px;
+  }
+
+  .audita-ia-modal-title {
+    font-size: 1.45rem;
+  }
+
+  .audita-ia-primary-btn,
+  .audita-ia-secondary-btn {
+    width: 100%;
+  }
+}

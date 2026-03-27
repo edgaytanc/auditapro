@@ -3,6 +3,7 @@ from . import views
 from .utils.import_utils import importar_cuentas_contables
 from .utils.export_utils import export_cuentas_contables
 from .views import audit_mark_views
+from .views import audit_views
 from .api import template_creator_views
 
 urlpatterns = [
@@ -26,4 +27,11 @@ urlpatterns = [
     path('api/symbols/library/', template_creator_views.get_symbols_library, name='api_get_symbols_library'),
     path('api/generate-template/', template_creator_views.generate_template, name='api_generate_template'),
     path('api/audit/<int:audit_id>/marks/', template_creator_views.get_audit_marks, name='api_get_audit_marks'),
+    
+    # Generate Document Routes
+    path("generate/<int:audit_id>/", audit_views.generate_audit_document, name="generate_audit_document"),
+    path("detalle/<int:audit_id>/generar-modal/", audit_views.generar_documento_modal, name="generar_documento_modal"),
+    path('detalle/<int:audit_id>/obtener-carpetas/', audit_views.obtener_carpetas_auditoria, name='obtener_carpetas_auditoria'),
+    path("detalle/<int:audit_id>/obtener-documentos/<path:carpeta_nombre>/", audit_views.obtener_documentos_auditoria, name="obtener_documentos_auditoria"),
+    path("detalle/<int:audit_id>/descargar-documento/", audit_views.descargar_documento_auditoria, name="descargar_documento_auditoria"),
 ]

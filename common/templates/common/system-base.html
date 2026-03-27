@@ -1,4 +1,5 @@
 {% extends "common/base.html" %}
+{% load static %}
 
 {% block content %}
 
@@ -6,7 +7,7 @@
 
   <div class="w-100 ms-sm-auto overflow-y-auto d-flex flex-column flex-grow-1">
     <header>
-
+      
       {% include "common/_aside_header.html" %}
 
       <div class="bg-secondary-subtle w-100 p-3 d-flex flex-column gap-3"
@@ -26,6 +27,7 @@
         </div>
       </div>
     </header>
+
     <main class="d-flex flex-wrap flex-grow-1 flex-column gap-4 flex-md-nowrap align-items-center pt-3 pb-2 p-md-4 px-3">
 
       {% include "common/_status-alert.html" %}
@@ -37,8 +39,13 @@
           <a class="btn btn-secondary" href="{{ request.path }}?reload_audit=true">Escoger Nueva Auditoría</a>
         {% endif %}
       </header>
+
       {% block main_content %}
       {% endblock main_content %}
     </main>
   </div>
+
+  <link rel="stylesheet" href="{% static 'css/audita_ia_button.css' %}">
+  <script src="{% static 'js/audita_ia_button.js' %}"></script>
+
 {% endblock content %}
