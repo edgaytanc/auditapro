@@ -24,7 +24,7 @@ def download_document(request, audit_id, folder, filename):
     # Determinar si es auditoría interna
     is_internal = audit.tipoAuditoria == 'I'
     
-    template_path = get_template_path(folder, filename, is_internal=is_internal)
+    template_path = get_template_path(folder, filename, audit_type=audit.tipoAuditoria)
     if not template_path or not os.path.exists(template_path):
         return HttpResponse(f'Plantilla no encontrada: {folder}/{filename}', status=404)
     try:
@@ -33,10 +33,21 @@ def download_document(request, audit_id, folder, filename):
             doc = modify_document_word(template_path, audit)
             doc.save(buffer)
             content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        elif filename.lower().endswith('.xlsx'):
+        if filename.lower().endswith('.xlsx'):
             wb = modify_document_excel(template_path, audit)
+
+            # ⬇️ LÓGICA CORREGIDA
+            try:
+                from auditoria.Revisoria.activo import update_dynamic_excel
+                #wb = update_dynamic_excel(wb, "Hoja1", audit.id)  # ← se agrega "Hoja1"
+            except Exception as e:
+                print("⚠️ Error en update_dynamic_excel:", e)
+            # ⬆️ LÓGICA CORREGIDA
+
             wb.save(buffer)
             content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+
         elif filename.lower().endswith('.xlsm'):
             # modify_document_excel_with_macros devuelve una ruta de archivo, no un objeto workbook
             processed_file_path = modify_document_excel_with_macros(template_path, audit)
