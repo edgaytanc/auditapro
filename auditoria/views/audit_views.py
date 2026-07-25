@@ -197,6 +197,8 @@ def obtener_carpetas_auditoria(request, audit_id):
     # Selecciona la carpeta base según el tipo de auditoría
     if audit.tipoAuditoria == 'I':
         base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_interna')
+    elif audit.tipoAuditoria == 'R':
+        base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_revisoria')
     else:
         base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_financiera')
 
@@ -243,6 +245,8 @@ def obtener_documentos_auditoria(request, audit_id, carpeta_nombre):
 
     if audit.tipoAuditoria == 'I':
         base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_interna')
+    elif audit.tipoAuditoria == 'R':
+        base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_revisoria')
     else:
         base_path = os.path.join(settings.BASE_DIR, 'static', 'templates_base_financiera')
 
@@ -279,12 +283,55 @@ def _get_audit_object(audit_id):
 
 def _resolve_template_path(audit, carpeta, documento):
     """Devuelve la ruta absoluta del archivo base (Word o Excel)."""
-    base_dir = (
-        "templates_base_interna"
-        if audit.tipoAuditoria == "I"
-        else "templates_base_financiera"
-    )
+    if audit.tipoAuditoria == "I":
+        base_dir = "templates_base_interna"
+    elif audit.tipoAuditoria == "R":
+        base_dir = "templates_base_revisoria"
+    else:
+        base_dir = "templates_base_financiera"
     return os.path.join(settings.BASE_DIR, "static", base_dir, carpeta, documento)
+
+
+def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
+                                 fecha_elaboracion, fecha_aprobacion):
+    """
+    Plantillas 2026: los papeles nuevos no traen etiquetas [NOMBRE_AUDITOR] /
+    [FECHA_ELABORACION]; en su lugar tienen un bloque de encabezado con las
+    celdas "Elaboro"/"Reviso" (y "Fecha" debajo). Esta función localiza esas
+    celdas ancla y escribe el dato en la celda contigua derecha, solo si está
+    vacía (no pisa datos existentes).
+    """
+    import unicodedata
+
+    def _norm(v):
+        s = unicodedata.normalize("NFD", str(v))
+        s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+        return s.strip().rstrip(":").strip().lower()
+
+    objetivos = {
+        "elaboro": (auditor_nombre, fecha_elaboracion),
+        "reviso": (supervisor_nombre, fecha_aprobacion),
+    }
+    for sh in wb.worksheets:
+        max_row = min(sh.max_row or 1, 30)
+        max_col = min(sh.max_column or 1, 20)
+        for row in sh.iter_rows(min_row=1, max_row=max_row, max_col=max_col):
+            for cell in row:
+                if not isinstance(cell.value, str):
+                    continue
+                clave = _norm(cell.value)
+                if clave not in objetivos:
+                    continue
+                nombre, fecha = objetivos[clave]
+                destino = sh.cell(row=cell.row, column=cell.column + 1)
+                if destino.value in (None, ""):
+                    destino.value = nombre
+                # "Fecha" en la fila siguiente del mismo bloque
+                abajo = sh.cell(row=cell.row + 1, column=cell.column)
+                if isinstance(abajo.value, str) and _norm(abajo.value) == "fecha":
+                    destino_fecha = sh.cell(row=cell.row + 1, column=cell.column + 1)
+                    if fecha and destino_fecha.value in (None, ""):
+                        destino_fecha.value = fecha
 
 
 def _apply_word_replacements(file_path, replacements):
@@ -524,6 +571,13 @@ def descargar_documento_auditoria(request, audit_id):
                                 if k in v:
                                     v = v.replace(k, val)
                             cell.value = v
+
+            # Plantillas 2026 sin etiquetas: escribir Auditor/Jefe y fechas
+            # junto a las celdas ancla "Elaboro"/"Reviso".
+            _inyectar_datos_auditor_jefe(
+                wb, auditor_nombre, supervisor_nombre,
+                fecha_elaboracion, fecha_aprobacion,
+            )
 
             bio = BytesIO()
             wb.save(bio)

@@ -1,8 +1,8 @@
 {% extends "common/system-base.html" %}
 {% load static %}
 
-{% block title %}Detalles de la Auditoría{% endblock title %}
-{% block page_title %}Detalles de la Auditoría{% endblock page_title %}
+{% block title %}Papeles de Trabajo{% endblock title %}
+{% block page_title %}Papeles de Trabajo{% endblock page_title %}
 
 {% block main_content %}
 <link rel="stylesheet" href="{% static 'users/styles.css' %}">
@@ -14,7 +14,7 @@
     <!-- Toolbar -->
     <div class="toolbar">
         <button class="btn btn-primary" onclick="abrirModalGenerarDocumento({{ audit.id }})">
-            📄 Generar documento
+            📋 Datos Auditor y Jefe
         </button>
 
         <button onclick="handleExportCuentas()" class="download-button">
@@ -121,7 +121,5 @@ function abrirModalGenerarDocumento(auditId) {
     .catch(err => console.error("Error al cargar modal:", err));
 }
 </script>
-
-{% include 'auditoria/modals/generar_documento_modal.html' with audit=audit auditor_nombre=auditor_nombre supervisor_nombre=supervisor_nombre %}
 
 {% endblock main_content %}

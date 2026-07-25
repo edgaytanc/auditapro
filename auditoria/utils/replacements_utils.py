@@ -61,6 +61,9 @@ def build_replacements_dict(
         replacements['[ENTIDAD_COMPLETA]'] = f"Entidad: {entidad_valor}"
         # NUEVO: reemplazo literal de encabezado
         replacements['Entidad: '] = f"Entidad: {entidad_valor}"
+        # 2026: encabezado sin dos puntos usado por las plantillas nuevas
+        # ("Entidad XXXXXXXXXXXXXXXX") — ver regla regex "Entidad\s+X{3,}".
+        replacements['[ENTIDAD_ETIQUETA]'] = f"Entidad {entidad_valor}"
 
     # Procesar fechas
     if 'fecha_rango' in config:
