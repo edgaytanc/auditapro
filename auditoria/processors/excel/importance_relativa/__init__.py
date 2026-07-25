@@ -1,6 +1,7 @@
 from .ingresos_totales import process_ir_ingresos_totales
 from .activos_totales import process_ir_activos_totales
 from .utilidad import process_ir_utilidad
+from .datos_entrada import process_ir_datos_entrada
 
 
 def process_importance_relative(workbook, balances):
@@ -30,6 +31,9 @@ def process_importance_relative(workbook, balances):
             process_ir_activos_totales(sheet_name, workbook, balances, anio_actual)
         elif "IR UTILIDAD" in name_upper:
             process_ir_utilidad(sheet_name, workbook, balances, anio_actual)
+        elif "DATOS ENTRADA" in name_upper:
+            # NUEVA plantilla 'Importancia Relativa.xlsx' (hoja '1. Datos Entrada')
+            process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual)
 
     return workbook
 
@@ -38,4 +42,5 @@ __all__ = [
     'process_ir_ingresos_totales',
     'process_ir_activos_totales',
     'process_ir_utilidad',
+    'process_ir_datos_entrada',
 ]

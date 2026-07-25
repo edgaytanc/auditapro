@@ -17,6 +17,10 @@ from .processors.revisoria_importer import (
     process_revisoria_sheet as _process_revisoria_sheet,
     process_estado_resultados_revisoria as _process_estado_resultados_revisoria,
 )
+from .processors.financiera_subcuentas_importer import (
+    importar_formato_subcuentas as _importar_formato_subcuentas,
+    es_formato_subcuentas as _es_formato_subcuentas,
+)
 from auditoria.models import RevisoriaSubcuenta
 
 
@@ -56,9 +60,29 @@ class EstadosFinancierosImporter:
                 ('semestral' in name)
                 for name in sheet_names_lower
             ):
+                # 👇 NUEVO: sin hojas ANUAL/SEMESTRAL también aceptamos el
+                # formato "Revisoría 2025 con subcuentas" (hoja 'ESTADOS
+                # FINANCIEROS') para auditorías Financiera / Interna.
+                if any('estados financieros' in name for name in sheet_names_lower):
+                    return True
                 return False
 
             return True
+        except Exception:
+            return False
+
+    def es_formato_subcuentas(self):
+        """
+        Detecta si el archivo corresponde al NUEVO formato con subcuentas
+        (hoja 'ESTADOS FINANCIEROS' sin hojas clásicas ANUAL/SEMESTRAL).
+        No consume el puntero del archivo.
+        """
+        try:
+            file_content = io.BytesIO(self.file_obj.read())
+            self.file_obj.seek(0)
+
+            wb = openpyxl.load_workbook(file_content, read_only=True, data_only=True)
+            return _es_formato_subcuentas(wb.sheetnames)
         except Exception:
             return False
 
@@ -71,7 +95,13 @@ class EstadosFinancierosImporter:
             
             wb = openpyxl.load_workbook(file_content, data_only=True)
             sheet_names_lower = {name.lower(): name for name in wb.sheetnames}
-            
+
+            # 👇 NUEVO FORMATO ("Revisoría 2025 con subcuentas"): si el libro
+            # trae la hoja 'ESTADOS FINANCIEROS' y NO trae las hojas clásicas
+            # ANUAL/SEMESTRAL, se enruta al importador específico.
+            if _es_formato_subcuentas(wb.sheetnames):
+                return _importar_formato_subcuentas(wb, self.audit_id)
+
             anual_processed = False
             semestral_processed = False
             

@@ -77,6 +77,14 @@ def determinar_cuenta_por_nombre_archivo(file_name: str) -> str | None:
 # Verificación de existencia de cuenta en balances
 # ---------------------------------------------------------------------
 
+# Nombres equivalentes usados por el NUEVO formato de importación
+# ("Revisoría 2025 con subcuentas"). Solo se consultan como fallback,
+# cuando la búsqueda normal no encuentra la cuenta.
+_EQUIVALENCIAS_CUENTAS: dict[str, tuple[str, ...]] = {
+    "Caja y Bancos": ("Efectivo y Equivalentes",),
+}
+
+
 def verificar_cuenta_en_balances(
     balances: Dict[str, float],
     cuenta_asociada: str,
@@ -111,12 +119,37 @@ def verificar_cuenta_en_balances(
                             cuenta_existe = True
                             break
 
+    # 👇 Fallback: probar los nombres equivalentes del nuevo formato
+    if not cuenta_existe:
+        for nombre_equivalente in _EQUIVALENCIAS_CUENTAS.get(cuenta_asociada, ()):
+            cuenta_existe, datos_cuenta = verificar_cuenta_en_balances(
+                balances, nombre_equivalente, fechas_semestrales
+            )
+            if cuenta_existe:
+                break
+
     return cuenta_existe, datos_cuenta
 
 
 # ---------------------------------------------------------------------
 # Localización de tabla SUMARIA en hoja Excel
 # ---------------------------------------------------------------------
+
+def _es_encabezado_saldos(valor) -> bool:
+    """
+    Detecta la leyenda de saldos de la tabla SUMARIA.
+    Acepta la leyenda clásica 'Saldos s/ Balance' y la de las plantillas
+    nuevas 'SALDOS SEGÚN BALANCE GENERAL' (con o sin tilde).
+    """
+    if not isinstance(valor, str):
+        return False
+    texto = valor.upper()
+    return (
+        "SALDOS S/ BALANCE" in texto
+        or "SALDOS SEGÚN BALANCE" in texto
+        or "SALDOS SEGUN BALANCE" in texto
+    )
+
 
 def buscar_tabla_sumaria(sheet: Worksheet) -> Optional[Dict[str, int | List[int]]]:
     """Intenta ubicar la tabla SUMARIA en *sheet*.
@@ -149,7 +182,7 @@ def buscar_tabla_sumaria(sheet: Worksheet) -> Optional[Dict[str, int | List[int]
     for row_idx in range(fila_titulo, fila_titulo + 15):
         for col_idx in range(1, 15):
             val = sheet.cell(row=row_idx, column=col_idx).value
-            if isinstance(val, str) and "SALDOS S/ BALANCE" in val.upper():
+            if _es_encabezado_saldos(val):
                 fila_encabezados = row_idx
                 break
         if fila_encabezados:
@@ -161,8 +194,7 @@ def buscar_tabla_sumaria(sheet: Worksheet) -> Optional[Dict[str, int | List[int]
     columnas_fechas: List[int] = [
         col
         for col in range(1, 15)
-        if isinstance(sheet.cell(row=fila_encabezados, column=col).value, str)
-        and "SALDOS S/ BALANCE" in sheet.cell(row=fila_encabezados, column=col).value.upper()
+        if _es_encabezado_saldos(sheet.cell(row=fila_encabezados, column=col).value)
     ]
 
     columna_cuenta = None

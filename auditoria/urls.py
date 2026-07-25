@@ -4,6 +4,7 @@ from .utils.import_utils import importar_cuentas_contables
 from .utils.export_utils import export_cuentas_contables
 from .views import audit_mark_views
 from .views import audit_views
+from .views import muestreo_views
 from .api import template_creator_views
 
 urlpatterns = [
@@ -34,4 +35,9 @@ urlpatterns = [
     path('detalle/<int:audit_id>/obtener-carpetas/', audit_views.obtener_carpetas_auditoria, name='obtener_carpetas_auditoria'),
     path("detalle/<int:audit_id>/obtener-documentos/<path:carpeta_nombre>/", audit_views.obtener_documentos_auditoria, name="obtener_documentos_auditoria"),
     path("detalle/<int:audit_id>/descargar-documento/", audit_views.descargar_documento_auditoria, name="descargar_documento_auditoria"),
+
+    # Muestreo NIA 530 (sustituye a la antigua carpeta estática '4 MUESTREO')
+    path('muestreo/<int:audit_id>/', muestreo_views.muestreo_page, name='muestreo_page'),
+    path('muestreo/<int:audit_id>/calcular/', muestreo_views.muestreo_calcular, name='muestreo_calcular'),
+    path('muestreo/<int:audit_id>/descargar/', muestreo_views.muestreo_descargar, name='muestreo_descargar'),
 ]
