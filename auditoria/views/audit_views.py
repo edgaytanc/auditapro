@@ -135,7 +135,11 @@ def auditoria_detalle_view(request, audit_id):
     user_verified = request.user.username == 'administrador' or (hasattr(request.user, 'plan') and request.user.plan in ['M', 'A'])
     
     # Generar HTML de la estructura con la información de verificación
-    estructura_html = generar_html_estructura(estructura_carpetas, audit_id, user_verified=user_verified)
+    estructura_html = generar_html_estructura(
+        estructura_carpetas, audit_id,
+        user_verified=user_verified,
+        tipo_auditoria=audit.tipoAuditoria,
+    )
 
     return render(request, 'auditoria/auditoria-detalle/auditoria_detalle.html', {
         'audit': audit,
@@ -578,6 +582,15 @@ def descargar_documento_auditoria(request, audit_id):
                 wb, auditor_nombre, supervisor_nombre,
                 fecha_elaboracion, fecha_aprobacion,
             )
+
+            # Referencia propia del papel de trabajo en el encabezado ('Ref.')
+            try:
+                from auditoria.services.referencias import obtener_ref, inyectar_ref_propia
+                ref_propia = obtener_ref(audit.tipoAuditoria, carpeta, documento)
+                if ref_propia:
+                    wb = inyectar_ref_propia(wb, ref_propia)
+            except Exception:
+                pass
 
             bio = BytesIO()
             wb.save(bio)

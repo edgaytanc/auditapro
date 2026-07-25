@@ -4,9 +4,11 @@ Contiene funciones de normalización, rutas, mensajes de error y generación de 
 """
 
 import os
+import html
 import urllib.parse
 import unicodedata
 from django.conf import settings
+from auditoria.services.referencias import obtener_ref, vinculos_de
 
 def normalize_text(text):
     """
@@ -117,10 +119,28 @@ def crear_mensaje_error(titulo, mensaje):
     </html>
     """
 
-def generar_html_estructura(estructura, audit_id, current_path='', user_verified=False):
+def _generar_pill_referencia(tipo_auditoria, current_path, nombre):
+    """
+    Genera la pastilla 'Ref. X' del papel de trabajo (informativa: el tooltip
+    muestra los papeles vinculados automáticamente). Cadena vacía si el
+    archivo no tiene referencia conocida.
+    """
+    if not tipo_auditoria:
+        return ''
+    ref = obtener_ref(tipo_auditoria, current_path.replace('\\', '/'), nombre)
+    if not ref:
+        return ''
+    vinculos = vinculos_de(ref, tipo_auditoria)
+    if vinculos:
+        title = "Vinculado automáticamente con: " + ", ".join(vinculos)
+    else:
+        title = "Sin vínculos automáticos registrados para este papel."
+    return f'<span class="ref-pill" title="{html.escape(title)}">Ref. {html.escape(ref)}</span>'
+
+def generar_html_estructura(estructura, audit_id, current_path='', user_verified=False, tipo_auditoria=None):
     """
     Genera HTML recursivo para la estructura de carpetas.
-    """ 
+    """
     if not estructura:
         return ""
     html = "<ul>"
@@ -139,7 +159,7 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
                     <img src="/static/icons/carpeta.svg" class="icon-img" alt="📂"/> {nombre}
                 </button>
                 <div id="{folder_id}" style="display: none;">
-                    {generar_html_estructura(contenido, audit_id, new_path, user_verified)}
+                    {generar_html_estructura(contenido, audit_id, new_path, user_verified, tipo_auditoria)}
                 </div>
             </li>
             """
@@ -158,7 +178,10 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
             folder_encoded = urllib.parse.quote(current_path.replace('\\', '/')) if current_path else ''
             filename_encoded = urllib.parse.quote(nombre)
             download_url = f"/auditoria/download/{audit_id}/{folder_encoded}/{filename_encoded}"
-            
+
+            # Pastilla de referencia automática del papel de trabajo
+            ref_pill = _generar_pill_referencia(tipo_auditoria, current_path, nombre)
+
             # aunque el usuario no esté verificado
             is_investment_folder = (current_path and 
                                      ("1 CAJA Y BANCOS" in current_path or 
@@ -172,7 +195,7 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
                 <li class="file-item">
                     <a href="{download_url}" class="file-link">
                         <img src="{icono}" class="icon-img" alt="{alt}"/> {nombre}
-                    </a>
+                    </a>{ref_pill}
                 </li>"""
             else:
                 # Usuario no verificado - muestra el archivo bloqueado
@@ -180,7 +203,7 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
                 <li class="file-item file-locked">
                     <div class="file-link-disabled" style="display: flex; align-items: center; color: #999; cursor: not-allowed; position: relative; padding: 5px 8px; border-radius: 4px; background-color: rgba(0,0,0,0.03);" title="Usuario no verificado. Contacte al administrador para desbloquear el acceso.">
                         <img src="{icono}" class="icon-img" alt="{alt}" style="opacity: 0.5; margin-right: 5px;"/> 
-                        <span style="margin-right: 25px;">{nombre}</span>
+                        <span style="margin-right: 25px;">{nombre}</span>{ref_pill}
                         <i class="fas fa-lock" style="position: absolute; right: 10px; color: #e74c3c; font-size: 14px;"></i>
                     </div>
                 </li>"""
