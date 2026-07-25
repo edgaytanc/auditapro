@@ -3,7 +3,9 @@ from ..processor_anual_semestral import process_anual_semestral_sheets
 from ..auxiliary_file import process_auxiliary_file_sheets
 from ..comparative_actual_auxiliar import process_comparative_file
 from ..materialidad_file import process_materialidad_file
+from ..materialidad_nia320 import process_materialidad_nia320
 from ..horizontal_vertical_analysis import process_horizontal_vertical_analysis
+from ..analisis_hv_2026 import process_analisis_hv_2026
 from ..initial_balance_tests import process_initial_balance_tests
 from ..centralizadoras import process_centralizadora_file
 from ..sumaria import process_sumaria_file
@@ -96,6 +98,16 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
             elif file_name == "8 MATERIALIDAD.xlsx" or file_name == "23 MATERIALIDAD.xlsx" and balances_normalizados:
                 workbook = process_materialidad_file(
                     workbook, balances_normalizados)
+            elif file_name == "Materialidad_NIA320.xlsx" and balances_normalizados:
+                # NUEVA plantilla de materialidad (hoja 'Entrada de Datos' con
+                # bases fijas): usa su escritor específico, no el antiguo.
+                workbook = process_materialidad_nia320(
+                    workbook, balances_normalizados)
+            elif (file_name == "1_Analisis_Horizontal_1.xlsx" or
+                  file_name == "2_Analisis_Vertical_1_1.xlsx") and balances_normalizados:
+                # Plantillas 2026: escritor específico (soporta 1 o 2 años)
+                workbook = process_analisis_hv_2026(
+                    workbook, balances_normalizados, file_name)
             elif (file_name == "4 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx" or
                   file_name == "20 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx" or
                   file_name == "5 ANÁLISIS VERTICAL DE BALANCE GENERAL.xlsx" or

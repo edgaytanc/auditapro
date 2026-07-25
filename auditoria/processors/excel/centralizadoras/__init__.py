@@ -49,10 +49,15 @@ def process_centralizadora_file(workbook, balances, ajustes_reclasificaciones, f
         }
     }
 
-    # Identificar el tipo de archivo
+    # Identificar el tipo de archivo.
+    # Las plantillas 2026 usan guiones bajos en el nombre (p. ej.
+    # "CENTRALIZADORA_DEL_PASIVO_Y_PATRIMONIO.xlsx"), por lo que se normaliza
+    # el nombre (guion bajo -> espacio, espacios colapsados) antes de comparar.
+    import re as _re
+    nombre_normalizado = _re.sub(r"\s+", " ", file_name.replace("_", " "))
     tipo_archivo = None
     for tipo in tipos_archivo:
-        if tipo in file_name:
+        if tipo in nombre_normalizado:
             tipo_archivo = tipo
             break
 

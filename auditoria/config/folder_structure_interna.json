@@ -1,256 +1,121 @@
 {
-    "1 DIRECTRICES": {
-        "1 Estatuto.docx": [],
-        "2 Código de Ética.docx": [],
-        "3 Plan de Capacitación.xlsx": []
+  "1 DIRECTRICES": {
+    "1 ESTATUTO_AUDITORIA_INTERNA_MIPP_NOGAI_2.docx": [],
+    "2 CODIGO_ETICA.docx": [],
+    "3 MANUAL_PROCEDIMIENTOS_AUDITORIA.docx": [],
+    "4  MATRIZ DE AUTORIDADES Y RESPONSABILIDADES.xlsx": [],
+    "5 MATRIZ DE INDEPENDENCIA Y OBJETIVIDAD.xlsx": [],
+    "6 POLITICA_INDEPENDENCIA.docx": [],
+    "7 MARCO DE EVALUACIÓN DE RIESGOS.xlsx": [],
+    "8 MATRIZ DE COMPETENCIAS.xlsx": [],
+    "9 POLITICA_CONFIDENCIALIDAD.docx": [],
+    "10 PROTOCOLO DE COMUNICACIÓN.xlsx": []
+  },
+  "2 PROYECTOS": {
+    "1_REUNION_INICIAL.xlsx": [],
+    "2_MATRIZ_EVALUACION_RIESGOS.xlsx": [],
+    "3_1_PLAN_ANUAL_AUDITORIA_INTERNA.xlsx": [],
+    "4_PRESUPUESTO.xlsx": [],
+    "5_ASIGNACION_DE_RECURSOS.xlsx": [],
+    "6_CRONOGRAMA_DE_EJECUCION.xlsx": [],
+    "7_DASHBOARD_EJECUTIVO.xlsx": []
+  },
+  "3 PLANEACION": {
+    "1 PLANEACION ESTRATEGICA": {
+      "1_P-01_Plan_Anual_Auditoria.xlsx": [],
+      "2 Acta_Aprobacion_Plan_Auditoria.docx": []
     },
-    "2 DECLARACIONES": {
-        "1 Declaración de independencia.docx": [],
-        "2 Declaración de Confidencialidad.docx": [],
-        "3 Declaración Conflicto de Intereses.docx": []
+    "2 ENTENDIMIENTO DE LA ENTIDAD": {
+      "1_ENTENDIMIENTO_DE_LA_ENTIDAD.xlsx": [],
+      "2_Entendimiento_Negocio_y_Procesos_Clave.xlsx": [],
+      "3_Analisis_pestel.xlsx": [],
+      "4_Analisis_porter.xlsx": []
     },
-    "3 PROYECTO INICIAL": {
-        "1 Reunion Proyecto Inicial.docx": [],
-        "2 Creacion del Proyecto.xlsx": []
+    "3 ANALISIS FINANCIERO": {
+      "1_Analisis_Horizontal_1.xlsx": [],
+      "2_Analisis_Vertical_1_1.xlsx": [],
+      "3_Ratios_Financieros.xlsx": [],
+      "4_Análisis_Presupuesto.xlsx": []
     },
-    "4 AUDITORIA AGIL": {
-        "1 Macroprocesos y Procesos.xlsx": [],
-        "2 Macroprocesos y Procesos Empresa Privada.xlsx": [],
-        "3 Macroprocesos y Procesos Entidad de Gobierno.xlsx": [],
-        "4 Macroprocesos y Procesos en Municipalidades.xlsx": [],
-        "5 Macroprocesos y Procesos Ahorro y Crédito.xlsx": [],
-        "6 Riesgos.xlsx": [],
-        "7 Priorización.xlsx": []
+    "4 EVALUACION DE  RIESGOS": {
+      "1_CUESTIONARIO_IDENTIFICACION_RIESGOS.xlsx": [],
+      "2_MATRIZ_DE_CATEGORIZACION.xlsx": [],
+      "3_EVALUACION_COSO_AMBIENTE_DE_CONTROL.xlsx": [],
+      "4_EVALUACION_DE_RIESGO_DE_FRAUDE.xlsx": [],
+      "5_EVALUACION_DE_CUMPLIMIENTO_NORMATIVO.xlsx": [],
+      "6_MARCO_ERM.xlsx": []
     },
-    "5 PLANEACION": {
-        "1 Plan Estratégico.docx": [],
-        "2 PLAN BASADO EN RIESGOS": {
-            "1 Acta Reunión.docx": [],
-            "2 Categorías de Impacto.docx": [],
-            "3 Mapa de Calor.docx": [],
-            "4 Solicitud de Información.docx": [],
-            "5 Entendimiento de Entidad.docx": [],
-            "6 Cuestionario de Riesgos.docx": [],
-            "7 Evaluación del Control Interno.docx": [],
-            "8 Cuestionario de Evaluación Autoridad.docx": [],
-            "9 Revisión Estatutos.docx": [],
-            "10 Revisión del Manual.docx": [],
-            "11 Revisión de Actas.docx": [],
-            "12 Revisión de Contratos.docx": [],
-            "13 Revisión de Correspondencia.docx": [],
-            "14 Revisión Informes de Auditoría.docx": [],
-            "15 Análisis 5 Fuerzas Porter.docx": [],
-            "16 Análisis Pestel.docx": [],
-            "17 Cuestionario Evaluación Leyes.docx": [],
-            "18 Revisión de Saldos Iniciales.xlsx": [],
-            "19 Estados Financieros Actuales y Anterior.xlsx": [],
-            "20 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx": [],
-            "20.1 Análisis Horizontal Estado Resultados.xlsx": [],
-            "21 ANÁLISIS VERTICAL DE BALANCE GENERAL.xlsx": [],
-            "21.1 Análisis Vertical Resultados.xlsx": [],
-            "22 Ratios Financieros.xlsx": [],
-            "23 MATERIALIDAD.xlsx": [],
-            "24 Evaluación Riesgos de Fraude.docx": [],
-            "25 Plan Anual Basado en Riesgos.docx": [],
-            "26 Equipo de Trabajo.docx": [],
-            "27 Cronograma.xlsx": [],
-            "28 Acta Aprobación.docx": []
-        }
+    "5 MATRICES Y MAPA DE RIESGOS": {
+      "1_MATRIZ_DE_RIESGOS_POR_AREAS_Y_PROCESOS.xlsx": [],
+      "2_MAPA_DE_CALOR.xlsx": [],
+      "3_RIESGOS_RESIDUALES.xlsx": [],
+      "4_MATRIZ_DE_PLANEACION_Y_TRATAMIENTO_DE_RIESGOS.xlsx": []
     },
-    "6 AUDITORIA DE PROCESOS": {
-        "1 Operativo": {
-            "1 Gestión de Inventarios y Almacenes": {
-                "1 Cuestionario.docx": [],
-                "2 Entendimiento.docx": [],
-                "3 Mapeo.docx": [],
-                "4 Programa de Auditoría.docx": [],
-                "5 PRUEBAS DE AUDITORIA": {
-                    "1 Inspección Física.docx": [],
-                    "2 Conciliacion Saldos.docx": [],
-                    "3 Análisis de transacciones.docx": [],
-                    "4 Revisión de documentación.docx": [],
-                    "5 Identificación de riesgos.docx": []
-                }
-            }
-        },
-        "2 Comercial": {
-            "1 Cuestionario.docx": [],
-            "2 Entendimiento.docx": [],
-            "3 Mapeo.docx": [],
-            "4 Programa de Auditoría.docx": [],
-            "5 PRUEBAS": {
-                "1 Pruebas de Ventas.docx": [],
-                "2 Analizar Transaciones.docx": [],
-                "3 Revisar segregación de funciones.docx": [],
-                "4 Conciliar periódicamente cifras.docx": [],
-                "5 Evaluar Politicas.docx": []
-            }
-        },
-        "3 Financiero": {
-            "1 AUDITORIA PROCESOS TESORERIA": {
-                "1 Cuestionario.docx": [],
-                "2 Entendimiento.docx": [],
-                "3 Mapeo.docx": [],
-                "4 Programa de Auditoría.docx": [],
-                "5 PRUEBAS SUSTANTIVAS Y FRAUDE": {
-                    "1 Revisar políticas y procedimientos.docx": [],
-                    "2 Examinar el cumplimiento.docx": [],
-                    "3 Revisar conciliaciones bancarias.docx": [],
-                    "4 Pruebas pagos duplicados.docx": [],
-                    "5 Identificar señales de fraude.docx": [],
-                    "6 Revisar reportes flujo de caja.docx": []
-                }
-            },
-            "2 AUDITORIA PROCESOS CONTABILIDAD": {
-                "1 Cuestionario.docx": [],
-                "2 Entendimiento.docx": [],
-                "3 Mapeo.docx": [],
-                "4 Programa de Auditoría.docx": [],
-                "5 PRUEBAS": {
-                    "1 Revisión Conciliaciones Bancarias.docx": [],
-                    "2 Pruebas de Integridad.docx": [],
-                    "3 Pruebas de Validación.docx": [],
-                    "4 Pruebas de Análisis.docx": [],
-                    "5 Pruebas de Confirmaciones externas.docx": [],
-                    "6 Pruebas Revisión de Accesos.docx": []
-                }
-            },
-            "3 AUDITORIA PROCESOS COMPRAS": {
-                "1 Cuestionario.docx": [],
-                "2 Entendimiento.docx": [],
-                "3 Mapeo.docx": [],
-                "4 Programa de Auditoría.docx": [],
-                "5 PRUEBAS": {
-                    "1 Pruebas  Verificar integridad.docx": [],
-                    "2 Pruebas de Control.docx": [],
-                    "3 Comprobar segregación de funciones.docx": [],
-                    "4 Revisar cumplimiento de políticas.docx": [],
-                    "5 Conciliar las facturas.docx": [],
-                    "6 Verificación Física de Empresas.docx": []
-                }
-            }
-        },
-        "4 Recursos Humanos": {
-            "1 Cuestionario.docx": [],
-            "2 Entendimiento.docx": [],
-            "3 Mapeo.docx": [],
-            "4 Programa de Auditoría.docx": [],
-            "5 PRUEBAS": {
-                "1 Pruebas de Validación Nómina.docx": [],
-                "2 Revisión Beneficios y Deducciones.docx": [],
-                "3 Verificación de Personal Fantasma.docx": [],
-                "4 Revisión de Contratos Laborales.docx": [],
-                "5 Prueba de Vacaciones y Licencias.docx": [],
-                "6 Revisión  Procesos de Reclutamiento.docx": [],
-                "7 Pruebas de Detección Pagos Duplicados.docx": []
-            }
-        },
-        "5 Tecnología": {
-            "1 Cuestionario.docx": [],
-            "2 Entendimiento.docx": [],
-            "3 Mapeo.docx": [],
-            "4 Programa de Auditoría.docx": [],
-            "5 PRUEBAS": {
-                "1 Pruebas Evaluación Control de Accesos.docx": [],
-                "2 Pruebas Revisión Incidentes de Seguridad.docx": [],
-                "3 Pruebas Validación de Actualizaciones Sistemas.docx": [],
-                "4 Pruebas Mantenimiento de Infraestructura.docx": [],
-                "5 Pruebas Detección de Accesos Indebidos.docx": []
-            }
-        },
-        "6 Legal": {
-            "1 Cuestionario.docx": [],
-            "2 Entendimiento.docx": [],
-            "3 Mapeo.docx": [],
-            "4 Programa de Auditoría.docx": [],
-            "5 PRUEBAS": {
-                "1 Pruebas Revisión Solicitudes de Contrato.docx": [],
-                "2 Pruebas Evaluación de Contratos Formalizados.docx": [],
-                "3 Pruebas Gestión de Litigios.docx": [],
-                "4 Pruebas de Cumplimiento Normativo.docx": [],
-                "5 Pruebas Gestión de Expedientes Legales.docx": []
-            }
-        },
-        "7 Servicios Públicos": {
-            "1 Cuestionario.docx": [],
-            "2 Entendimiento.docx": [],
-            "3 Mapeo.docx": [],
-            "4 Programa de Auditoría.docx": [],
-            "5 PRUEBAS": {
-                "1 Validar solicitudes.docx": [],
-                "2 Verificar calidad y cumplimiento.docx": [],
-                "3 Revisar sistema de reclamos y sugerencias.docx": [],
-                "4 Verificar alineación de  operaciones.docx": [],
-                "5 Revisión registros de mantenimiento.docx": []
-            }
-        },
-        "8 Obras Públicas": {
-            "1 Cuestionario.docx": [],
-            "2 Entendimiento.docx": [],
-            "3 Mapeo.docx": [],
-            "4 Programa de Auditoría.docx": [],
-            "5 PRUEBAS": {
-                "1 Verificar expedientes.docx": [],
-                "2 Revisar licitaciones públicas.docx": [],
-                "3 Analizar avances financieros y físicos.docx": [],
-                "4 Inspeccionar calidad de materiales.docx": [],
-                "5 Revisar pagos.docx": [],
-                "6 Inspección física al proveedor.docx": []
-            }
-        },
-        "9 Gestión de Ahorro": {
-            "1 Cuestionario.docx": [],
-            "2 Entendimiento.docx": [],
-            "3 Mapeo.docx": [],
-            "4 Programa de Auditoría.docx": [],
-            "5 PRUEBAS": {
-                "1 Revisión de solicitudes.docx": [],
-                "2 Verificación autorizaciones.docx": [],
-                "3 Pruebas Evaluación de permisos.docx": [],
-                "4 Pruebas cuentas de ahorro inactivas.docx": [],
-                "5 Pruebas de Pagos.docx": []
-            }
-        },
-        "10 Gestión de Créditos": {
-            "1 Cuestionario.docx": [],
-            "2 Entendimiento.docx": [],
-            "3 Mapeo.docx": [],
-            "4 Programa de Auditoría.docx": [],
-            "5 PRUEBAS": {
-                "1 Verificación Solicitudes de Crédito.docx": [],
-                "2 Evaluación Crediticia.docx": [],
-                "3 Evaluación Aprobación de Créditos.docx": [],
-                "4 Inspección de Cartera.docx": [],
-                "5 Revisión de Créditos en Mora.docx": [],
-                "6 Análisis Registros Contables.docx": [],
-                "7 Detección de Indicios de Fraude.docx": []
-            }
-        }
+    "6 PLANEACION ESPECIFICA": {
+      "1 Memorandum_Planeacion_Auditoria_Interna_MIPP_NOGAI.docx": [],
+      "2_Muestreo_NIA530.xlsx": []
     },
-    "7 INFORMES": {
-        "1 Informe Auditoria Contabilidad.docx": [],
-        "2 Informe de Auditoría Tesorería.docx": [],
-        "3 Infome Auditoría Anticipo.docx": [],
-        "4 Informe Auditoría Créditos.docx": [],
-        "5 Informe Auditoría Inventarios.docx": [],
-        "6 Informe Auditoría Compras.docx": [],
-        "7 Informe Auditoría Ventas.docx": [],
-        "8 Informe Auditoría Presupuestos.docx": [],
-        "9 Informe Auditoría Recursos Humanos.docx": [],
-        "10 Informe Auditoría Jurídico.docx": [],
-        "11 Informe Auditoría Informatica.docx": []
+    "7 ASIGNACION DE RECURSOS": {
+      "1_CONFORMACION_DEL_EQUIPO_DE_TRABAJO.xlsx": [],
+      "2_CRONOGRAMA.xlsx": [],
+      "3_PRESUPUESTO_HORAS_Y_RECURSOS.xlsx": []
     },
-    "8 SEGUIMIENTO": {
-        "1 Registro de Recomendaciones.docx": [],
-        "2 Seguimiento.docx": [],
-        "3 Informe de Seguimiento.docx": [],
-        "4 Seguimiento Horas Trabajo.docx": []
+    "8 COMUNICACION": {
+      "1_COMUNICACION_1.xlsx": [],
+      "2 ACTA DE REUNION.xlsx": []
     },
-    "9 CALIDAD": {
-        "1 Cuestionario Evaluación de Calidad.docx": [],
-        "2 Autoevaluación Auditores Internos.docx": [],
-        "3 Encuesta.docx": [],
-        "4 Evaluación KPIs.docx": [],
-        "5 Informe de Resultados.docx": []
-    }
+    "P-01_Plan_Anual_Auditoria_Basado_Riesgos.docx": []
+  },
+  "4 PRUEBAS DE PROCESO": {
+    "1_Pruebas_en_Compras.xlsx": [],
+    "2_Pruebas_en_Cuentas_por_Pagar.xlsx": [],
+    "3_Pruebas_en_Tesoreria_y_Flujo_de_Efectivo.xlsx": [],
+    "4_Pruebas_en_Ventas.xlsx": [],
+    "5_Pruebas_en_Cuentas_por_Cobrar.xlsx": [],
+    "6_Pruebas_en_Cierre_Contable.xlsx": [],
+    "7_Pruebas_en_Activos_Fijos.xlsx": [],
+    "8_Pruebas_en_Recursos_Humanos_y_Nomina.xlsx": [],
+    "9_Pruebas_en_Tecnologia_de_Informacion.xlsx": [],
+    "10_Cumplimiento_Normativo.xlsx": [],
+    "11_Prueba_Ahorro_y_Credito.xlsx": []
+  },
+  "5 INFORME": {
+    "8 INFORMES ESPECIFICOS POR AREAS": {
+      "1 AI-INF-05-A_Resumen_Ejecutivo_1.docx": [],
+      "1 Informe Auditoria Contabilidad.docx": [],
+      "2 AI-INF-05-B_Opinion_Auditoria_1.docx": [],
+      "2 Informe de Auditoría Tesorería.docx": [],
+      "3 AI-INF-05-C_Anexos_Evidencia.docx": [],
+      "3 Infome Auditoría Anticipo.docx": [],
+      "4 Informe Auditoría Créditos.docx": [],
+      "5 Informe Auditoría Inventarios.docx": [],
+      "6 Informe Auditoría Compras.docx": [],
+      "7 Informe Auditoría Ventas.docx": [],
+      "8 Informe Auditoría Presupuestos.docx": [],
+      "9 Informe Auditoría Recursos Humanos.docx": [],
+      "10 Informe Auditoría Jurídico.docx": [],
+      "11 Informe Auditoría Informatica.docx": []
+    },
+    "1_Documentacion_Hallazgos.xlsx": [],
+    "2_Formulacion_Recomendaciones.xlsx": [],
+    "3_Planificacion_Informe.xlsx": [],
+    "4_Borrador_Informe.xlsx": [],
+    "5_Archivo_Informe.xlsx": [],
+    "6_Presentacion_Comite.xlsx": [],
+    "7_Resumen_Ejecutivo_Opinion.xlsx": []
+  },
+  "6 SEGUIMIENTO": {
+    "1_CRONOGRAMA__SEGUIMIENTO__RECOMENDACIONES.xlsx": [],
+    "2_RECOMENDACIONES_VENCIDAS.xlsx": [],
+    "3_EVIDENCIA_DE_IMPLEMENTACIÓN.xlsx": [],
+    "4_Informe_Seguimiento.xlsx": [],
+    "05_Cierre_Seguimiento.xlsx": []
+  },
+  "7 CALIDAD": {
+    "1_Programa_de_Aseguramiento.xlsx": [],
+    "2_Evaluaciones_Internas.xlsx": [],
+    "3_Evaluaciones_Externas.xlsx": [],
+    "4_Comunicacion_Resultados_QAIP.xlsx": [],
+    "5_Plan_Mejora_Calidad.xlsx": []
+  }
 }

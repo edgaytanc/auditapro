@@ -68,6 +68,15 @@ def download_document(request, audit_id, folder, filename):
             except Exception as e:
                 logger.warning(f"⚠️ Error en update_dynamic_excel: {e}")
 
+            # Referencia propia del papel de trabajo en el encabezado ('Ref.')
+            try:
+                from auditoria.services.referencias import obtener_ref, inyectar_ref_propia
+                ref_propia = obtener_ref(audit.tipoAuditoria, folder, filename)
+                if ref_propia:
+                    wb = inyectar_ref_propia(wb, ref_propia)
+            except Exception as e:
+                logger.warning(f"No se pudo inyectar la referencia propia para {filename}: {e}")
+
             wb.save(buffer)
             content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 

@@ -14,14 +14,28 @@ def procesar_seccion_centralizadora(
     """
     Función genérica para procesar una sección de una hoja centralizadora.
     """
-    # 1. Obtener cuentas únicas para las secciones dadas
+    # Import diferido para evitar ciclos de importación con los servicios
+    from auditoria.services.referencias import ref_para_cuenta
+
+    # 1. Obtener cuentas únicas para las secciones dadas, recordando la
+    #    sección de origen de cada cuenta (la sección manda sobre las palabras
+    #    clave al asignar la referencia de sumaria: p. ej. 'Resultado del
+    #    ejercicio' en Patrimonio referencia J-1, no R-1).
     cuentas_unicas = set()
+    seccion_por_cuenta = {}
     for fecha, data in cuentas_por_fecha.items():
         for seccion in secciones:
             # Manejar estructura de datos anidada y plana
             cuentas_seccion = data.get(seccion, data if not isinstance(list(data.values())[0], dict) else {})
             cuentas_unicas.update(cuentas_seccion.keys())
-    
+            if isinstance(data.get(seccion), dict):
+                for cuenta in cuentas_seccion:
+                    seccion_por_cuenta.setdefault(cuenta, seccion)
+            else:
+                # Estructura plana: todas las cuentas pertenecen a la única sección
+                for cuenta in cuentas_seccion:
+                    seccion_por_cuenta.setdefault(cuenta, secciones[0])
+
     cuentas_ordenadas = sorted(list(cuentas_unicas))
 
     # 2. Asegurar espacio en la hoja, insertando filas si es necesario
@@ -42,6 +56,11 @@ def procesar_seccion_centralizadora(
     for i, cuenta in enumerate(cuentas_ordenadas):
         fila_actual = fila_inicio + i
         sheet[f'B{fila_actual}'] = cuenta
+
+        # Ref P/T (columna C): referencia de la cédula sumaria asociada.
+        # Nunca dejar el valor de muestra de la plantilla en filas escritas.
+        ref = ref_para_cuenta(cuenta, seccion=seccion_por_cuenta.get(cuenta))
+        sheet[f'C{fila_actual}'] = ref if ref else ''
 
         # Insertar saldos por fecha
         for col, fecha in fechas_columnas.items():
