@@ -111,15 +111,110 @@ window.AUDIT_CTX = {
 </script>
 <script src="{% static 'js/auditoria_detalle.js' %}"></script>
 
-<!-- Script para boton generar documento -->
+<!-- Script para boton Datos Auditor y Jefe -->
 <script>
+// Los <script> del HTML inyectado por innerHTML no se ejecutan, por lo que la
+// lógica del modal (cargar carpetas/documentos, bloqueo por rol y descarga)
+// se inicializa aquí después de inyectarlo.
+function inicializarModalGenerarDocumento(auditId, root) {
+  const modalEl = root.querySelector("#generarDocumentoModal");
+  const selectCarpeta = root.querySelector("select[name='carpeta']");
+  const selectDocumento = root.querySelector("select[name='documento']");
+  const inpElab = root.querySelector("input[name='fecha_elaboracion']");
+  const inpAprob = root.querySelector("input[name='fecha_aprobacion']");
+  const btnDescargar = root.querySelector("#btnDescargar");
+  const role = ((modalEl && modalEl.dataset.userRole) || "auditor").trim();
+
+  // Bloqueo de campos según rol: el supervisor edita solo la fecha de
+  // aprobación; el auditor solo la de elaboración.
+  if (role === "audit_manager") {
+    if (inpElab)  { inpElab.readOnly = true;  inpElab.classList.add("no-edit"); }
+    if (inpAprob) { inpAprob.readOnly = false; inpAprob.classList.remove("no-edit"); }
+  } else {
+    if (inpElab)  { inpElab.readOnly = false; inpElab.classList.remove("no-edit"); }
+    if (inpAprob) { inpAprob.readOnly = true;  inpAprob.classList.add("no-edit"); }
+  }
+
+  // Cargar carpetas
+  fetch(`/auditoria/detalle/${auditId}/obtener-carpetas/`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.carpetas && data.carpetas.length > 0) {
+        selectCarpeta.innerHTML = `<option value="">Seleccione una carpeta</option>`;
+        data.carpetas.forEach(carpeta => {
+          const option = document.createElement("option");
+          const depth = carpeta.split("/").length - 1;
+          option.value = carpeta;
+          option.textContent = `${" ".repeat(depth)}${carpeta}`;
+          selectCarpeta.appendChild(option);
+        });
+      } else {
+        selectCarpeta.innerHTML = `<option value="">No hay carpetas disponibles</option>`;
+      }
+    })
+    .catch(() => { selectCarpeta.innerHTML = `<option value="">Error al cargar carpetas</option>`; });
+
+  // Cargar documentos al elegir carpeta
+  selectCarpeta.addEventListener("change", async () => {
+    const carpetaSeleccionada = selectCarpeta.value;
+    selectDocumento.innerHTML = `<option value="">Cargando...</option>`;
+    if (!carpetaSeleccionada) {
+      selectDocumento.innerHTML = `<option value="">Seleccione una carpeta primero</option>`;
+      return;
+    }
+    try {
+      const encodedCarpeta = encodeURIComponent(carpetaSeleccionada);
+      const response = await fetch(`/auditoria/detalle/${auditId}/obtener-documentos/${encodedCarpeta}/`);
+      const data = await response.json();
+      if (data.documentos && data.documentos.length > 0) {
+        selectDocumento.innerHTML = `<option value="">Seleccione un documento</option>`;
+        data.documentos.forEach(doc => {
+          const option = document.createElement("option");
+          option.value = doc;
+          option.textContent = doc;
+          selectDocumento.appendChild(option);
+        });
+      } else {
+        selectDocumento.innerHTML = `<option value="">No hay documentos disponibles</option>`;
+      }
+    } catch (err) {
+      selectDocumento.innerHTML = `<option value="">Error al cargar documentos</option>`;
+    }
+  });
+
+  // Generar y descargar
+  if (btnDescargar) {
+    btnDescargar.addEventListener("click", () => {
+      const carpeta = selectCarpeta.value;
+      const documento = selectDocumento.value;
+      if (!carpeta || !documento) {
+        alert("Seleccione una carpeta y un documento antes de continuar.");
+        return;
+      }
+      const params = new URLSearchParams({
+        carpeta: carpeta,
+        documento: documento,
+        fecha_elaboracion: (inpElab && inpElab.value) || "",
+        fecha_aprobacion: (inpAprob && inpAprob.value) || ""
+      });
+      window.location.href = `/auditoria/detalle/${auditId}/descargar-documento/?${params.toString()}`;
+    });
+  }
+}
+
 function abrirModalGenerarDocumento(auditId) {
   fetch(`/auditoria/detalle/${auditId}/generar-modal/`)
     .then(response => response.json())
     .then(data => {
+      // Retirar una instancia previa para no duplicar IDs ni listeners
+      const previo = document.getElementById("generarDocumentoModal");
+      if (previo && previo.parentElement) previo.parentElement.remove();
+
       const modalDiv = document.createElement("div");
       modalDiv.innerHTML = data.html;
       document.body.appendChild(modalDiv);
+
+      inicializarModalGenerarDocumento(auditId, modalDiv);
 
       const modal = new bootstrap.Modal(document.getElementById("generarDocumentoModal"));
       modal.show();
