@@ -104,10 +104,16 @@ def _correccion_poblacion_finita(n_calculado, poblacion):
 
 
 def _seleccionar_indices(rng, poblacion, n, prefijo="Partida"):
-    """Selecciona n índices sin reemplazo de 1..N y los devuelve ordenados."""
+    """
+    Selecciona n índices sin reemplazo de 1..N y los devuelve ordenados.
+
+    Además del rótulo, cada elemento lleva su 'indice' dentro de la población:
+    es lo que permite localizar la partida real cuando la muestra se generó
+    desde el Excel de datos importado.
+    """
     indices = sorted(rng.sample(range(1, poblacion + 1), n))
     return [
-        {'numero': posicion, 'elemento': f"{prefijo} {indice}"}
+        {'numero': posicion, 'elemento': f"{prefijo} {indice}", 'indice': indice}
         for posicion, indice in enumerate(indices, start=1)
     ]
 
@@ -240,7 +246,11 @@ def calcular_estratificado(nivel_confianza, tolerancia, materialidad, sigma,
         if asignados <= 0:
             continue
         for indice in sorted(rng.sample(range(inicio, fin + 1), asignados)):
-            seleccion.append({'numero': posicion, 'elemento': f"Partida {indice} · {etiqueta}"})
+            seleccion.append({
+                'numero': posicion,
+                'elemento': f"Partida {indice} · {etiqueta}",
+                'indice': indice,
+            })
             posicion += 1
 
     formula = (
@@ -313,7 +323,11 @@ def calcular_mus(nivel_confianza, valor_libros, error_tolerable, error_esperado,
     seleccion = []
     for k in range(n):
         punto = round(arranque + k * intervalo, 2)
-        seleccion.append({'numero': k + 1, 'elemento': f"Unidad monetaria {_formato_q(punto)}"})
+        seleccion.append({
+            'numero': k + 1,
+            'elemento': f"Unidad monetaria {_formato_q(punto)}",
+            'punto': punto,
+        })
 
     formula = (
         f"n = (BV × R) / (TE − EA) · BV = {_formato_q(valor_libros)} · R({nivel}%) = {factor_r} · "

@@ -32,8 +32,8 @@
       "4_Analisis_porter.xlsx": []
     },
     "3 ANALISIS FINANCIERO": {
-      "1_Analisis_Horizontal_1.xlsx": [],
-      "2_Analisis_Vertical_1_1.xlsx": [],
+      "1_Analisis_Horizontal.xlsx": [],
+      "2_Analisis_Vertical.xlsx": [],
       "3_Ratios_Financieros.xlsx": [],
       "4_Análisis_Presupuesto.xlsx": []
     },
@@ -64,7 +64,7 @@
       "1_COMUNICACION_1.xlsx": [],
       "2 ACTA DE REUNION.xlsx": []
     },
-    "P-01_Plan_Anual_Auditoria_Basado_Riesgos.docx": []
+    "9 Plan_Anual_Auditoria_Basado_Riesgos.docx": []
   },
   "4 PRUEBAS DE PROCESO": {
     "1_Pruebas_en_Compras.xlsx": [],
@@ -80,12 +80,16 @@
     "11_Prueba_Ahorro_y_Credito.xlsx": []
   },
   "5 INFORME": {
+    "1_Documentacion_Hallazgos.xlsx": [],
+    "2_Formulacion_Recomendaciones.xlsx": [],
+    "3_Planificacion_Informe.xlsx": [],
+    "4_Borrador_Informe.xlsx": [],
+    "5_Archivo_Informe.xlsx": [],
+    "6_Presentacion_Comite.xlsx": [],
+    "7_Resumen_Ejecutivo_Opinion.xlsx": [],
     "8 INFORMES ESPECIFICOS POR AREAS": {
-      "1 AI-INF-05-A_Resumen_Ejecutivo_1.docx": [],
       "1 Informe Auditoria Contabilidad.docx": [],
-      "2 AI-INF-05-B_Opinion_Auditoria_1.docx": [],
       "2 Informe de Auditoría Tesorería.docx": [],
-      "3 AI-INF-05-C_Anexos_Evidencia.docx": [],
       "3 Infome Auditoría Anticipo.docx": [],
       "4 Informe Auditoría Créditos.docx": [],
       "5 Informe Auditoría Inventarios.docx": [],
@@ -94,15 +98,10 @@
       "8 Informe Auditoría Presupuestos.docx": [],
       "9 Informe Auditoría Recursos Humanos.docx": [],
       "10 Informe Auditoría Jurídico.docx": [],
-      "11 Informe Auditoría Informatica.docx": []
-    },
-    "1_Documentacion_Hallazgos.xlsx": [],
-    "2_Formulacion_Recomendaciones.xlsx": [],
-    "3_Planificacion_Informe.xlsx": [],
-    "4_Borrador_Informe.xlsx": [],
-    "5_Archivo_Informe.xlsx": [],
-    "6_Presentacion_Comite.xlsx": [],
-    "7_Resumen_Ejecutivo_Opinion.xlsx": []
+      "11 Informe Auditoría Informatica.docx": [],
+      "12_Resumen_Ejecutivo_1.docx": [],
+      "13_Opinion_Auditoria_1.docx": []
+    }
   },
   "6 SEGUIMIENTO": {
     "1_CRONOGRAMA__SEGUIMIENTO__RECOMENDACIONES.xlsx": [],

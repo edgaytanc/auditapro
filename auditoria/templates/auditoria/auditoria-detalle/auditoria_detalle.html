@@ -34,6 +34,10 @@
             Importar
         </button>
 
+        <button onclick="openAniosModal()" class="download-button">
+            📅 Años de la auditoría
+        </button>
+
         {% if audit.tipoAuditoria != 'R' %}
         <button onclick="window.location.href='{% url 'muestreo_page' audit_id=audit.id %}'" class="download-button">
             🎯 Muestreo NIA 530
@@ -64,19 +68,24 @@
             <div class="modal-header">Importar Cuentas Contables</div>
             <div class="modal-body">
                 <button onclick="goToImportUpload('estado-financiero')" class="download-button w-full">
-                    Estado Financiero
+                    Excel Financiero
                 </button>
             </div>
         </div>
 
         <div id="import-upload-section" style="display: none;">
-            <div class="modal-header" id="importUploadTitle">Importar</div>
+            <div class="modal-header" id="importUploadTitle">Importar Excel Financiero</div>
             <form id="uploadForm" enctype="multipart/form-data" onsubmit="submitImportForm(event)">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <label for="archivo_excel" class="form-label">Selecciona un archivo Excel:</label>
+                    <label for="archivo_excel" class="form-label">Selecciona el Excel Financiero:</label>
                     <input type="file" name="archivo_excel" id="archivo_excel" accept=".xlsx,.xls" required
                         class="form-control">
+                    <p class="anios-nota">
+                        Al importarlo se llenan solas las cédulas centralizadoras y sumarias,
+                        la Materialidad y la Importancia Relativa, y se toman los años de los
+                        cuadros comparativos desde las fechas de corte del archivo.
+                    </p>
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="download-button">Subir</button>
@@ -99,6 +108,43 @@
     </div>
 </div>
 
+<!-- MODAL AÑOS DE LA AUDITORÍA -->
+<div id="aniosModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeAniosModal()">&times;</span>
+        <div class="modal-header">Años de la auditoría</div>
+        <form onsubmit="guardarAnios(event)">
+            {% csrf_token %}
+            <div class="modal-body">
+                <p class="anios-nota">
+                    Estos años rotulan los cuadros comparativos (Análisis Horizontal y
+                    Vertical, Importancia Relativa y Materialidad). Al importar el Excel
+                    Financiero se toman solos de sus fechas de corte; si los edita aquí,
+                    el sistema respeta lo que usted escriba.
+                </p>
+                <div class="anios-form">
+                    <label for="anioAnterior">
+                        Año anterior
+                        <input type="number" id="anioAnterior" name="anio_anterior"
+                               min="1900" max="2200" placeholder="2024">
+                    </label>
+                    <label for="anioActual">
+                        Año actual
+                        <input type="number" id="anioActual" name="anio_actual"
+                               min="1900" max="2200" placeholder="2025">
+                    </label>
+                </div>
+                <div id="aniosMensaje"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="download-button">Guardar</button>
+                <button type="button" class="download-button" style="background-color: grey;"
+                    onclick="closeAniosModal()">Cerrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- MODAL MARCAS DE AUDITORÍA -->
 {% include 'auditoria/_upload-audit-marks-modal.html' %}
 
@@ -106,7 +152,9 @@
 <script>
 window.AUDIT_CTX = {
   audit_id: "{{ audit.id }}",
-  import_url: "{% url 'importar_cuentas_contables' audit_id=audit.id %}"
+  import_url: "{% url 'importar_cuentas_contables' audit_id=audit.id %}",
+  anios_url: "{% url 'anios_auditoria' audit_id=audit.id %}",
+  referencia_url: "{% url 'referencia_papel' audit_id=audit.id %}"
 };
 </script>
 <script src="{% static 'js/auditoria_detalle.js' %}"></script>

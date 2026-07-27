@@ -12,14 +12,54 @@ from ..sumaria import process_sumaria_file
 from ..importance_relativa import process_importance_relative
 from ..ratios_financieros import process_ratios_financieros
 from .normalizar_balances import normalizar_balances
+from ....utils.replacements_utils import get_replacements_config
 import os
 import re
+import unicodedata
 import logging
 
 
 logger = logging.getLogger(__name__)
 
-def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_path=None):
+# Plantillas 2026 de Análisis Financiero Preliminar. El árbol oficial las
+# nombra '1_Analisis_Horizontal.xlsx' y '2_Analisis_Vertical_.xlsx' en
+# Financiera y '2_Analisis_Vertical.xlsx' en Interna; versiones anteriores
+# traían sufijos ('_1', '_1_1'). Se reconocen todas por patrón para que el
+# escritor siga aplicándose aunque cambie el sufijo del archivo.
+_PATRON_ANALISIS_HV = re.compile(
+    r'^\d+[_\s]*analisis[_\s]*(horizontal|vertical)[_\s\d]*\.xlsx$',
+    re.IGNORECASE,
+)
+
+
+def _leyenda_moneda_rota(valor, replacements):
+    """
+    Devuelve la leyenda de moneda en texto plano si *valor* es la fórmula rota
+    que traen algunas plantillas oficiales, o None si no aplica.
+
+    Varias cédulas sumarias incluyen
+        =CONCATENATE("(Cifras expresadas en ",#REF!,")")
+    porque la celda a la que apuntaban se borró al recortar la plantilla. Tal
+    cual, Excel solo muestra #REF!, así que se escribe la leyenda resuelta.
+    """
+    if not valor.startswith('=') or '#REF!' not in valor:
+        return None
+    if 'cifras expresadas en' not in valor.lower():
+        return None
+
+    texto = replacements.get('[MONEDA_EXPRESION]')
+    return f'({texto})' if texto else None
+
+
+def _es_analisis_hv_2026(file_name):
+    """True si el archivo es una plantilla de Análisis Horizontal/Vertical 2026."""
+    normalizado = unicodedata.normalize('NFKD', file_name)
+    normalizado = ''.join(c for c in normalizado if not unicodedata.combining(c))
+    return bool(_PATRON_ANALISIS_HV.match(normalizado))
+
+
+def process_excel_sheets(workbook, tables_config, replacements, data_bd,
+                         file_path=None, audit_id=None):
     """
     Procesa las hojas del Excel aplicando los reemplazos de texto
 
@@ -29,6 +69,8 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
         replacements: Diccionario con los reemplazos a aplicar
         data_bd: Diccionario con los datos financieros
         file_path: Ruta completa al archivo Excel (opcional)
+        audit_id: id de la auditoría, para rotular los cuadros comparativos con
+            los años editables de `ParametrosAuditoria` (opcional)
     """
     # Extraer los componentes de data_bd en variables separadas
     balances = data_bd.get('balances', {})
@@ -36,17 +78,29 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
     saldos_iniciales = data_bd.get('saldos_iniciales', {})
     ajustes_reclasificaciones = data_bd.get('ajustes_reclasificaciones', {})
 
+    # Reglas regex del encabezado (Entidad / Período / Moneda). Las plantillas
+    # oficiales escriben esas líneas de formas ligeramente distintas, así que
+    # el reemplazo literal no basta y se completa con estos patrones.
+    reglas_regex = get_replacements_config().get('patrones_regex', [])
+
     # Procesar reemplazos normales en todas las hojas
     for sheet in workbook.worksheets:
         # Procesar reemplazos normales usando tables_config
         patrones_exactos = tables_config.get('patrones_exactos', {})
-        patrones_regex = tables_config.get('patrones_regex', {})
 
         # Procesar cada celda de la hoja para reemplazos
         for row in sheet.iter_rows():
             for cell in row:
                 if cell.value and isinstance(cell.value, str):
                     valor_original = cell.value.strip()
+
+                    # Fórmulas rotas de la leyenda de moneda: la plantilla trae
+                    # =CONCATENATE("(Cifras expresadas en ",#REF!,")"), que en
+                    # Excel solo muestra #REF!. Se sustituye por el texto plano.
+                    leyenda = _leyenda_moneda_rota(valor_original, replacements)
+                    if leyenda:
+                        cell.value = leyenda
+                        continue
 
                     # Reemplazos exactos
                     if valor_original in patrones_exactos:
@@ -55,19 +109,10 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
                             cell.value = replacements[placeholder]
                             continue
 
-                    # Reemplazos de texto parciales
-                    nuevo_valor = replace_text(valor_original, replacements)
+                    # Reemplazos de texto parciales + regex del encabezado
+                    nuevo_valor = replace_text(valor_original, replacements, reglas_regex)
                     if nuevo_valor != valor_original:
                         cell.value = nuevo_valor
-                        continue
-
-                    # Reemplazos con regex (si están definidos como diccionario)
-                    if isinstance(patrones_regex, dict):
-                        for patron, placeholder in patrones_regex.items():
-                            if patron in valor_original and placeholder in replacements:
-                                cell.value = valor_original.replace(
-                                    patron, replacements[placeholder])
-                                break
 
     if file_path:
         file_name = os.path.basename(file_path)
@@ -103,11 +148,10 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd, file_pa
                 # bases fijas): usa su escritor específico, no el antiguo.
                 workbook = process_materialidad_nia320(
                     workbook, balances_normalizados)
-            elif (file_name == "1_Analisis_Horizontal_1.xlsx" or
-                  file_name == "2_Analisis_Vertical_1_1.xlsx") and balances_normalizados:
+            elif _es_analisis_hv_2026(file_name) and balances_normalizados:
                 # Plantillas 2026: escritor específico (soporta 1 o 2 años)
                 workbook = process_analisis_hv_2026(
-                    workbook, balances_normalizados, file_name)
+                    workbook, balances_normalizados, file_name, audit_id=audit_id)
             elif (file_name == "4 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx" or
                   file_name == "20 ANÁLISIS HORIZONTAL DE BALANCE GENERAL.xlsx" or
                   file_name == "5 ANÁLISIS VERTICAL DE BALANCE GENERAL.xlsx" or

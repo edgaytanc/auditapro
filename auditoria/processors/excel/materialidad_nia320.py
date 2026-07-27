@@ -19,7 +19,8 @@ Relativa. No modifica process_materialidad_file (plantillas antiguas).
 from .importance_relativa.datos_entrada import (
     _norm_texto,
     obtener_anios_anuales,
-    buscar_valor_estado_resultados,
+    calcular_ingresos_totales,
+    calcular_utilidad_antes_impuesto,
     calcular_total_seccion,
 )
 
@@ -55,11 +56,9 @@ def process_materialidad_nia320(workbook, balances):
 
     # Valores de las bases (0 si la cuenta no existe, como en los escritores IR)
     valores_bases = {
-        "utilidadantesdeimpuestos": buscar_valor_estado_resultados(
-            balances, anio_actual, "Utilidad antes de impuesto"),
+        "utilidadantesdeimpuestos": calcular_utilidad_antes_impuesto(balances, anio_actual),
         "activostotales": calcular_total_seccion(balances, anio_actual, "Activo"),
-        "ingresostotales": buscar_valor_estado_resultados(
-            balances, anio_actual, "Ingresos totales"),
+        "ingresostotales": calcular_ingresos_totales(balances, anio_actual),
         "patrimonio": calcular_total_seccion(balances, anio_actual, "Patrimonio"),
     }
 

@@ -71,7 +71,7 @@ def download_document(request, audit_id, folder, filename):
             # Referencia propia del papel de trabajo en el encabezado ('Ref.')
             try:
                 from auditoria.services.referencias import obtener_ref, inyectar_ref_propia
-                ref_propia = obtener_ref(audit.tipoAuditoria, folder, filename)
+                ref_propia = obtener_ref(audit.tipoAuditoria, folder, filename, audit_id=audit.id)
                 if ref_propia:
                     wb = inyectar_ref_propia(wb, ref_propia)
             except Exception as e:

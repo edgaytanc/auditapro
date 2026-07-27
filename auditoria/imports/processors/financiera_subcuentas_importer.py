@@ -179,6 +179,15 @@ def importar_formato_subcuentas(workbook, audit_id):
     if all(fecha is None for fecha in fechas_columnas.values()):
         return False, "❌ No se pudieron leer las fechas de corte (C6, D6, E6, H6)."
 
+    # 2.bis) Años de la auditoría: se toman del archivo y quedan disponibles
+    # para los cuadros comparativos (el auditor puede corregirlos después).
+    from auditoria.services.parametros_anios import actualizar_anios_desde_import
+    actualizar_anios_desde_import(
+        audit_id,
+        fecha_cierre_anterior=fechas_columnas.get(4),  # Columna E
+        fecha_cierre_actual=fechas_columnas.get(7),    # Columna H
+    )
+
     # 3) Recorrer las filas de la hoja por secciones
     current_section = None
     cuentas_importadas = 0

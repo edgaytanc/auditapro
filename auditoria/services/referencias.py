@@ -147,15 +147,8 @@ def limpiar_cache():
     _indice_normalizado.cache_clear()
 
 
-def obtener_ref(tipo_auditoria, carpeta, archivo):
-    """
-    Devuelve la referencia de un papel de trabajo o None si no se conoce.
-
-    Args:
-        tipo_auditoria: 'F', 'I' o 'R'
-        carpeta: ruta relativa de la carpeta (separador '/' o '\\')
-        archivo: nombre del archivo
-    """
+def ref_automatica(tipo_auditoria, carpeta, archivo):
+    """Referencia que calcula el sistema, sin considerar la del auditor."""
     if not tipo_auditoria or not archivo:
         return None
     indice = construir_indice(tipo_auditoria)
@@ -164,6 +157,53 @@ def obtener_ref(tipo_auditoria, carpeta, archivo):
     if ref:
         return ref
     return _indice_normalizado(tipo_auditoria).get(_clave_normalizada(carpeta, archivo))
+
+
+def ref_manual(audit_id, carpeta, archivo):
+    """
+    Referencia fijada a mano por el auditor para ese papel, o None.
+
+    Se busca primero por coincidencia exacta y luego normalizando tildes y
+    separadores, porque la carpeta llega desde la URL y desde el árbol con
+    formatos ligeramente distintos.
+    """
+    if not audit_id or not archivo:
+        return None
+
+    from auditoria.models import ReferenciaPapelTrabajo
+
+    carpeta_limpia = (carpeta or '').replace('\\', '/').strip('/')
+    registros = ReferenciaPapelTrabajo.objects.filter(audit_id=audit_id)
+
+    exacto = registros.filter(carpeta=carpeta_limpia, archivo=archivo).first()
+    if exacto:
+        return exacto.referencia
+
+    buscado = _clave_normalizada(carpeta_limpia, archivo)
+    for registro in registros:
+        if _clave_normalizada(registro.carpeta, registro.archivo) == buscado:
+            return registro.referencia
+    return None
+
+
+def obtener_ref(tipo_auditoria, carpeta, archivo, audit_id=None):
+    """
+    Devuelve la referencia de un papel de trabajo o None si no se conoce.
+
+    Si el auditor fijó una referencia propia para ese papel en esta auditoría,
+    ESA manda: el sistema no la sobrescribe (respuesta a la consulta del
+    cliente sobre si puede mantener sus propias letras/números).
+
+    Args:
+        tipo_auditoria: 'F', 'I' o 'R'
+        carpeta: ruta relativa de la carpeta (separador '/' o '\\')
+        archivo: nombre del archivo
+        audit_id: auditoría en curso, para consultar la referencia manual
+    """
+    manual = ref_manual(audit_id, carpeta, archivo)
+    if manual:
+        return manual
+    return ref_automatica(tipo_auditoria, carpeta, archivo)
 
 
 def _archivo_de_ref(ref, tipo_auditoria):
@@ -260,11 +300,19 @@ def _celda_destino_derecha(sheet, cell):
     return destino
 
 
+# Hueco de la referencia dentro de la propia etiqueta: 'Ref.      XXXXXX'
+_PATRON_HUECO_REF = re.compile(r'(x{3,})', re.IGNORECASE)
+
+
 def inyectar_ref_propia(workbook, ref):
     """
-    Escribe la referencia propia del papel junto a la etiqueta 'Ref' del
-    encabezado (filas 1-12, columnas 1-15) de cada hoja. Nunca sobreescribe
-    celdas con contenido.
+    Escribe la referencia propia del papel en el recuadro 'Ref.' del encabezado
+    (filas 1-12, columnas 1-15) de cada hoja.
+
+    Las plantillas oficiales resuelven ese recuadro de dos maneras:
+      · 'Ref.' en una celda y el hueco en la de al lado, o
+      · 'Ref.      XXXXXX' todo en la misma celda.
+    Se cubren las dos. Nunca se pisa un valor que el auditor ya haya escrito.
     """
     if not ref:
         return workbook
@@ -279,6 +327,13 @@ def inyectar_ref_propia(workbook, ref):
                     continue
                 if not _normalizar_texto(cell.value).startswith('ref'):
                     continue
+
+                # Caso 'Ref.      XXXXXX': se rellena el hueco en la misma celda
+                if _PATRON_HUECO_REF.search(cell.value):
+                    cell.value = _PATRON_HUECO_REF.sub(ref, cell.value, count=1)
+                    procesada = True
+                    break
+
                 destino = _celda_destino_derecha(sheet, cell)
                 if destino is not None and destino.value in (None, ''):
                     destino.value = ref

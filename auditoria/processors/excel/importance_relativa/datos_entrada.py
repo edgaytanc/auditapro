@@ -20,6 +20,8 @@ import unicodedata
 __all__ = [
     "process_ir_datos_entrada",
     "buscar_valor_estado_resultados",
+    "calcular_ingresos_totales",
+    "calcular_utilidad_antes_impuesto",
     "calcular_total_seccion",
     "obtener_anios_anuales",
 ]
@@ -52,18 +54,137 @@ def obtener_anios_anuales(balances):
     return sorted(anios, reverse=True)
 
 
+# Variantes con que el Excel Financiero puede rotular cada base. Se comparan
+# normalizadas (sin tildes, sin espacios, minúsculas) para que dé igual si el
+# cliente escribe 'Ingresos totales', 'INGRESOS TOTALES' o 'Ingresos Totales'.
+_ALIAS_BASES = {
+    "Ingresos totales": (
+        "ingresostotales",
+        "totalingresos",
+        "ingresostotalesventas",
+        "ventastotales",
+    ),
+    "Utilidad antes de impuesto": (
+        "utilidadantesdeimpuesto",
+        "utilidadantesdeimpuestos",
+        "utilidadantesdeimpuestosobrelarenta",
+        "resultadoantesdeimpuesto",
+        "resultadoantesdeimpuestos",
+        "utilidadantesdeisr",
+    ),
+}
+
+# Palabras que clasifican una cuenta de ESTADO DE RESULTADOS como gasto/costo
+_PALABRAS_GASTO = ('gasto', 'costo', 'egreso', 'impuesto', 'perdida')
+_PALABRAS_INGRESO = ('ingreso', 'venta')
+
+
+def _cuenta_de_clave(key):
+    """Extrae el nombre de cuenta de una clave 'TIPO-fecha-seccion-cuenta'."""
+    partes = key.split('-')
+    # La sección puede traer guiones ('ESTADO DE RESULTADOS' no, pero el nombre
+    # de la cuenta sí), así que se corta después del marcador de sección.
+    marcador = 'ESTADO DE RESULTADOS-'
+    posicion = key.find(marcador)
+    if posicion >= 0:
+        return key[posicion + len(marcador):].strip()
+    return partes[-1].strip()
+
+
+def _claves_estado_resultados(balances, anio):
+    """Pares (cuenta, valor) del ESTADO DE RESULTADOS anual del año dado."""
+    for key, value in balances.items():
+        if f"ANUAL-{anio}" in key and "ESTADO DE RESULTADOS" in key:
+            yield _cuenta_de_clave(key), value
+
+
 def buscar_valor_estado_resultados(balances, anio, nombre_cuenta):
     """
     Busca una cuenta de ESTADO DE RESULTADOS para un año dado.
-    Misma lógica de búsqueda flexible que process_ir_ingresos_totales /
-    process_ir_utilidad. Devuelve el valor o None si no existe.
+
+    Acepta las variantes de rotulación del Excel Financiero (mayúsculas,
+    tildes y sinónimos habituales). Devuelve el valor o None si no existe.
     """
-    for key, value in balances.items():
-        if (f"ANUAL-{anio}" in key and
-                "ESTADO DE RESULTADOS" in key and
-                nombre_cuenta in key):
-            return value
+    if anio is None:
+        return None
+
+    alias = _ALIAS_BASES.get(nombre_cuenta, ())
+    objetivo = _norm_texto(nombre_cuenta)
+
+    for cuenta, valor in _claves_estado_resultados(balances, anio):
+        cuenta_norm = _norm_texto(cuenta)
+        if cuenta_norm == objetivo or cuenta_norm in alias:
+            return valor
+
+    # Coincidencia parcial como último recurso (p. ej. 'Ingresos totales netos')
+    for cuenta, valor in _claves_estado_resultados(balances, anio):
+        cuenta_norm = _norm_texto(cuenta)
+        if objetivo and (objetivo in cuenta_norm or cuenta_norm in objetivo):
+            return valor
+        if any(clave in cuenta_norm for clave in alias):
+            return valor
+
     return None
+
+
+def _es_cuenta_gasto(cuenta):
+    texto = _norm_texto(cuenta)
+    if any(palabra in texto for palabra in _PALABRAS_INGRESO):
+        return False
+    return any(palabra in texto for palabra in _PALABRAS_GASTO)
+
+
+def calcular_ingresos_totales(balances, anio):
+    """
+    Ingresos totales del año.
+
+    Usa la cuenta 'Ingresos totales' del Excel Financiero cuando existe
+    (observación 2 del cliente). Si el archivo todavía no la trae, suma las
+    cuentas de ingreso del ESTADO DE RESULTADOS para que la base no quede en 0.
+    """
+    valor = buscar_valor_estado_resultados(balances, anio, "Ingresos totales")
+    if valor is not None:
+        return valor
+
+    total = 0
+    encontrado = False
+    for cuenta, importe in _claves_estado_resultados(balances, anio):
+        if not _es_cuenta_gasto(cuenta) and any(
+                palabra in _norm_texto(cuenta) for palabra in _PALABRAS_INGRESO):
+            total += importe
+            encontrado = True
+
+    return total if encontrado else None
+
+
+def calcular_utilidad_antes_impuesto(balances, anio):
+    """
+    Utilidad antes de impuesto del año.
+
+    Usa la cuenta 'Utilidad antes de impuesto' del Excel Financiero cuando
+    existe. Si no, la deriva como ingresos − gastos (excluyendo las cuentas de
+    impuesto, que son precisamente las que van después de esta base).
+    """
+    valor = buscar_valor_estado_resultados(balances, anio, "Utilidad antes de impuesto")
+    if valor is not None:
+        return valor
+
+    ingresos = 0
+    gastos = 0
+    encontrado = False
+    for cuenta, importe in _claves_estado_resultados(balances, anio):
+        texto = _norm_texto(cuenta)
+        if 'impuesto' in texto:
+            continue  # la base es ANTES de impuesto
+        if _es_cuenta_gasto(cuenta):
+            gastos += importe
+        elif any(palabra in texto for palabra in _PALABRAS_INGRESO):
+            ingresos += importe
+        else:
+            continue
+        encontrado = True
+
+    return ingresos - gastos if encontrado else None
 
 
 def calcular_total_seccion(balances, anio, seccion):
@@ -151,9 +272,8 @@ def process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual):
     # 1) Ingresos totales (cuenta 'Ingresos totales' de ESTADO DE RESULTADOS)
     _escribir(
         fila_ingresos,
-        buscar_valor_estado_resultados(balances, anio_actual, "Ingresos totales"),
-        buscar_valor_estado_resultados(balances, anio_anterior, "Ingresos totales")
-        if anio_anterior else None,
+        calcular_ingresos_totales(balances, anio_actual),
+        calcular_ingresos_totales(balances, anio_anterior) if anio_anterior else None,
     )
 
     # 2) Activos totales (suma de la sección Activo en la fecha más reciente)
@@ -167,7 +287,7 @@ def process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual):
     # 3) Utilidad antes de impuesto (ESTADO DE RESULTADOS)
     _escribir(
         fila_utilidad,
-        buscar_valor_estado_resultados(balances, anio_actual, "Utilidad antes de impuesto"),
-        buscar_valor_estado_resultados(balances, anio_anterior, "Utilidad antes de impuesto")
+        calcular_utilidad_antes_impuesto(balances, anio_actual),
+        calcular_utilidad_antes_impuesto(balances, anio_anterior)
         if anio_anterior else None,
     )

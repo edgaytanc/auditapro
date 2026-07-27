@@ -5,6 +5,7 @@ from .utils.export_utils import export_cuentas_contables
 from .views import audit_mark_views
 from .views import audit_views
 from .views import muestreo_views
+from .views import parametros_views
 from .api import template_creator_views
 
 urlpatterns = [
@@ -40,4 +41,13 @@ urlpatterns = [
     path('muestreo/<int:audit_id>/', muestreo_views.muestreo_page, name='muestreo_page'),
     path('muestreo/<int:audit_id>/calcular/', muestreo_views.muestreo_calcular, name='muestreo_calcular'),
     path('muestreo/<int:audit_id>/descargar/', muestreo_views.muestreo_descargar, name='muestreo_descargar'),
+    path('muestreo/<int:audit_id>/importar-datos/', muestreo_views.muestreo_importar_datos,
+         name='muestreo_importar_datos'),
+    path('muestreo/<int:audit_id>/formato-datos/', muestreo_views.muestreo_formato_datos,
+         name='muestreo_formato_datos'),
+
+    # Parámetros editables por el auditor (años y referencias)
+    path('detalle/<int:audit_id>/anios/', parametros_views.anios_auditoria, name='anios_auditoria'),
+    path('detalle/<int:audit_id>/referencia/', parametros_views.referencia_papel,
+         name='referencia_papel'),
 ]

@@ -204,6 +204,31 @@
         </div>
 
         <button type="button" class="calc-btn" id="calcularBtn">Calcular muestra</button>
+
+        <!-- Importación del Excel de datos (mayor auxiliar) -->
+        <div class="import-datos">
+            <h3>O genere la muestra desde el Excel de datos</h3>
+            <div class="hint">
+                Suba el mayor auxiliar de la cuenta a muestrear con las columnas
+                <strong>N.º Documento · Descripción · Fecha · Monto</strong>. El sistema deduce
+                la población (N), la desviación estándar (σ) y el valor en libros, calcula la
+                muestra y devuelve las partidas reales seleccionadas.
+                <br>
+                El archivo <strong>no se guarda en el sistema</strong>: se lee, se genera la
+                muestra y se descarta. Para volver a generarla, súbalo de nuevo.
+            </div>
+            <div class="import-row">
+                <input type="file" id="archivoDatos" accept=".xlsx" class="form-control">
+                <button type="button" class="calc-btn secundario" id="importarDatosBtn">
+                    Subir y generar muestra
+                </button>
+                <button type="button" class="calc-btn secundario" id="formatoDatosBtn">
+                    ⬇ Descargar formato de ejemplo
+                </button>
+            </div>
+            <div class="import-estado" id="importEstado"></div>
+        </div>
+
         <div class="error-box" id="errorBox"></div>
 
         <!-- Resultados -->
@@ -223,8 +248,6 @@
         <div class="descarga-row">
             <span class="dl-label">Descargar resultado</span>
             <button type="button" class="dl-btn" data-formato="excel">⬇ Excel</button>
-            <button type="button" class="dl-btn" data-formato="word">⬇ Word</button>
-            <button type="button" class="dl-btn" data-formato="pdf">⬇ PDF</button>
         </div>
     </div>
 </div>
@@ -234,7 +257,9 @@
 window.MUESTREO_CTX = {
     audit_id: "{{ audit.id }}",
     calcular_url: "{% url 'muestreo_calcular' audit_id=audit.id %}",
-    descargar_url: "{% url 'muestreo_descargar' audit_id=audit.id %}"
+    descargar_url: "{% url 'muestreo_descargar' audit_id=audit.id %}",
+    importar_url: "{% url 'muestreo_importar_datos' audit_id=audit.id %}",
+    formato_url: "{% url 'muestreo_formato_datos' audit_id=audit.id %}"
 };
 </script>
 <script src="{% static 'js/muestreo_nia530.js' %}"></script>

@@ -17,14 +17,21 @@ from .config import (
 from .utils import crear_mensaje_error
 from auditoria.services import muestreo_nia530
 from auditoria.services import muestreo_export
+from auditoria.services import muestreo_datos
 
 logger = logging.getLogger(__name__)
 
+# El cliente confirmó que este módulo se descarga SOLO en Excel.
 CONTENT_TYPES = {
     'excel': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'word': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'pdf': 'application/pdf',
 }
+
+# Clave de sesión donde queda la última muestra generada desde un Excel de
+# datos. Guarda ÚNICAMENTE las partidas seleccionadas: el archivo subido se
+# procesa en memoria y se descarta al terminar la petición, nunca se almacena.
+CLAVE_SESION_DETALLE = 'muestreo_detalle'
+
+TAMANO_MAXIMO_MB = 10
 
 
 def _verificar_acceso(request, audit):
@@ -124,17 +131,146 @@ def muestreo_calcular(request, audit_id):
 
 
 @login_required
+def muestreo_importar_datos(request, audit_id):
+    """
+    Importa el Excel de datos (mayor auxiliar) y genera la muestra.
+
+    El archivo NO se guarda en el sistema: se lee en memoria, se derivan los
+    parámetros de la población (N, σ, valor en libros), se calcula la muestra y
+    se descarta. En la sesión solo quedan las partidas seleccionadas, para que
+    la descarga en Excel las incluya sin volver a subir el archivo.
+
+    POST multipart con:
+      - archivo_datos: el Excel del mayor auxiliar
+      - metodo: clave del método de muestreo
+      - parametros: JSON con los parámetros del método (los derivables del
+        archivo pueden venir vacíos: se completan con los del archivo)
+    """
+    audit, error = _obtener_auditoria(request, audit_id)
+    if error:
+        return JsonResponse(
+            {'success': False, 'error': 'Acceso no autorizado a la auditoría.'},
+            status=error.status_code,
+        )
+
+    if request.method != 'POST':
+        return JsonResponse(
+            {'success': False, 'error': 'Método HTTP no permitido. Use POST.'}, status=405)
+
+    archivo = request.FILES.get('archivo_datos')
+    if not archivo:
+        return JsonResponse(
+            {'success': False, 'error': 'No se adjuntó ningún archivo Excel de datos.'},
+            status=400,
+        )
+    if archivo.size > TAMANO_MAXIMO_MB * 1024 * 1024:
+        return JsonResponse(
+            {'success': False,
+             'error': f'El archivo supera los {TAMANO_MAXIMO_MB} MB permitidos.'},
+            status=400,
+        )
+
+    try:
+        datos_archivo = muestreo_datos.parsear_mayor_auxiliar(archivo)
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    except Exception as e:
+        logger.error(f"Error leyendo el Excel de datos (auditoría {audit_id}): {e}")
+        return JsonResponse(
+            {'success': False, 'error': 'No se pudo leer el archivo Excel de datos.'},
+            status=400,
+        )
+    finally:
+        # El archivo se descarta explícitamente: no se escribe en disco ni en BD
+        archivo.close()
+
+    metodo = request.POST.get('metodo') or 'aleatorio_simple'
+    try:
+        parametros = json.loads(request.POST.get('parametros') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {'success': False, 'error': "El campo 'parametros' debe ser JSON válido."},
+            status=400,
+        )
+    if not isinstance(parametros, dict):
+        return JsonResponse(
+            {'success': False, 'error': "El campo 'parametros' debe ser un objeto JSON."},
+            status=400,
+        )
+
+    parametros = muestreo_datos.completar_parametros(metodo, parametros, datos_archivo)
+
+    try:
+        resultado = muestreo_nia530.calcular_muestreo(metodo, parametros, audit_id=audit.id)
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+    except Exception as e:
+        logger.error(f"Error calculando la muestra importada (auditoría {audit_id}): {e}")
+        return JsonResponse(
+            {'success': False, 'error': 'Error inesperado al calcular la muestra.'}, status=500)
+
+    try:
+        detalle = muestreo_datos.mapear_seleccion_a_partidas(
+            resultado, datos_archivo['partidas'])
+    except ValueError as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+    if detalle:
+        resultado['detalle_partidas'] = detalle
+        request.session[CLAVE_SESION_DETALLE] = {
+            'audit_id': audit.id,
+            'metodo': metodo,
+            'parametros': parametros,
+            'detalle': detalle,
+        }
+        request.session.modified = True
+
+    return JsonResponse({
+        'success': True,
+        'data': resultado,
+        'origen': {
+            'archivo': archivo.name,
+            'empresa': datos_archivo['empresa'],
+            'cuenta': datos_archivo['cuenta'],
+            'partidas': datos_archivo['n'],
+            'valor_libros': datos_archivo['bv'],
+            'desviacion_estandar': datos_archivo['sigma'],
+        },
+        'parametros_aplicados': parametros,
+        'mensaje': (
+            f"Se leyeron {datos_archivo['n']:,} partidas y se generó la muestra. "
+            "El archivo no se almacenó en el sistema."
+        ),
+    })
+
+
+@login_required
+def muestreo_formato_datos(request, audit_id):
+    """Descarga el Excel de ejemplo con la estructura que espera el módulo."""
+    _audit, error = _obtener_auditoria(request, audit_id)
+    if error:
+        return error
+
+    contenido = muestreo_datos.generar_formato_ejemplo()
+    respuesta = FileResponse(
+        io.BytesIO(contenido), as_attachment=True,
+        filename='Formato_Mayor_Auxiliar_Muestreo.xlsx',
+    )
+    respuesta['Content-Type'] = CONTENT_TYPES['excel']
+    return respuesta
+
+
+@login_required
 def muestreo_descargar(request, audit_id):
     """
-    Descarga el papel de trabajo generado.
+    Descarga el papel de trabajo generado, siempre en Excel.
 
     GET con los mismos parámetros del cálculo:
       - metodo: clave del método
       - parametros: JSON con los parámetros del método
-      - formato: excel | word | pdf
 
-    Si se pide PDF y weasyprint no está disponible (entorno local), se entrega
-    el Excel como alternativa con el encabezado 'X-Muestreo-Advertencia'.
+    Si la muestra se generó desde un Excel de datos importado, la hoja
+    'Selección' incluye las partidas reales guardadas en la sesión.
     """
     audit, error = _obtener_auditoria(request, audit_id)
     if error:
@@ -142,7 +278,11 @@ def muestreo_descargar(request, audit_id):
 
     formato = (request.GET.get('formato') or 'excel').lower()
     if formato not in CONTENT_TYPES:
-        return JsonResponse({'success': False, 'error': f"Formato no soportado: {formato}. Use excel, word o pdf."}, status=400)
+        return JsonResponse(
+            {'success': False,
+             'error': f"Formato no soportado: {formato}. Este módulo se descarga en Excel."},
+            status=400,
+        )
 
     metodo = request.GET.get('metodo')
     try:
@@ -157,34 +297,25 @@ def muestreo_descargar(request, audit_id):
     except ValueError as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
 
+    # Partidas reales de la última importación, si corresponden a esta misma
+    # muestra (mismo método y parámetros).
+    guardado = request.session.get(CLAVE_SESION_DETALLE)
+    if (guardado
+            and guardado.get('audit_id') == audit.id
+            and guardado.get('metodo') == metodo
+            and guardado.get('parametros') == parametros):
+        resultado['detalle_partidas'] = guardado['detalle']
+
     info = _info_auditoria(audit)
-    advertencia = None
 
     try:
-        if formato == 'excel':
-            contenido = muestreo_export.generar_excel(info, resultado)
-        elif formato == 'word':
-            contenido = muestreo_export.generar_word(info, resultado)
-        else:  # pdf
-            contenido = muestreo_export.generar_pdf(info, resultado)
-            if contenido is None:
-                # weasyprint no disponible: entregar el Excel como alternativa
-                advertencia = (
-                    "Generación de PDF no disponible en este entorno; "
-                    "se entrega el papel de trabajo en Excel."
-                )
-                logger.warning(f"weasyprint no disponible para la auditoría {audit_id}: {advertencia}")
-                formato = 'excel'
-                contenido = muestreo_export.generar_excel(info, resultado)
+        contenido = muestreo_export.generar_excel(info, resultado)
     except Exception as e:
         logger.error(f"Error generando el archivo de muestreo (auditoría {audit_id}): {e}")
         return HttpResponse(f'Error al generar el documento: {str(e)}', status=500)
 
-    extension = {'excel': 'xlsx', 'word': 'docx', 'pdf': 'pdf'}[formato]
-    nombre = muestreo_export.nombre_archivo(resultado, audit.id, extension)
+    nombre = muestreo_export.nombre_archivo(resultado, audit.id, 'xlsx')
 
     respuesta = FileResponse(io.BytesIO(contenido), as_attachment=True, filename=nombre)
-    respuesta['Content-Type'] = CONTENT_TYPES[formato]
-    if advertencia:
-        respuesta['X-Muestreo-Advertencia'] = advertencia
+    respuesta['Content-Type'] = CONTENT_TYPES['excel']
     return respuesta

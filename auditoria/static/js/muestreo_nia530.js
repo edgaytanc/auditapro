@@ -2,8 +2,16 @@
    Lee el contexto dinámico desde window.MUESTREO_CTX (mismo patrón que
    window.AUDIT_CTX en auditoria_detalle.js). */
 
-const { audit_id: muestreoAuditId, calcular_url: muestreoCalcularUrl, descargar_url: muestreoDescargarUrl } =
-    window.MUESTREO_CTX || { audit_id: null, calcular_url: null, descargar_url: null };
+const {
+    audit_id: muestreoAuditId,
+    calcular_url: muestreoCalcularUrl,
+    descargar_url: muestreoDescargarUrl,
+    importar_url: muestreoImportarUrl,
+    formato_url: muestreoFormatoUrl
+} = window.MUESTREO_CTX || {
+    audit_id: null, calcular_url: null, descargar_url: null,
+    importar_url: null, formato_url: null
+};
 
 let metodoActivo = 'aleatorio_simple';
 let ultimoCalculo = null; // { metodo, parametros } del último cálculo exitoso
@@ -186,23 +194,33 @@ function renderResultado(data) {
         ? 'Semilla de selección utilizada: ' + data.semilla + ' (consérvela para reproducir la muestra — evidencia NIA 530).'
         : 'Selección dirigida: no se utiliza semilla aleatoria.';
 
-    // Tabla de selección (se muestran las primeras filas; la descarga trae todas)
+    // Tabla de selección (se muestran las primeras filas; la descarga trae todas).
+    // Si la muestra se generó desde el Excel de datos, se listan las partidas reales.
     const tabla = document.getElementById('tablaSeleccion');
-    let filasHtml = '<tr><th>Nº</th><th>Elemento seleccionado</th></tr>';
-    data.seleccion.slice(0, LIMITE_FILAS_SELECCION).forEach(item => {
+    const detalle = data.detalle_partidas;
+    const filas = detalle || data.seleccion;
+
+    let filasHtml = detalle
+        ? '<tr><th>Nº</th><th>N.º Documento</th><th>Descripción</th><th>Fecha</th><th>Monto</th></tr>'
+        : '<tr><th>Nº</th><th>Elemento seleccionado</th></tr>';
+
+    filas.slice(0, LIMITE_FILAS_SELECCION).forEach(item => {
         const fila = document.createElement('tr');
-        const celdaNumero = document.createElement('td');
-        celdaNumero.textContent = item.numero;
-        const celdaElemento = document.createElement('td');
-        celdaElemento.textContent = item.elemento;
-        fila.appendChild(celdaNumero);
-        fila.appendChild(celdaElemento);
+        const celdas = detalle
+            ? [item.no, item.documento, item.descripcion, item.fecha, item.monto]
+            : [item.numero, item.elemento];
+        celdas.forEach(valor => {
+            const celda = document.createElement('td');
+            celda.textContent = valor;
+            fila.appendChild(celda);
+        });
         filasHtml += fila.outerHTML;
     });
     tabla.innerHTML = filasHtml;
+
     const nota = document.getElementById('notaSeleccion');
-    if (data.seleccion.length > LIMITE_FILAS_SELECCION) {
-        nota.textContent = '… y ' + (data.seleccion.length - LIMITE_FILAS_SELECCION) +
+    if (filas.length > LIMITE_FILAS_SELECCION) {
+        nota.textContent = '… y ' + (filas.length - LIMITE_FILAS_SELECCION) +
             ' elementos más (incluidos completos en la descarga).';
     } else {
         nota.textContent = '';
@@ -224,7 +242,7 @@ function descargarMuestreo(formato) {
     const url = muestreoDescargarUrl +
         '?metodo=' + encodeURIComponent(ultimoCalculo.metodo) +
         '&parametros=' + encodeURIComponent(JSON.stringify(ultimoCalculo.parametros)) +
-        '&formato=' + encodeURIComponent(formato);
+        '&formato=excel';
     window.location.href = url;
 }
 
@@ -252,3 +270,75 @@ document.getElementById('agregarPartidaBtn').addEventListener('click', agregarFi
 
 // Comenzar con una fila vacía en la tabla de criterio
 agregarFilaPartida();
+
+// ---------------------------------------------------------------------------
+// Importación del Excel de datos (mayor auxiliar)
+//
+// El archivo NO se guarda en el sistema: se sube, el servidor lo lee en
+// memoria, genera la muestra y lo descarta. Para repetir el cálculo hay que
+// volver a subirlo.
+// ---------------------------------------------------------------------------
+
+function estadoImportacion(mensaje, tipo) {
+    const caja = document.getElementById('importEstado');
+    if (!caja) return;
+    caja.textContent = mensaje || '';
+    caja.className = 'import-estado' + (tipo ? ' ' + tipo : '');
+}
+
+function importarDatosMuestreo() {
+    const entrada = document.getElementById('archivoDatos');
+    if (!entrada || !entrada.files.length) {
+        estadoImportacion('Seleccione primero el Excel de datos (mayor auxiliar).', 'error');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('archivo_datos', entrada.files[0]);
+    formData.append('metodo', metodoActivo);
+    formData.append('parametros', JSON.stringify(recolectarParametros()));
+
+    estadoImportacion('Leyendo el archivo y generando la muestra…', '');
+    document.getElementById('errorBox').style.display = 'none';
+
+    fetch(muestreoImportarUrl, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken() },
+        body: formData
+    })
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+            if (!datos.success) {
+                estadoImportacion('', '');
+                mostrarError(datos.error || 'No se pudo procesar el archivo.');
+                return;
+            }
+            ultimoCalculo = {
+                metodo: metodoActivo,
+                parametros: datos.parametros_aplicados
+            };
+            const origen = datos.origen || {};
+            estadoImportacion(
+                `${datos.mensaje} · Cuenta: ${origen.cuenta || 'no indicada'} · ` +
+                `Población (N): ${origen.partidas}`,
+                'ok'
+            );
+            renderResultado(datos.data);
+            // El archivo ya se descartó en el servidor; se limpia el selector
+            entrada.value = '';
+        })
+        .catch(() => {
+            estadoImportacion('', '');
+            mostrarError('Error inesperado al subir el archivo de datos.');
+        });
+}
+
+function descargarFormatoDatos() {
+    if (muestreoFormatoUrl) window.location.href = muestreoFormatoUrl;
+}
+
+const botonImportar = document.getElementById('importarDatosBtn');
+if (botonImportar) botonImportar.addEventListener('click', importarDatosMuestreo);
+
+const botonFormato = document.getElementById('formatoDatosBtn');
+if (botonFormato) botonFormato.addEventListener('click', descargarFormatoDatos);

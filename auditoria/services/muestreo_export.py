@@ -131,15 +131,32 @@ def generar_excel(info_auditoria, resultado):
     hoja_resultados.row_dimensions[fila + 1].height = 60
 
     # --- Hoja Selección ---
+    # Cuando la muestra se generó desde el Excel de datos importado, se
+    # detallan las partidas reales (documento, descripción, fecha y monto);
+    # si el auditor trabajó solo con parámetros, se listan los números.
     hoja_seleccion = libro.create_sheet("Selección")
-    filas_seleccion = [
-        (item['numero'], item['elemento'], '')
-        for item in resultado['seleccion']
-    ]
-    _escribir_tabla(
-        hoja_seleccion, 1, "Elementos seleccionados",
-        ["Nº", "Elemento seleccionado", "Marca"], filas_seleccion, anchos=[8, 70, 14],
-    )
+    detalle = resultado.get('detalle_partidas')
+
+    if detalle:
+        filas_seleccion = [
+            (item['no'], item['documento'], item['descripcion'],
+             item['fecha'], item['monto'], '')
+            for item in detalle
+        ]
+        _escribir_tabla(
+            hoja_seleccion, 1, "Partidas seleccionadas",
+            ["Nº", "N.º Documento", "Descripción", "Fecha", "Monto", "Marca"],
+            filas_seleccion, anchos=[8, 20, 46, 14, 18, 12],
+        )
+    else:
+        filas_seleccion = [
+            (item['numero'], item['elemento'], '')
+            for item in resultado['seleccion']
+        ]
+        _escribir_tabla(
+            hoja_seleccion, 1, "Elementos seleccionados",
+            ["Nº", "Elemento seleccionado", "Marca"], filas_seleccion, anchos=[8, 70, 14],
+        )
 
     buffer = io.BytesIO()
     libro.save(buffer)

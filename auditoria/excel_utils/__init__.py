@@ -298,7 +298,8 @@ def modify_document_excel(template_path, audit):
     )
 
     # Procesar el documento Excel
-    process_excel_sheets(wb, tables_config, replacements, data_bd, template_path)
+    process_excel_sheets(wb, tables_config, replacements, data_bd, template_path,
+                         audit_id=audit.id)
 
     return wb
 
