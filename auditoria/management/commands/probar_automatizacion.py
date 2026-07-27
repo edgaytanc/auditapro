@@ -52,7 +52,7 @@ PAPELES_FINANCIERA = [
     ('4 PRUEBAS SUSTANTIVAS', 'CENTRALIZADORA__DEL_ESTADO_DE_RESULTADOS.xlsx',
      ['encabezado', 'centralizadora']),
     ('4 PRUEBAS SUSTANTIVAS/1 CAJA Y BANCOS', '2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx',
-     ['encabezado', 'sumaria', 'ref_propia']),
+     ['encabezado', 'sumaria', 'ref_propia', 'sumaria_caja']),
     ('4 PRUEBAS SUSTANTIVAS/9 AUDITORIA CUENTAS POR PAGAR', '2_SUMARIA_CUENTAS_POR_PAGAR.xlsx',
      ['encabezado', 'sumaria', 'ref_propia']),
     ('4 PRUEBAS SUSTANTIVAS/11  AUDITORIA PATRIMONIO', '2_SUMARIA_PATRIMONIO.xlsx',
@@ -345,6 +345,84 @@ class Command(BaseCommand):
         return {'cuentas': cuentas, 'con_importe': con_importe, 'con_ref': con_ref}
 
 
+    def _check_rotulos_centralizadora(self, wb, audit, fallos, etiqueta):
+        """
+        Los rótulos de fecha (fila 12) deben ser las fechas REALES del Excel
+        importado, no fechas fabricadas ('Al 01/01/2025').
+        """
+        from auditoria.services.cortes_excel import cortes_de_auditoria
+
+        cortes = cortes_de_auditoria(audit.id)
+        if not cortes:
+            return
+
+        hoja = wb['Hoja1'] if 'Hoja1' in wb.sheetnames else wb.worksheets[0]
+
+        esperados = {}
+        for col, fecha in zip(('D', 'E', 'F'), cortes['cortes']):
+            if fecha:
+                esperados[col] = f"Al {fecha.strftime('%d/%m/%Y')}"
+        actual = cortes['actual'] or next(
+            (f for f in reversed(cortes['cortes']) if f), None)
+        if actual:
+            esperados['I'] = f"Al {actual.strftime('%d/%m/%Y')}"
+
+        for col, esperado in esperados.items():
+            rotulo = hoja[f'{col}12'].value
+            if _norm(rotulo) != _norm(esperado):
+                fallos.append(
+                    f'{etiqueta}: la columna {col} dice {rotulo!r} y el Excel '
+                    f'importado pide {esperado!r}'
+                )
+
+    def _check_sumaria_caja(self, wb, audit, fallos, etiqueta):
+        """
+        La sumaria de Caja y Bancos debe traer: el título del área (sin el
+        hueco XXXXXXXXX), el detalle de subcuentas del Excel (como Revisoría)
+        y el corte del año actual en su columna (para que 'Saldo según
+        auditoría' no quede en cero).
+        """
+        from auditoria.models import RevisoriaSubcuenta
+
+        subcuentas = list(
+            RevisoriaSubcuenta.objects
+            .filter(audit=audit, cuenta_principal__iexact='Efectivo y Equivalentes')
+            .values_list('nombre_subcuenta', flat=True)
+        )
+
+        hoja = wb.worksheets[0]
+        textos = set()
+        for fila in hoja.iter_rows(min_row=1, max_row=min(hoja.max_row, 60)):
+            for celda in fila:
+                if isinstance(celda.value, str) and celda.value.strip():
+                    textos.add(_norm(celda.value))
+
+        if any('sumaria' in t and 'xxx' in t for t in textos):
+            fallos.append(f'{etiqueta}: el título sigue con el hueco XXXXXXXXX')
+
+        presentes = 0
+        if subcuentas:
+            presentes = sum(1 for s in subcuentas if _norm(s) in textos)
+            if presentes < min(3, len(subcuentas)):
+                fallos.append(
+                    f'{etiqueta}: las subcuentas del Excel no aparecen en la '
+                    f'cédula ({presentes} de {len(subcuentas)})'
+                )
+
+        # Columna G = tercer corte de la plantilla (el que alimenta la fórmula
+        # J = G + Debe - Haber del 'Saldo según auditoría').
+        numericos_g = sum(
+            1 for f in range(9, 41)
+            if isinstance(hoja.cell(row=f, column=7).value, (int, float))
+        )
+        if numericos_g == 0:
+            fallos.append(
+                f'{etiqueta}: la columna del corte de cierre quedó vacía '
+                f"(el 'Saldo según auditoría' saldría 0)"
+            )
+
+        return {'subcuentas': len(subcuentas), 'presentes': presentes}
+
     def _check_sumaria(self, wb, fallos, etiqueta):
         cuentas = 0
         importes = 0
@@ -365,6 +443,29 @@ class Command(BaseCommand):
         if importes == 0:
             fallos.append(f'{etiqueta}: la cédula sumaria no trajo importes del Excel')
         return {'importes': importes, 'textos': cuentas}
+
+    def _check_bases_capturadas(self, audit, bases, fallos, etiqueta):
+        """
+        Si el Excel trae 'Total Ingresos' / 'Utilidad antes de impuesto' como
+        filas de total, la base de Materialidad debe ser EXACTAMENTE esa cifra
+        (trazable al archivo del cliente).
+        """
+        from auditoria.services.cortes_excel import totales_er_de_auditoria
+
+        ingresos_excel, utilidad_excel = totales_er_de_auditoria(audit.id)
+        comparaciones = (
+            ('ingresos totales', ingresos_excel, 'Total Ingresos'),
+            ('utilidad antes de impuestos', utilidad_excel, 'Utilidad antes de impuesto'),
+        )
+        for clave, esperado, rotulo in comparaciones:
+            if esperado is None:
+                continue
+            valor = bases.get(clave)
+            if isinstance(valor, (int, float)) and abs(valor - esperado) > 0.01:
+                fallos.append(
+                    f'{etiqueta}: la base "{clave}" es {valor} y el archivo '
+                    f'trae {rotulo} = {esperado}'
+                )
 
     def _check_bases(self, wb, fallos, etiqueta, etiquetas_esperadas, nombre_hoja):
         hoja = next(
@@ -391,7 +492,8 @@ class Command(BaseCommand):
 
         return encontrados
 
-    def _check_analisis_hv(self, wb, fallos, etiqueta):
+    def _check_analisis_hv(self, wb, fallos, etiqueta, anio_actual=None,
+                           anio_anterior=None):
         cuentas = 0
         anios = []
         for hoja in wb.worksheets:
@@ -408,6 +510,22 @@ class Command(BaseCommand):
             fallos.append(f'{etiqueta}: el análisis no trajo cuentas')
         if not anios:
             fallos.append(f'{etiqueta}: no se rotularon las columnas de año')
+
+        # Con un solo ejercicio ('si es 2025 pues 2025') NO debe aparecer
+        # ningún año que el Excel no traiga (nada de 'Año 2024' inventado).
+        if anio_actual:
+            permitidos = {f'Año {anio_actual}'}
+            if anio_anterior:
+                permitidos.add(f'Año {anio_anterior}')
+            extranos = sorted(set(anios) - permitidos)
+            if extranos:
+                fallos.append(
+                    f'{etiqueta}: aparecen años que el Excel no trae: {extranos}'
+                )
+            if f'Año {anio_actual}' not in anios:
+                fallos.append(
+                    f'{etiqueta}: falta el rótulo del año actual (Año {anio_actual})'
+                )
 
         return {'cuentas': cuentas, 'anios': sorted(set(anios))}
 
@@ -450,17 +568,23 @@ class Command(BaseCommand):
                 self._check_ref_propia(ref, fallos, etiqueta)
             if 'centralizadora' in comprobaciones:
                 datos = self._check_centralizadora(wb, audit, fallos, etiqueta)
+                self._check_rotulos_centralizadora(wb, audit, fallos, etiqueta)
                 detalle.append(
                     f"cuentas={datos['cuentas']} importes={datos['con_importe']} refPT={datos['con_ref']}")
             if 'sumaria' in comprobaciones:
                 datos = self._check_sumaria(wb, fallos, etiqueta)
                 detalle.append(f"importes={datos['importes']}")
+            if 'sumaria_caja' in comprobaciones:
+                datos = self._check_sumaria_caja(wb, audit, fallos, etiqueta)
+                detalle.append(
+                    f"subcuentas={datos['presentes']}/{datos['subcuentas']}")
             if 'materialidad' in comprobaciones:
                 datos = self._check_bases(
                     wb, fallos, etiqueta,
                     ['utilidad antes de impuestos', 'activos totales',
                      'ingresos totales', 'patrimonio'],
                     'entrada de datos')
+                self._check_bases_capturadas(audit, datos, fallos, etiqueta)
                 detalle.append(', '.join(f'{k}={v}' for k, v in datos.items()))
             if 'importancia_relativa' in comprobaciones:
                 datos = self._check_bases(
@@ -469,7 +593,11 @@ class Command(BaseCommand):
                     'datos entrada')
                 detalle.append(', '.join(f'{k}={v}' for k, v in datos.items()))
             if 'analisis_hv' in comprobaciones:
-                datos = self._check_analisis_hv(wb, fallos, etiqueta)
+                from auditoria.services.parametros_anios import anios_de_auditoria
+                anio_actual, anio_anterior = anios_de_auditoria(audit.id)
+                datos = self._check_analisis_hv(
+                    wb, fallos, etiqueta,
+                    anio_actual=anio_actual, anio_anterior=anio_anterior)
                 detalle.append(f"cuentas={datos['cuentas']} anios={datos['anios']}")
 
             marca = 'OK ' if ref is None else f'Ref {ref}'

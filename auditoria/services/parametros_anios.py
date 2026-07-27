@@ -12,10 +12,12 @@ Regla acordada con el cliente (observación 1 del documento de respuestas):
   · Los cuadros comparativos (Análisis Horizontal/Vertical, Importancia
     Relativa, Materialidad) rotulan sus columnas con estos años.
 
-Si el Excel trae la MISMA fecha en los dos cortes (caso del archivo de
-ejemplo actual, «Al 31/12/2025» en ambos), solo hay un año de datos: el año
-anterior queda deducido (año actual − 1) para que el rótulo del cuadro sea
-correcto, pero no se inventan importes.
+Si el Excel trae la MISMA fecha (o el mismo año) en los dos cortes, la
+auditoría es de UN solo ejercicio («si es 2025 pues es 2025»): el año
+anterior queda VACÍO, los cuadros comparativos rotulan únicamente el año
+actual y no se muestra ninguna columna de un año que el archivo no trae.
+El auditor puede fijar un año anterior a mano si su trabajo sí compara dos
+ejercicios.
 """
 
 from auditoria.models import ParametrosAuditoria
@@ -66,10 +68,11 @@ def actualizar_anios_desde_import(audit_id, fecha_cierre_anterior, fecha_cierre_
     anio_actual = _anio_de(fecha_cierre_actual)
     anio_anterior = _anio_de(fecha_cierre_anterior)
 
-    # Cortes iguales -> el Excel solo trae un año; el anterior se deduce para
-    # que el rótulo del comparativo no repita el mismo año en las dos columnas.
+    # Cortes del mismo año -> el Excel solo trae UN ejercicio ('si es 2025
+    # pues es 2025'): el año anterior queda vacío y los comparativos rotulan
+    # únicamente el año actual. No se inventa un 'año actual - 1'.
     if anio_actual and anio_anterior == anio_actual:
-        anio_anterior = anio_actual - 1
+        anio_anterior = None
 
     if anio_actual is None and anio_anterior is None:
         return anios_de_auditoria(audit_id)

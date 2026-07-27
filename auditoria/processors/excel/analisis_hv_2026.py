@@ -356,7 +356,12 @@ def _escribir_resultado(sheet, fila, fila_ingresos, fila_gastos, es_vertical,
 def _rotulo_año_anterior(audit_id, año_actual, año_anterior):
     """
     Año con que rotular la columna comparativa cuando el Excel importado trae
-    un solo ejercicio: el que el auditor tenga configurado (o año actual − 1).
+    un solo ejercicio.
+
+    SOLO se usa el año anterior que el auditor haya fijado a mano en «Años de
+    la auditoría». Si no hay ninguno, se devuelve None y la columna conserva
+    el rótulo genérico de la plantilla ('Año Anterior'): una auditoría de un
+    solo ejercicio no debe mostrar un año inventado («si es 2025 pues 2025»).
     """
     if año_anterior or not año_actual:
         return None
@@ -368,10 +373,7 @@ def _rotulo_año_anterior(audit_id, año_actual, año_anterior):
                 return str(anterior_configurado)
         except Exception:
             pass
-    try:
-        return str(int(año_actual) - 1)
-    except (TypeError, ValueError):
-        return None
+    return None
 
 
 def process_analisis_hv_2026(workbook, balances, file_name, audit_id=None):

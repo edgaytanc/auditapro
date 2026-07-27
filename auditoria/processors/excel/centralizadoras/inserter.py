@@ -62,18 +62,23 @@ def procesar_seccion_centralizadora(
         ref = ref_para_cuenta(cuenta, seccion=seccion_por_cuenta.get(cuenta))
         sheet[f'C{fila_actual}'] = ref if ref else ''
 
-        # Insertar saldos por fecha
+        # Insertar saldos por fecha. Si el archivo no trajo importe para un
+        # corte, la celda queda EN BLANCO (no 0): así el papel refleja lo que
+        # realmente vino en el Excel importado.
         for col, fecha in fechas_columnas.items():
-            valor = 0
-            if fecha in cuentas_por_fecha:
+            valor = None
+            data = cuentas_por_fecha.get(fecha)
+            if data:
                 for seccion in secciones:
                     # Adaptarse a la estructura de cuentas_por_fecha
-                    if seccion in cuentas_por_fecha[fecha]:
-                        valor = cuentas_por_fecha[fecha][seccion].get(cuenta, 0)
-                        if valor != 0: break
-                    elif not isinstance(list(cuentas_por_fecha[fecha].values())[0], dict):
-                        valor = cuentas_por_fecha[fecha].get(cuenta, 0)
-                        if valor != 0: break
+                    if isinstance(data.get(seccion), dict):
+                        if cuenta in data[seccion]:
+                            valor = data[seccion][cuenta]
+                            break
+                    elif data and not isinstance(next(iter(data.values()), None), dict):
+                        if cuenta in data:
+                            valor = data[cuenta]
+                            break
             sheet[f'{col}{fila_actual}'] = valor
 
         # Insertar ajustes

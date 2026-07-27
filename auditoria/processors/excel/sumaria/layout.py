@@ -53,7 +53,9 @@ _ETIQUETAS_DEBE = ('debe', 'debito', 'cargo')
 _ETIQUETAS_HABER = ('haber', 'credito', 'abono')
 
 _PATRON_FECHA_TEXTO = re.compile(r'(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})')
-_PATRON_TOTAL = re.compile(r'^\s*(total|suma|sumas)\b', re.IGNORECASE)
+# La fila de totales puede venir precedida por el símbolo de sumatoria
+# ('Σ  TOTAL CAJA Y BANCOS' en la plantilla oficial de Caja y Bancos).
+_PATRON_TOTAL = re.compile(r'^\s*(?:[Σ∑]\s*)?(total|suma|sumas)\b', re.IGNORECASE)
 
 
 def _norm(valor):

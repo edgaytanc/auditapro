@@ -116,6 +116,76 @@ def _parse_numero(value):
     return -numero if negativo else numero
 
 
+# Rótulos con que el archivo puede traer cada total del Estado de Resultados.
+# Se comparan normalizados (sin tildes, sin espacios, minúsculas).
+_ALIAS_TOTAL_INGRESOS = (
+    "ingresostotales", "totalingresos", "totaldeingresos",
+    "ingresostotalesventas", "totalingresosordinarios",
+)
+_ALIAS_UTILIDAD_AI = (
+    "utilidadantesdeimpuesto", "utilidadantesdeimpuestos",
+    "totalutilidadantesdeimpuesto", "totalutilidadantesdeimpuestos",
+    "resultadoantesdeimpuesto", "resultadoantesdeimpuestos",
+)
+
+
+def _capturar_totales_estado_resultados(workbook, main_sheet, audit_id,
+                                        anio_unico=False):
+    """
+    Busca 'Total Ingresos' / 'Utilidad antes de impuesto' en la hoja principal
+    y en la hoja 'SUBCUENTAS RESULTADOS', y guarda el valor del CORTE ACTUAL
+    en ParametrosAuditoria (None si el archivo no los trae).
+
+    Solo cuando el archivo es de UN ejercicio (`anio_unico`) se acepta como
+    respaldo la columna del cierre (E en la hoja principal, D en la de
+    subcuentas): en archivos de dos años esa columna es el ejercicio anterior
+    y capturarla daría una base de otro año.
+    """
+    from auditoria.services.cortes_excel import guardar_totales_er_desde_import
+
+    def _valor_fila(row, indices):
+        for indice in indices:
+            if len(row) > indice:
+                valor = _parse_numero(row[indice])
+                if valor is not None:
+                    return valor
+        return None
+
+    indices_principal = (7, 4) if anio_unico else (7,)
+    indices_subcuentas = (6, 3) if anio_unico else (6,)
+
+    ingresos = None
+    utilidad = None
+
+    # Hoja principal: nombre en col B, corte actual en col H.
+    for row in main_sheet.iter_rows(values_only=True):
+        nombre = _norm(row[1] if len(row) > 1 else None)
+        if not nombre:
+            continue
+        if ingresos is None and nombre in _ALIAS_TOTAL_INGRESOS:
+            ingresos = _valor_fila(row, indices_principal)
+        if utilidad is None and nombre in _ALIAS_UTILIDAD_AI:
+            utilidad = _valor_fila(row, indices_principal)
+
+    # Hoja 'SUBCUENTAS RESULTADOS': nombre en col A, corte actual en col G.
+    hoja_resultados = next(
+        (workbook[name] for name in workbook.sheetnames
+         if 'subcuentas' in name.lower() and 'resultados' in name.lower()),
+        None,
+    )
+    if hoja_resultados is not None:
+        for row in hoja_resultados.iter_rows(values_only=True):
+            nombre = _norm(row[0] if len(row) > 0 else None)
+            if not nombre:
+                continue
+            if ingresos is None and nombre in _ALIAS_TOTAL_INGRESOS:
+                ingresos = _valor_fila(row, indices_subcuentas)
+            if utilidad is None and nombre in _ALIAS_UTILIDAD_AI:
+                utilidad = _valor_fila(row, indices_subcuentas)
+
+    guardar_totales_er_desde_import(audit_id, ingresos, utilidad)
+
+
 def es_formato_subcuentas(sheetnames):
     """
     Detecta el NUEVO formato "Revisoría 2025 con subcuentas":
@@ -186,6 +256,18 @@ def importar_formato_subcuentas(workbook, audit_id):
         audit_id,
         fecha_cierre_anterior=fechas_columnas.get(4),  # Columna E
         fecha_cierre_actual=fechas_columnas.get(7),    # Columna H
+    )
+
+    # 2.ter) Cortes tal cual venían en el archivo (columnas C/D/E/H): los
+    # escritores de centralizadoras y sumarias rotulan sus columnas con estas
+    # fechas REALES en lugar de fabricar 'Al 01/01/{año}'.
+    from auditoria.services.cortes_excel import guardar_cortes_desde_import
+    guardar_cortes_desde_import(
+        audit_id,
+        fecha1=fechas_columnas.get(2),        # Columna C
+        fecha2=fechas_columnas.get(3),        # Columna D
+        fecha3=fechas_columnas.get(4),        # Columna E
+        fecha_actual=fechas_columnas.get(7),  # Columna H
     )
 
     # 3) Recorrer las filas de la hoja por secciones
@@ -295,6 +377,18 @@ def importar_formato_subcuentas(workbook, audit_id):
         importar_subcuentas_estados_financieros,
     )
     importar_subcuentas_estados_financieros(audit_id, workbook)
+
+    # 5) Totales del Estado de Resultados ('Total Ingresos', 'Utilidad antes
+    # de impuesto'): el archivo los trae como filas de total, no como cuentas,
+    # así que se capturan aparte para Materialidad / Importancia Relativa.
+    fecha_cierre = fechas_columnas.get(4)
+    fecha_actual = fechas_columnas.get(7)
+    anio_unico = (
+        fecha_actual is None
+        or (fecha_cierre is not None and fecha_cierre.year == fecha_actual.year)
+    )
+    _capturar_totales_estado_resultados(workbook, sheet, audit_id,
+                                        anio_unico=anio_unico)
 
     return True, (
         f"✅ Importación del formato con subcuentas completada "

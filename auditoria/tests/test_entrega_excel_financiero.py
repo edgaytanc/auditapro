@@ -87,12 +87,16 @@ class AniosAuditoriaTestCase(TestCase):
             self.audit.id, date(2024, 12, 31), date(2025, 12, 31))
         self.assertEqual((actual, anterior), (2025, 2024))
 
-    def test_cortes_iguales_deducen_el_anio_anterior(self):
-        """El Excel de ejemplo trae 'Al 31/12/2025' en los dos cortes."""
+    def test_cortes_iguales_dejan_un_solo_anio(self):
+        """
+        El Excel del cliente trae 'Al 31/12/2025' en los dos cortes: la
+        auditoría es de UN ejercicio y no debe inventarse un año anterior
+        ('si es 2025 pues es 2025, nada de dos años').
+        """
         actual, anterior = actualizar_anios_desde_import(
             self.audit.id, date(2025, 12, 31), date(2025, 12, 31))
         self.assertEqual(actual, 2025)
-        self.assertEqual(anterior, 2024)
+        self.assertIsNone(anterior)
 
     def test_el_auditor_puede_editar_los_anios(self):
         guardar_anios_manuales(self.audit.id, 2026, 2025)

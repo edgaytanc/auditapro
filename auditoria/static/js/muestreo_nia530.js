@@ -286,6 +286,18 @@ function estadoImportacion(mensaje, tipo) {
     caja.className = 'import-estado' + (tipo ? ' ' + tipo : '');
 }
 
+// Parámetros que se deducen del archivo por método → id del campo del
+// formulario. Al generar la muestra DESDE EL ARCHIVO, estos campos se
+// deducen del propio Excel (población, desviación y valor en libros): el
+// valor precargado del formulario no debe pisar los datos reales del archivo.
+const CAMPOS_DERIVABLES_ARCHIVO = {
+    aleatorio_simple: { poblacion: 's_N', sigma: 's_sigma' },
+    estratificado: { sigma: 'e_sigma' },
+    mus: { valor_libros: 'm_bv' },
+    atributos: { poblacion: 'a_N' },
+    criterio: {}
+};
+
 function importarDatosMuestreo() {
     const entrada = document.getElementById('archivoDatos');
     if (!entrada || !entrada.files.length) {
@@ -293,10 +305,15 @@ function importarDatosMuestreo() {
         return;
     }
 
+    // Los parámetros derivables se toman SIEMPRE del archivo subido
+    const parametros = recolectarParametros();
+    const camposDerivables = CAMPOS_DERIVABLES_ARCHIVO[metodoActivo] || {};
+    Object.keys(camposDerivables).forEach(clave => { parametros[clave] = null; });
+
     const formData = new FormData();
     formData.append('archivo_datos', entrada.files[0]);
     formData.append('metodo', metodoActivo);
-    formData.append('parametros', JSON.stringify(recolectarParametros()));
+    formData.append('parametros', JSON.stringify(parametros));
 
     estadoImportacion('Leyendo el archivo y generando la muestra…', '');
     document.getElementById('errorBox').style.display = 'none';
@@ -317,6 +334,16 @@ function importarDatosMuestreo() {
                 metodo: metodoActivo,
                 parametros: datos.parametros_aplicados
             };
+            // Reflejar en el formulario los valores deducidos del archivo,
+            // para que el auditor VEA la población/desviación/valor en libros
+            // con los que realmente se generó la muestra.
+            const aplicados = datos.parametros_aplicados || {};
+            Object.entries(camposDerivables).forEach(([clave, idCampo]) => {
+                const campo = document.getElementById(idCampo);
+                if (campo && aplicados[clave] !== undefined && aplicados[clave] !== null) {
+                    campo.value = Math.round(aplicados[clave] * 100) / 100;
+                }
+            });
             const origen = datos.origen || {};
             estadoImportacion(
                 `${datos.mensaje} · Cuenta: ${origen.cuenta || 'no indicada'} · ` +

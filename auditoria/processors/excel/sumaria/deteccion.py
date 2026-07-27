@@ -10,6 +10,7 @@ from openpyxl.worksheet.worksheet import Worksheet
 __all__ = [
     "determinar_cuenta_por_nombre_archivo",
     "verificar_cuenta_en_balances",
+    "cuenta_importada_equivalente",
     "buscar_tabla_sumaria",
 ]
 
@@ -129,6 +130,36 @@ def verificar_cuenta_en_balances(
                 break
 
     return cuenta_existe, datos_cuenta
+
+
+def cuenta_importada_equivalente(
+    balances: Dict[str, float],
+    cuenta_asociada: str,
+    fechas_semestrales: List[str],
+) -> Optional[str]:
+    """
+    Devuelve el nombre REAL con que la cuenta está en los balances importados
+    ('Caja y Bancos' → 'Efectivo y Equivalentes' si así vino en el Excel),
+    o None si no existe. Sirve para buscar las subcuentas de la cuenta.
+    """
+    candidatos = (cuenta_asociada,) + _EQUIVALENCIAS_CUENTAS.get(cuenta_asociada, ())
+
+    for candidato in candidatos:
+        normalizada = candidato.lower().strip()
+        for seccion in ["Activo", "Pasivo", "Patrimonio", "ESTADO DE RESULTADOS"]:
+            for fecha in fechas_semestrales:
+                clave_exacta = f"SEMESTRAL-{fecha}-{seccion}-{candidato}"
+                if clave_exacta in balances:
+                    return candidato
+
+                prefijo = f"SEMESTRAL-{fecha}-{seccion}-"
+                for clave in balances:
+                    if clave.startswith(prefijo):
+                        nombre_cuenta = "-".join(clave.split("-")[3:]).strip()
+                        nombre_norm = nombre_cuenta.lower()
+                        if normalizada in nombre_norm or nombre_norm in normalizada:
+                            return nombre_cuenta
+    return None
 
 
 # ---------------------------------------------------------------------

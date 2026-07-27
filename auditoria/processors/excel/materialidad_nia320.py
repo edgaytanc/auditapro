@@ -27,7 +27,7 @@ from .importance_relativa.datos_entrada import (
 __all__ = ["process_materialidad_nia320"]
 
 
-def process_materialidad_nia320(workbook, balances):
+def process_materialidad_nia320(workbook, balances, audit_id=None):
     """
     Procesa la nueva plantilla de materialidad (NIA 320) llenando la hoja
     'Entrada de Datos' con las bases del año más reciente.
@@ -35,6 +35,7 @@ def process_materialidad_nia320(workbook, balances):
     Args:
         workbook: El libro de Excel a procesar
         balances: Diccionario con los balances financieros (normalizados)
+        audit_id: id de la auditoría (para los totales capturados del archivo)
 
     Returns:
         El libro de Excel procesado
@@ -56,20 +57,56 @@ def process_materialidad_nia320(workbook, balances):
 
     # Valores de las bases (0 si la cuenta no existe, como en los escritores IR)
     valores_bases = {
-        "utilidadantesdeimpuestos": calcular_utilidad_antes_impuesto(balances, anio_actual),
+        "utilidadantesdeimpuestos": calcular_utilidad_antes_impuesto(
+            balances, anio_actual, audit_id=audit_id),
         "activostotales": calcular_total_seccion(balances, anio_actual, "Activo"),
-        "ingresostotales": calcular_ingresos_totales(balances, anio_actual),
+        "ingresostotales": calcular_ingresos_totales(
+            balances, anio_actual, audit_id=audit_id),
         "patrimonio": calcular_total_seccion(balances, anio_actual, "Patrimonio"),
     }
 
     # Escribir el monto (col B) en la fila de cada base, localizada por etiqueta
     # EXACTA en la columna A para no tocar encabezados ni otras secciones.
+    filas_bases = {}
     for row_idx in range(1, min(sheet.max_row, 60) + 1):
         etiqueta = _norm_texto(sheet.cell(row=row_idx, column=1).value)
         if etiqueta in valores_bases:
             valor = valores_bases.pop(etiqueta)
             sheet.cell(row=row_idx, column=2).value = valor if valor is not None else 0
+            filas_bases[etiqueta] = row_idx
         if not valores_bases:
             break
 
+    _reparar_hoja_calculo(workbook, sheet.title, filas_bases)
+
     return workbook
+
+
+def _reparar_hoja_calculo(workbook, nombre_hoja_entrada, filas_bases):
+    """
+    La hoja 'Cálculo Materialidad' de la plantilla oficial trae la fila de
+    'Utilidad antes de impuestos' con constantes de muestra (monto 8 y 10 %)
+    en lugar de enlazar a la hoja de entrada, como sí hacen las otras bases.
+    Aquí se repara: toda fila de base cuyo monto/porcentaje no sea fórmula se
+    enlaza a su fila de 'Entrada de Datos'.
+    """
+    hoja_calculo = next(
+        (workbook[name] for name in workbook.sheetnames
+         if "calculo" in _norm_texto(name) and "materialidad" in _norm_texto(name)),
+        None,
+    )
+    if hoja_calculo is None or not filas_bases:
+        return
+
+    for row_idx in range(1, min(hoja_calculo.max_row, 60) + 1):
+        etiqueta = _norm_texto(hoja_calculo.cell(row=row_idx, column=1).value)
+        fila_entrada = filas_bases.get(etiqueta)
+        if not fila_entrada:
+            continue
+        for columna in (2, 3):  # B = monto, C = porcentaje
+            celda = hoja_calculo.cell(row=row_idx, column=columna)
+            if isinstance(celda.value, str) and celda.value.startswith('='):
+                continue  # ya enlaza a la entrada; no se toca
+            celda.value = (
+                f"='{nombre_hoja_entrada}'!{'B' if columna == 2 else 'C'}{fila_entrada}"
+            )

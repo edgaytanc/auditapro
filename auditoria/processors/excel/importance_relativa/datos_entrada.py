@@ -134,17 +134,65 @@ def _es_cuenta_gasto(cuenta):
     return any(palabra in texto for palabra in _PALABRAS_GASTO)
 
 
-def calcular_ingresos_totales(balances, anio):
+def _cierre_excel_financiero(audit_id):
     """
-    Ingresos totales del año.
+    Fecha de cierre del último Excel Financiero 2026 importado (columna H, o
+    E como respaldo), o None si la auditoría se cargó con el formato clásico.
+    """
+    if not audit_id:
+        return None
+    try:
+        from auditoria.services.cortes_excel import cortes_de_auditoria
+        cortes = cortes_de_auditoria(audit_id)
+    except Exception:
+        return None
+    if not cortes:
+        return None
+    return cortes.get('actual') or next(
+        (f for f in reversed(cortes.get('cortes') or []) if f), None)
 
-    Usa la cuenta 'Ingresos totales' del Excel Financiero cuando existe
-    (observación 2 del cliente). Si el archivo todavía no la trae, suma las
-    cuentas de ingreso del ESTADO DE RESULTADOS para que la base no quede en 0.
+
+def _total_capturado_del_excel(audit_id, campo, anio):
+    """
+    Total 'Total Ingresos' / 'Utilidad antes de impuesto' capturado del propio
+    archivo al importar (fila de total, no cuenta). Devuelve None si no hay o
+    si el capturado pertenece a OTRO ejercicio (p. ej. quedó de un archivo
+    anterior y luego se importó un año distinto).
+    """
+    if not audit_id or anio is None:
+        return None
+
+    # Guarda de frescura: el total capturado es del ejercicio del último
+    # Excel Financiero importado. Para otro año no aplica.
+    cierre = _cierre_excel_financiero(audit_id)
+    if not cierre or str(cierre.year) != str(anio):
+        return None
+
+    try:
+        from auditoria.services.cortes_excel import totales_er_de_auditoria
+        ingresos, utilidad = totales_er_de_auditoria(audit_id)
+    except Exception:
+        return None
+    return ingresos if campo == 'ingresos' else utilidad
+
+
+def calcular_ingresos_totales(balances, anio, audit_id=None):
+    """
+    Ingresos totales del año. Prioridad (siempre trazable al archivo):
+
+      1. La cuenta 'Ingresos totales' del ESTADO DE RESULTADOS, si existe.
+      2. La fila 'Total Ingresos' que el archivo trae en sus hojas (capturada
+         al importar; solo si pertenece a este mismo ejercicio).
+      3. Suma de las cuentas de ingreso del ESTADO DE RESULTADOS
+         (comportamiento histórico).
     """
     valor = buscar_valor_estado_resultados(balances, anio, "Ingresos totales")
     if valor is not None:
         return valor
+
+    capturado = _total_capturado_del_excel(audit_id, 'ingresos', anio)
+    if capturado is not None:
+        return capturado
 
     total = 0
     encontrado = False
@@ -157,17 +205,104 @@ def calcular_ingresos_totales(balances, anio):
     return total if encontrado else None
 
 
-def calcular_utilidad_antes_impuesto(balances, anio):
-    """
-    Utilidad antes de impuesto del año.
+def _fecha_anual_mas_reciente(balances, anio):
+    """Última fecha ANUAL (YYYY-MM-DD) del año dado, o None."""
+    fechas = set()
+    prefijo = f"ANUAL-{anio}"
+    for key in balances:
+        if key.startswith(prefijo):
+            partes = key.split('-')
+            if len(partes) >= 4:
+                fechas.add('-'.join(partes[1:4]))
+    return max(fechas) if fechas else None
 
-    Usa la cuenta 'Utilidad antes de impuesto' del Excel Financiero cuando
-    existe. Si no, la deriva como ingresos − gastos (excluyendo las cuentas de
-    impuesto, que son precisamente las que van después de esta base).
+
+def _claves_estado_resultados_en_fecha(balances, fecha):
+    """Pares (cuenta, valor) del ESTADO DE RESULTADOS en una fecha exacta."""
+    prefijo = f"ANUAL-{fecha}"
+    for key, value in balances.items():
+        if key.startswith(prefijo) and "ESTADO DE RESULTADOS" in key:
+            yield _cuenta_de_clave(key), value
+
+
+def _utilidad_desde_resultado_del_ejercicio(balances, anio, audit_id):
+    """
+    Deriva la utilidad antes de impuestos con la identidad contable a partir
+    del 'Resultado del ejercicio' que trae el propio archivo:
+
+        gastos en negativo:  Utilidad a. de impuestos = Resultado − impuestos
+        gastos en positivo:  Utilidad a. de impuestos = Resultado + impuestos
+
+    Solo aplica a auditorías cargadas con el Excel Financiero 2026 (cortes
+    guardados y del mismo ejercicio): en archivos clásicos se conserva el
+    respaldo histórico (ingresos − gastos). Usa únicamente el corte de cierre
+    más reciente del año para no mezclar dos cortes del mismo ejercicio.
+    """
+    cierre = _cierre_excel_financiero(audit_id)
+    if not cierre or str(cierre.year) != str(anio):
+        return None
+
+    fecha = _fecha_anual_mas_reciente(balances, anio)
+    if not fecha:
+        return None
+
+    candidatos = []
+    prefijo = f"ANUAL-{fecha}"
+    for key, value in balances.items():
+        if not key.startswith(prefijo):
+            continue
+        if 'resultadodelejercicio' in _norm_texto(_cuenta_de_clave(key)):
+            candidatos.append((key, value))
+    if not candidatos:
+        return None
+    # Si está en las dos secciones, manda la fila de Patrimonio
+    resultado = next(
+        (valor for clave, valor in candidatos if '-Patrimonio-' in clave),
+        candidatos[0][1],
+    )
+
+    impuestos = 0
+    suma_gastos = 0
+    hay_gastos = False
+    for cuenta, importe in _claves_estado_resultados_en_fecha(balances, fecha):
+        texto = _norm_texto(cuenta)
+        if 'impuesto' in texto:
+            impuestos += importe
+        elif _es_cuenta_gasto(cuenta):
+            suma_gastos += importe
+            hay_gastos = True
+
+    # Convención de signos del archivo: si los gastos vienen en positivo,
+    # la utilidad antes de impuestos es Resultado + impuestos; si vienen en
+    # negativo (suma algebraica), es Resultado − impuestos.
+    referencia_signo = suma_gastos if hay_gastos else impuestos
+    if referencia_signo > 0:
+        return resultado + impuestos
+    return resultado - impuestos
+
+
+def calcular_utilidad_antes_impuesto(balances, anio, audit_id=None):
+    """
+    Utilidad antes de impuesto del año. Prioridad (siempre trazable):
+
+      1. La cuenta 'Utilidad antes de impuesto' del archivo, si existe.
+      2. La fila de total equivalente capturada al importar (mismo ejercicio).
+      3. Resultado del ejercicio (del archivo) ± cuentas de impuesto del ER
+         (solo auditorías del Excel Financiero 2026).
+      4. Ingresos − gastos del ESTADO DE RESULTADOS, sin impuestos
+         (comportamiento histórico).
     """
     valor = buscar_valor_estado_resultados(balances, anio, "Utilidad antes de impuesto")
     if valor is not None:
         return valor
+
+    capturado = _total_capturado_del_excel(audit_id, 'utilidad', anio)
+    if capturado is not None:
+        return capturado
+
+    derivado = _utilidad_desde_resultado_del_ejercicio(balances, anio, audit_id)
+    if derivado is not None:
+        return derivado
 
     ingresos = 0
     gastos = 0
@@ -238,7 +373,8 @@ def _buscar_fila_etiqueta(sheet, texto_normalizado, max_row=40):
 # Escritor de la hoja '1. Datos Entrada'
 # ---------------------------------------------------------------------
 
-def process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual):
+def process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual,
+                             audit_id=None):
     """
     Llena la hoja '1. Datos Entrada' de la nueva plantilla de Importancia
     Relativa con los datos del año más reciente (columna B) y, si existe un
@@ -249,6 +385,7 @@ def process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual):
         workbook: Libro de Excel
         balances: Diccionario con los datos de balances (normalizados)
         anio_actual: Año más reciente identificado
+        audit_id: id de la auditoría (para los totales capturados del archivo)
     """
     sheet = workbook[sheet_name]
 
@@ -272,7 +409,7 @@ def process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual):
     # 1) Ingresos totales (cuenta 'Ingresos totales' de ESTADO DE RESULTADOS)
     _escribir(
         fila_ingresos,
-        calcular_ingresos_totales(balances, anio_actual),
+        calcular_ingresos_totales(balances, anio_actual, audit_id=audit_id),
         calcular_ingresos_totales(balances, anio_anterior) if anio_anterior else None,
     )
 
@@ -287,7 +424,7 @@ def process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual):
     # 3) Utilidad antes de impuesto (ESTADO DE RESULTADOS)
     _escribir(
         fila_utilidad,
-        calcular_utilidad_antes_impuesto(balances, anio_actual),
+        calcular_utilidad_antes_impuesto(balances, anio_actual, audit_id=audit_id),
         calcular_utilidad_antes_impuesto(balances, anio_anterior)
         if anio_anterior else None,
     )

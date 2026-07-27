@@ -147,7 +147,7 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd,
                 # NUEVA plantilla de materialidad (hoja 'Entrada de Datos' con
                 # bases fijas): usa su escritor específico, no el antiguo.
                 workbook = process_materialidad_nia320(
-                    workbook, balances_normalizados)
+                    workbook, balances_normalizados, audit_id=audit_id)
             elif _es_analisis_hv_2026(file_name) and balances_normalizados:
                 # Plantillas 2026: escritor específico (soporta 1 o 2 años)
                 workbook = process_analisis_hv_2026(
@@ -163,12 +163,14 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd,
                     workbook, balances_normalizados, saldos_iniciales)
             elif file_name.startswith("CENTRALIZADORA") and balances_normalizados:
                 workbook = process_centralizadora_file(
-                    workbook, balances_normalizados, ajustes_reclasificaciones, file_name)
+                    workbook, balances_normalizados, ajustes_reclasificaciones,
+                    file_name, audit_id=audit_id)
             elif "SUMARIA" in file_name.upper() and balances_normalizados:
                 workbook = process_sumaria_file(
-                    workbook, balances_normalizados, ajustes_reclasificaciones, file_name)
+                    workbook, balances_normalizados, ajustes_reclasificaciones,
+                    file_name, audit_id=audit_id)
             elif "IMPORTANCIA RELATIVA" in file_name.upper() and balances_normalizados:
                 workbook = process_importance_relative(
-                    workbook, balances_normalizados)
+                    workbook, balances_normalizados, audit_id=audit_id)
 
     return workbook

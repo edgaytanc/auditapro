@@ -22,6 +22,7 @@ from .fechas import obtener_fechas_semestrales
 from .deteccion import (
     determinar_cuenta_por_nombre_archivo,
     verificar_cuenta_en_balances,
+    cuenta_importada_equivalente,
     buscar_tabla_sumaria,
 )
 from .data_extraction import obtener_todas_cuentas_seccion
@@ -85,11 +86,35 @@ def _referencias_de(cuentas):
 # API Principal del procesador SUMARIA
 # ---------------------------------------------------------------------
 
+def _subcuentas_de_cuenta(audit_id, balances, cuenta_archivo, fechas_semestrales):
+    """
+    Subcuentas importadas (RevisoriaSubcuenta) de la cuenta que nombra la
+    cédula, o [] si no hay. Es el mismo detalle que llenan las cédulas de
+    Revisoría: la sumaria muestra las subcuentas REALES del Excel del cliente.
+    """
+    if not audit_id or not cuenta_archivo:
+        return []
+    try:
+        from auditoria.models import RevisoriaSubcuenta
+    except Exception:
+        return []
+
+    cuenta_real = cuenta_importada_equivalente(
+        balances, cuenta_archivo, fechas_semestrales) or cuenta_archivo
+
+    return list(
+        RevisoriaSubcuenta.objects
+        .filter(audit_id=audit_id, cuenta_principal__iexact=cuenta_real)
+        .order_by('nombre_subcuenta')
+    )
+
+
 def process_sumaria_file(
     workbook: Workbook,
     balances: dict[str, float],
     ajustes_reclasificaciones: dict[str, float],
     file_name: str,
+    audit_id=None,
 ):
     """
     Procesa archivos SUMARIA insertando los saldos del Excel Financiero.
@@ -101,6 +126,12 @@ def process_sumaria_file(
     Estado de Resultados— tienen columnas propias que no corresponden a los
     cortes del balance, así que se dejan intactas: reciben igualmente el
     encabezado, los datos del auditor y su referencia.
+
+    Con `audit_id` además:
+      · las columnas de corte se rotulan con las fechas REALES del Excel
+        importado (guardadas en ParametrosAuditoria), y
+      · si la cuenta del área trae subcuentas (hojas 'SUBCUENTAS ...'),
+        la cédula lista ese detalle igual que las cédulas de Revisoría.
     """
     fechas_semestrales = obtener_fechas_semestrales(balances)
     if not fechas_semestrales:
@@ -113,17 +144,46 @@ def process_sumaria_file(
 
     referencias = _referencias_de(cuentas)
 
+    # Cortes reales del último Excel Financiero importado (si se guardaron)
+    try:
+        from auditoria.services.cortes_excel import cortes_de_auditoria
+        cortes = cortes_de_auditoria(audit_id)
+    except Exception:
+        cortes = None
+
+    # Guarda: si los cortes guardados no corresponden a los balances actuales
+    # (p. ej. luego se reimportó un archivo del formato clásico), se ignoran.
+    if cortes:
+        fechas_guardadas = {
+            f.isoformat()
+            for f in list(cortes.get('cortes') or []) + [cortes.get('actual')]
+            if f
+        }
+        if not fechas_guardadas & set(fechas_semestrales):
+            cortes = None
+
+    # Cédulas de un área concreta: subcuentas y título del área
+    titulo = None
+    subcuentas = []
+    if not _seccion_de_archivo(file_name):
+        cuenta_archivo = determinar_cuenta_por_nombre_archivo(file_name)
+        if cuenta_archivo:
+            titulo = cuenta_archivo
+            subcuentas = _subcuentas_de_cuenta(
+                audit_id, balances, cuenta_archivo, fechas_semestrales)
+
     for hoja in workbook.worksheets:
         layout = detectar_layout(hoja)
         if not layout:
             continue
 
         escritas = escribir_sumaria(
-            layout, cuentas, fechas_ordenadas, ajustes_reclasificaciones, referencias
+            layout, cuentas, fechas_ordenadas, ajustes_reclasificaciones,
+            referencias, cortes=cortes, subcuentas=subcuentas, titulo=titulo,
         )
         if escritas:
             logger.info(
-                'SUMARIA %s: %s cuenta(s) escritas en la hoja %r',
+                'SUMARIA %s: %s fila(s) escritas en la hoja %r',
                 file_name, escritas, hoja.title,
             )
         return workbook

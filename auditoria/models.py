@@ -575,6 +575,22 @@ class ParametrosAuditoria(models.Model):
     anios_manuales = models.BooleanField(default=False)
     anio_actual_excel = models.PositiveIntegerField(null=True, blank=True)
     anio_anterior_excel = models.PositiveIntegerField(null=True, blank=True)
+
+    # Fechas de corte tal y como venían en el Excel Financiero (C6/D6/E6/H6).
+    # Sirven para rotular las columnas de las centralizadoras y sumarias con
+    # las fechas REALES del archivo (no con fechas fabricadas) y para saber a
+    # qué columna corresponde cada corte aunque dos traigan la misma fecha.
+    fecha_corte1_excel = models.DateField(null=True, blank=True)   # columna C
+    fecha_corte2_excel = models.DateField(null=True, blank=True)   # columna D
+    fecha_corte3_excel = models.DateField(null=True, blank=True)   # columna E
+    fecha_corte_actual_excel = models.DateField(null=True, blank=True)  # col. H
+
+    # Totales del Estado de Resultados que el archivo trae como filas de
+    # 'Total ...' (no como cuentas): se capturan al importar para que
+    # Materialidad e Importancia Relativa usen cifras trazables al archivo.
+    ingresos_totales_excel = models.FloatField(null=True, blank=True)
+    utilidad_antes_impuestos_excel = models.FloatField(null=True, blank=True)
+
     actualizado_en = models.DateTimeField(auto_now=True)
 
     class Meta:

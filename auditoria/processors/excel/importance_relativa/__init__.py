@@ -4,7 +4,7 @@ from .utilidad import process_ir_utilidad
 from .datos_entrada import process_ir_datos_entrada
 
 
-def process_importance_relative(workbook, balances):
+def process_importance_relative(workbook, balances, audit_id=None):
     """
     Procesa específicamente el archivo de Importancia Relativa, insertando datos
     de balances en las tablas correspondientes.
@@ -33,7 +33,8 @@ def process_importance_relative(workbook, balances):
             process_ir_utilidad(sheet_name, workbook, balances, anio_actual)
         elif "DATOS ENTRADA" in name_upper:
             # NUEVA plantilla 'Importancia Relativa.xlsx' (hoja '1. Datos Entrada')
-            process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual)
+            process_ir_datos_entrada(sheet_name, workbook, balances, anio_actual,
+                                     audit_id=audit_id)
 
     return workbook
 
