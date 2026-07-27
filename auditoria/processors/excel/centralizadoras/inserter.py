@@ -80,10 +80,20 @@ def procesar_seccion_centralizadora(
         sheet[f'G{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('debe', 0)
         sheet[f'H{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('haber', 0)
 
-    # 4. Actualizar la fila de suma
+    # 4. Vaciar las filas de muestra que trae la plantilla y no se usaron.
+    #    Las centralizadoras oficiales vienen precargadas con cuentas de ejemplo
+    #    ('Bancos', 'Inventarios'…) y sus propias Ref P/T (A-2, A-3…). Si no se
+    #    limpian, el papel descargado mezcla las cuentas reales del Excel con
+    #    esas de muestra y sus referencias equivocadas.
+    primera_libre = fila_inicio + len(cuentas_ordenadas)
+    for fila in range(primera_libre, suma_row):
+        for col in ('B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'):
+            sheet[f'{col}{fila}'] = None
+
+    # 5. Actualizar la fila de suma
     if cuentas_ordenadas:
         last_row = fila_inicio + len(cuentas_ordenadas) - 1
         for col in columnas_suma:
             sheet[f"{col}{suma_row}"] = f"=SUM({col}{fila_inicio}:{col}{last_row})"
-            
+
     return filas_a_insertar

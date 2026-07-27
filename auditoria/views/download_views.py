@@ -61,12 +61,10 @@ def download_document(request, audit_id, folder, filename):
                 logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
                 # Continuar con la descarga incluso si las marcas fallan
 
-            # Lógica de actualización dinámica de Excel
-            try:
-                from auditoria.Revisoria.activo import update_dynamic_excel
-                wb = update_dynamic_excel(wb, "Hoja1", audit.id)
-            except Exception as e:
-                logger.warning(f"⚠️ Error en update_dynamic_excel: {e}")
+            # La actualización dinámica del balance ya la aplica
+            # modify_document_excel, que además la condiciona a que la auditoría
+            # tenga Revisoría activa. Repetirla aquí sobre 'Hoja1' pisaba las
+            # cédulas de Financiera, así que se eliminó.
 
             # Referencia propia del papel de trabajo en el encabezado ('Ref.')
             try:

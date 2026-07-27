@@ -269,28 +269,70 @@ class Command(BaseCommand):
         if not ref:
             fallos.append(f'{etiqueta}: el papel no tiene referencia asignada')
 
-    def _check_centralizadora(self, wb, fallos, etiqueta):
+    def _check_centralizadora(self, wb, audit, fallos, etiqueta):
+        """
+        Comprueba los bloques de cuentas de la centralizadora.
+
+        Solo se revisan las filas que van entre un encabezado 'Cuenta' y su
+        fila 'Suma ...': el resto de la hoja son rótulos, marcas y la
+        conclusión, que no son cuentas.
+
+        En cada fila se exige que la cuenta venga del Excel importado (las
+        plantillas oficiales traen cuentas de muestra que hay que limpiar) y
+        que su Ref P/T sea la de la cédula sumaria del área.
+        """
+        from auditoria.models import BalanceCuentas
+        from auditoria.services.referencias import ref_para_cuenta
+
         hoja = wb['Hoja1'] if 'Hoja1' in wb.sheetnames else wb.worksheets[0]
+
+        # Cuenta -> sección con que se importó (la sección manda sobre las
+        # palabras clave al asignar la referencia)
+        secciones = {}
+        for nombre, seccion in BalanceCuentas.objects.filter(audit=audit).values_list(
+                'nombre_cuenta', 'seccion'):
+            secciones.setdefault(_norm(nombre), seccion)
 
         cuentas = 0
         con_importe = 0
         con_ref = 0
-        patron_ref = re.compile(r'^[A-Z]-\d+$')
+        en_bloque = False
 
         for fila in range(1, hoja.max_row + 1):
-            cuenta = hoja.cell(row=fila, column=2).value
-            if not isinstance(cuenta, str) or not cuenta.strip():
+            valor = hoja.cell(row=fila, column=2).value
+            texto = _norm(valor)
+
+            if texto == 'cuenta':          # encabezado: empieza un bloque
+                en_bloque = True
                 continue
-            if _norm(cuenta).startswith(('suma', 'cuenta', 'total')):
+            if texto.startswith(('suma', 'total')):   # fin del bloque
+                en_bloque = False
                 continue
+            if not en_bloque or not isinstance(valor, str) or not valor.strip():
+                continue
+
+            nombre = valor.strip()
             cuentas += 1
+
+            if _norm(nombre) not in secciones:
+                fallos.append(
+                    f'{etiqueta}: quedo la cuenta de muestra "{nombre}" '
+                    f'(fila {fila}), que no viene del Excel importado'
+                )
+                continue
 
             if any(isinstance(hoja.cell(row=fila, column=col).value, (int, float))
                    for col in range(4, 10)):
                 con_importe += 1
 
             ref = hoja.cell(row=fila, column=3).value
-            if isinstance(ref, str) and patron_ref.match(ref.strip()):
+            esperada = ref_para_cuenta(nombre, seccion=secciones[_norm(nombre)])
+            if esperada and ref != esperada:
+                fallos.append(
+                    f'{etiqueta}: la Ref P/T de "{nombre}" es {ref!r} '
+                    f'y deberia ser {esperada!r}'
+                )
+            if isinstance(ref, str) and re.match(r'^[A-Z]-\d+$', ref.strip()):
                 con_ref += 1
 
         if cuentas == 0:
@@ -298,9 +340,10 @@ class Command(BaseCommand):
         if con_importe == 0:
             fallos.append(f'{etiqueta}: la centralizadora no trajo importes')
         if con_ref == 0:
-            fallos.append(f'{etiqueta}: la columna Ref P/T quedó vacía (A-1, H-1, J-1…)')
+            fallos.append(f'{etiqueta}: la columna Ref P/T quedo vacia (A-1, H-1, J-1...)')
 
         return {'cuentas': cuentas, 'con_importe': con_importe, 'con_ref': con_ref}
+
 
     def _check_sumaria(self, wb, fallos, etiqueta):
         cuentas = 0
@@ -406,7 +449,7 @@ class Command(BaseCommand):
             if 'ref_propia' in comprobaciones:
                 self._check_ref_propia(ref, fallos, etiqueta)
             if 'centralizadora' in comprobaciones:
-                datos = self._check_centralizadora(wb, fallos, etiqueta)
+                datos = self._check_centralizadora(wb, audit, fallos, etiqueta)
                 detalle.append(
                     f"cuentas={datos['cuentas']} importes={datos['con_importe']} refPT={datos['con_ref']}")
             if 'sumaria' in comprobaciones:
