@@ -24,6 +24,8 @@ from .deteccion import (
     verificar_cuenta_en_balances,
     cuenta_importada_equivalente,
     buscar_tabla_sumaria,
+    numero_de_cedula_generica,
+    cuentas_sin_cedula_propia,
 )
 from .data_extraction import obtener_todas_cuentas_seccion
 from .insercion import (
@@ -51,6 +53,25 @@ def _seccion_de_archivo(file_name):
     return None
 
 
+def _cuenta_generica(balances, fechas, file_name):
+    """
+    Cuenta que corresponde a una cédula genérica ('N CEDULA_SUMARIA.xlsx').
+
+    Las cédulas de 'OTRAS CEDULAS SUMARIAS' están para las cuentas que el
+    cliente agrega a su Excel Financiero y que no tienen cédula propia
+    (p. ej. 'Contratos'). Se reparten en orden: la cédula 1 recibe la primera
+    cuenta sin cédula propia, la 2 la segunda, y así sucesivamente.
+    """
+    numero = numero_de_cedula_generica(file_name)
+    if not numero:
+        return None
+
+    pendientes = cuentas_sin_cedula_propia(balances, fechas)
+    if numero > len(pendientes):
+        return None
+    return pendientes[numero - 1]
+
+
 def _cuentas_a_escribir(balances, fechas, file_name):
     """
     Devuelve {cuenta: {fecha: importe}} con lo que corresponde a esta cédula.
@@ -58,8 +79,8 @@ def _cuentas_a_escribir(balances, fechas, file_name):
     · Cédulas de bloque (Patrimonio / Estado de Resultados): todas las cuentas
       de la sección.
     · Cédulas de un área concreta: la cuenta que nombra el archivo.
-    · Cédulas genéricas ('N CEDULA_SUMARIA.xlsx'): ninguna — quedan en blanco
-      para que el auditor las use con el área que necesite.
+    · Cédulas genéricas ('N CEDULA_SUMARIA.xlsx'): la enésima cuenta importada
+      que no tiene cédula propia (las cuentas nuevas del Excel del cliente).
     """
     seccion = _seccion_de_archivo(file_name)
     if seccion:
@@ -67,7 +88,9 @@ def _cuentas_a_escribir(balances, fechas, file_name):
 
     cuenta = determinar_cuenta_por_nombre_archivo(file_name)
     if not cuenta:
-        return {}
+        cuenta = _cuenta_generica(balances, fechas, file_name)
+        if not cuenta:
+            return {}
 
     existe, datos = verificar_cuenta_en_balances(balances, cuenta, fechas)
     return {cuenta: datos} if existe else {}
@@ -166,7 +189,8 @@ def process_sumaria_file(
     titulo = None
     subcuentas = []
     if not _seccion_de_archivo(file_name):
-        cuenta_archivo = determinar_cuenta_por_nombre_archivo(file_name)
+        cuenta_archivo = (determinar_cuenta_por_nombre_archivo(file_name)
+                          or _cuenta_generica(balances, fechas_semestrales, file_name))
         if cuenta_archivo:
             titulo = cuenta_archivo
             subcuentas = _subcuentas_de_cuenta(

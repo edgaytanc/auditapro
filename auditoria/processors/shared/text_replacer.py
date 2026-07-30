@@ -24,6 +24,10 @@ def replace_text(text, replacements, regex_patterns=None):
             value = replacements.get(key)
 
             if pattern and value:
-                text = re.sub(pattern, str(value), text, flags=re.IGNORECASE)
+                # El valor se inserta con una lambda para que re.sub NO
+                # interprete secuencias de escape del nombre de la entidad
+                # (una entidad con '\' rompía el reemplazo).
+                text = re.sub(pattern, lambda _m, v=str(value): v, text,
+                              flags=re.IGNORECASE)
     return text
     

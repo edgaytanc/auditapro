@@ -45,6 +45,8 @@ urlpatterns = [
          name='muestreo_importar_datos'),
     path('muestreo/<int:audit_id>/formato-datos/', muestreo_views.muestreo_formato_datos,
          name='muestreo_formato_datos'),
+    # Página MUM entregada por el cliente, integrada tal cual
+    path('muestreo/<int:audit_id>/mum/', muestreo_views.muestreo_mum, name='muestreo_mum'),
 
     # Parámetros editables por el auditor (años y referencias)
     path('detalle/<int:audit_id>/anios/', parametros_views.anios_auditoria, name='anios_auditoria'),

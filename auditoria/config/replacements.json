@@ -121,7 +121,8 @@
   },
   "patrones_regex": [
     {
-      "pattern": "Entidad\\s+X{3,}",
+      "_comentario": "Encabezado 'Entidad <hueco>' de las plantillas 2026. El hueco se escribe con distintas letras repetidas segun la plantilla ('Entidad XXXXXXXX', 'Entidad SSSSSSSS'), por eso se detecta cualquier letra repetida 3 o mas veces y no solo la X.",
+      "pattern": "Entidad\\s+([A-Za-z])\\1{2,}",
       "reemplazar_por": "[ENTIDAD_ETIQUETA]"
     },
     {

@@ -304,9 +304,12 @@ def _celda_destino_derecha(sheet, cell):
 _PATRON_HUECO_REF = re.compile(r'(x{3,})', re.IGNORECASE)
 
 # Un recuadro cuyo contenido completo es un código de referencia: 'PL-1.1',
-# 'B-4', 'INF-05', 'A-1', 'CC-BG'...  (las plantillas Word lo traen así)
-_PATRON_TOKEN_REF = re.compile(
-    r'^(?:PL|INF|PRA|CC|ER|[A-JR])-?\d+(?:[.\-]\d+)*$', re.IGNORECASE)
+# 'B-4', 'INF-05', 'A-1', 'PA-016'...  (las plantillas Word lo traen así)
+_PATRON_TOKEN_REF = re.compile(r'^[A-Z]{1,4}-?\d{1,4}(?:[.\-]\d{1,4})*$', re.IGNORECASE)
+
+# Siglas que se parecen a una referencia pero son normativa, no el recuadro
+# ('NIA-530', 'ISO-9001'): nunca deben sustituirse.
+_SIGLAS_NO_REF = {'NIA', 'ISA', 'ISO', 'NIC', 'NIIF', 'IFRS', 'IAS', 'NAGA'}
 
 # Recuadro que solo trae la etiqueta, sin valor: 'Ref.' / 'Ref'
 # (deliberadamente NO coincide con encabezados de columna como 'REF. PT')
@@ -407,7 +410,9 @@ def _valor_ref_para_grupo(elementos, ref):
 
     # 2) El recuadro ya trae un código de referencia de la plantilla: se sustituye
     if _PATRON_TOKEN_REF.match(compacto):
-        return ref
+        sigla = re.match(r'^([A-Za-z]+)', compacto).group(1).upper()
+        if sigla not in _SIGLAS_NO_REF:
+            return ref
 
     # 3) Solo la etiqueta, sin valor ('Ref.')
     if _PATRON_SOLO_ETIQUETA_REF.match(compacto):
@@ -435,6 +440,87 @@ def _partes_con_encabezados(documento):
                 # Alguna variante de encabezado puede no existir en la plantilla
                 continue
     return partes
+
+
+def _posicion_horizontal(elemento):
+    """
+    Desplazamiento horizontal del cuadro de texto que contiene *elemento*.
+
+    Sirve para distinguir el recuadro de la Ref (arriba a la DERECHA) del
+    recuadro del logo (arriba a la izquierda) cuando los dos están vacíos.
+    Devuelve None si la plantilla no declara posición.
+    """
+    from docx.oxml.ns import qn
+
+    nodo = elemento
+    for _ in range(12):  # se sube por los ancestros hasta el ancla del dibujo
+        if nodo is None:
+            return None
+        # Dibujo moderno (DrawingML): <wp:positionH><wp:posOffset>
+        for offset in nodo.iter(qn('wp:posOffset')):
+            try:
+                return int(offset.text)
+            except (TypeError, ValueError):
+                pass
+        # Dibujo heredado (VML): style="...margin-left:340pt..."
+        for forma in nodo.iter():
+            estilo = forma.get('style')
+            if estilo and 'margin-left' in estilo:
+                encontrado = re.search(r'margin-left:\s*(-?[\d.]+)pt', estilo)
+                if encontrado:
+                    # a EMU, para comparar con posOffset (1 pt = 12700 EMU)
+                    return int(float(encontrado.group(1)) * 12700)
+        nodo = nodo.getparent()
+    return None
+
+
+def _cuadros_vacios_de_la_derecha(partes):
+    """
+    Copias del cuadro de texto VACÍO situado más a la derecha.
+
+    Cuando la plantilla trae el recuadro de la Ref dibujado pero vacío, ahí es
+    donde el cliente espera ver la referencia (no detrás de él). Se elige el de
+    más a la derecha porque el de la izquierda suele ser el del logo, y se
+    devuelven TODAS las copias de esa misma forma (Word duplica cada forma en
+    mc:Choice y mc:Fallback; si se rellenara solo una, podría seguir viéndose
+    el recuadro vacío).
+    """
+    from docx.oxml.ns import qn
+
+    vacios = []
+    for parte in partes:
+        for cuadro in parte.findall('.//' + qn('w:txbxContent')):
+            if _texto_unido(_textos_de(cuadro)).strip():
+                continue
+            vacios.append((_posicion_horizontal(cuadro) or 0, cuadro))
+    if not vacios:
+        return []
+
+    posicion_derecha = max(posicion for posicion, _ in vacios)
+    return [cuadro for posicion, cuadro in vacios if posicion == posicion_derecha]
+
+
+def _escribir_en_cuadro_vacio(cuadro, ref):
+    """Crea el texto de la referencia dentro de un cuadro de texto vacío."""
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+
+    parrafo = cuadro.find(qn('w:p'))
+    if parrafo is None:
+        parrafo = OxmlElement('w:p')
+        cuadro.append(parrafo)
+
+    ejecucion = OxmlElement('w:r')
+    propiedades = OxmlElement('w:rPr')
+    negrita = OxmlElement('w:b')
+    propiedades.append(negrita)
+    ejecucion.append(propiedades)
+
+    texto = OxmlElement('w:t')
+    texto.text = f"Ref. {ref}"
+    texto.set(qn('xml:space'), 'preserve')
+    ejecucion.append(texto)
+    parrafo.append(ejecucion)
 
 
 def _grupos_candidatos(partes, limite_parrafos=25):
@@ -518,7 +604,14 @@ def inyectar_ref_propia_word(documento, ref):
             break
 
     if objetivo is None:
-        # La plantilla no trae recuadro: se agrega arriba a la derecha
+        # La plantilla dibuja el recuadro pero lo deja vacío: la referencia va
+        # DENTRO (si se escribiera fuera, el recuadro la tapa).
+        vacios = _cuadros_vacios_de_la_derecha(_partes_con_encabezados(documento))
+        if vacios:
+            for cuadro in vacios:
+                _escribir_en_cuadro_vacio(cuadro, ref)
+            return documento
+        # Sin recuadro alguno: se agrega arriba a la derecha
         return _agregar_recuadro_ref(documento, ref)
 
     firma_objetivo, valor = objetivo

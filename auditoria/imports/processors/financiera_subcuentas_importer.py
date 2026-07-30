@@ -186,6 +186,27 @@ def _capturar_totales_estado_resultados(workbook, main_sheet, audit_id,
     guardar_totales_er_desde_import(audit_id, ingresos, utilidad)
 
 
+# Comienzos de las notas que el cliente escribe entre las filas de la hoja
+# ('EJEMPLO PARA AGREGAR', 'El mismo nombre que tiene la cuenta en sistema'...).
+# Van SIN espacios ni tildes porque se comparan contra _norm(), que los quita.
+_INICIOS_ANOTACION = (
+    'ejemplo', 'elmismonombre', 'lascuentas', 'nota', 'sepegaaqui',
+    'lasfechascuando', 'elcodigosolo',
+)
+
+
+def _es_anotacion(nombre):
+    """
+    True si el texto de la columna B es una nota del archivo, no una cuenta.
+
+    Solo se descartan las frases que el cliente escribe como guía en su hoja.
+    El filtro decisivo es otro: una fila sin importes en ninguna columna de
+    corte no se importa, venga con el nombre que venga.
+    """
+    texto = _norm(nombre)
+    return not texto or texto.startswith(_INICIOS_ANOTACION)
+
+
 def es_formato_subcuentas(sheetnames):
     """
     Detecta el NUEVO formato "Revisoría 2025 con subcuentas":
@@ -305,14 +326,23 @@ def importar_formato_subcuentas(workbook, audit_id):
         if txtA.startswith("total") or txtB.startswith("total"):
             continue
 
-        # Solo filas de cuenta: código entero en col A y nombre en col B
-        try:
-            int(str(colA).strip())
-        except (TypeError, ValueError):
+        # Filas de cuenta: lo que manda es el NOMBRE de la columna B.
+        # El propio archivo del cliente advierte "EL CODIGO SOLO ES REFERENCIA
+        # NO SE AUTOMATIZA", así que exigir un código entero en la columna A
+        # dejaba fuera las cuentas que el auditor agrega a mano (p. ej.
+        # 'Contratos', que trae texto en esa columna). Las filas de anotación
+        # se descartan por el nombre y, sobre todo, porque no traen importes.
+        nombre_cuenta = str(colB).strip() if colB not in (None, "") else ""
+        if not nombre_cuenta or _es_anotacion(nombre_cuenta):
             continue
 
-        nombre_cuenta = str(colB).strip() if colB not in (None, "") else ""
-        if not nombre_cuenta:
+        # Sin ningún importe en las columnas de corte no es una cuenta: son las
+        # notas que el cliente escribe entre las filas de la hoja.
+        importes = [
+            _parse_numero(row[col_idx]) if len(row) > col_idx else None
+            for col_idx, fecha in fechas_columnas.items() if fecha is not None
+        ]
+        if all(valor is None for valor in importes):
             continue
 
         # 3.a) Saldos SEMESTRALES (las 4 fechas) → centralizadoras y sumarias

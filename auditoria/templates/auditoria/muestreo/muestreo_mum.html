@@ -1,0 +1,552 @@
+{% comment %}
+Página de Muestreo MUM — NIA 530.
+
+Es el HTML que envió el cliente, integrado al sistema TAL CUAL: no se le agregó
+información ni contenido adicional. Lo único que cambia son los dos datos del
+encabezado (código de la auditoría y la línea Entidad · Auditoría · Período),
+que ahora muestran la auditoría real en vez del texto de ejemplo.
+
+El cálculo, la memoria de cálculo y la descarga de la muestra en Excel funcionan
+dentro de la propia página, igual que en el archivo original.
+{% endcomment %}<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muestreo MUM — NIA 530 | AuditaPro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+{% verbatim %}
+<style>
+  :root{
+    --bg:#F5F7FB;
+    --surface:#FFFFFF;
+    --primary:#2557D6;
+    --primary-dark:#1B3FA3;
+    --primary-tint:#EAF1FF;
+    --primary-border:#A9C6FF;
+    --text:#1E293B;
+    --text-soft:#64748B;
+    --border:#E2E8F0;
+    --success:#158A4A;
+    --success-bg:#EAFBF1;
+    --warn:#B4740E;
+    --warn-bg:#FFF7E6;
+    --danger:#C0342C;
+    --danger-bg:#FDECEC;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px;}
+  .breadcrumb{font-size:13px;color:var(--text-soft);margin-bottom:14px;}
+  .breadcrumb b{color:var(--text);font-weight:600;}
+  .page-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px;margin-bottom:22px;}
+  .page-header h1{font-size:24px;margin:0 0 4px;font-weight:700;}
+  .page-header p{margin:0;color:var(--text-soft);font-size:14px;}
+  .std-badge{display:inline-flex;align-items:center;gap:6px;background:var(--primary-tint);color:var(--primary-dark);border:1px solid var(--primary-border);padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:600;}
+
+  .tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:22px;}
+  .tab{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;text-align:left;transition:.15s;}
+  .tab:hover{border-color:var(--primary-border);}
+  .tab.active{border-color:var(--primary);background:var(--primary-tint);}
+  .tab .tab-icon{width:20px;height:20px;color:var(--primary);margin-bottom:8px;}
+  .tab .tab-title{font-size:13.5px;font-weight:600;display:block;}
+  .tab .tab-sub{font-size:11.5px;color:var(--text-soft);display:block;margin-top:2px;}
+  .tab-disabled{opacity:.55;cursor:not-allowed;}
+
+  .grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:20px;align-items:start;}
+  @media(max-width:900px){.grid{grid-template-columns:1fr;} .tabs{grid-template-columns:repeat(2,1fr);}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;}
+  .card + .card{margin-top:16px;}
+  .card h2{font-size:15px;margin:0 0 4px;font-weight:700;}
+  .card .card-sub{font-size:12.5px;color:var(--text-soft);margin:0 0 16px;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:5px;}
+  .field .hint{font-size:11.5px;color:var(--text-soft);margin-top:5px;line-height:1.4;}
+  .input-affix{position:relative;}
+  .input-affix span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-soft);font-size:13px;}
+  .input-affix input{padding-left:26px;}
+  input[type=number], select{
+    width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;
+    font-size:14px;font-family:'IBM Plex Mono',monospace;color:var(--text);background:#fff;
+  }
+  select{font-family:'Inter',sans-serif;}
+  input:focus, select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-tint);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+
+  .btn{border:none;border-radius:9px;padding:11px 18px;font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-ghost{background:transparent;color:var(--primary);border:1.5px solid var(--primary-border);}
+  .btn-ghost:hover{background:var(--primary-tint);}
+  .btn:disabled{background:#CBD5E1;color:#fff;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+
+  .banner{border-radius:9px;padding:12px 14px;font-size:13px;margin-bottom:16px;display:flex;gap:9px;align-items:flex-start;line-height:1.5;}
+  .banner.warn{background:var(--warn-bg);color:#7A4E09;border:1px solid #F3D48A;}
+  .banner.danger{background:var(--danger-bg);color:#8C231D;border:1px solid #F0B3AE;}
+  .banner.ok{background:var(--success-bg);color:#0E5C33;border:1px solid #A6E6C4;}
+  .banner b{font-weight:700;}
+
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .kpi{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px 14px;}
+  .kpi .kpi-label{font-size:11px;color:var(--text-soft);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+  .kpi .kpi-value{font-size:19px;font-weight:700;margin-top:3px;}
+  .kpi.highlight{background:var(--primary-tint);border-color:var(--primary-border);}
+  .kpi.highlight .kpi-value{color:var(--primary-dark);}
+
+  .trail{background:#0F172A;color:#E2E8F0;border-radius:9px;padding:16px 18px;font-size:12.5px;line-height:2.05;}
+  .trail .step-label{color:#93C5FD;}
+  .trail .step-eq{color:#F1F5F9;}
+  .trail .step-result{color:#6EE7A8;font-weight:600;}
+  .trail hr{border:none;border-top:1px solid #334155;margin:10px 0;}
+
+  table.sel{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.sel th{text-align:left;background:var(--bg);color:var(--text-soft);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;}
+  table.sel td{padding:7px 10px;border-bottom:1px solid #F1F5F9;}
+  .sel-scroll{max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:9px;}
+  .sel-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--text-soft);}
+
+  .footnote{font-size:11.5px;color:var(--text-soft);margin-top:18px;line-height:1.6;}
+
+  .dropzone{border:1.5px dashed var(--primary-border);background:var(--primary-tint);border-radius:9px;padding:16px;text-align:center;cursor:pointer;}
+  .dropzone:hover{background:#DEEBFF;}
+  .dropzone input{display:none;}
+  .dropzone .dz-title{font-size:13px;font-weight:600;color:var(--primary-dark);}
+  .dropzone .dz-sub{font-size:11.5px;color:var(--text-soft);margin-top:3px;}
+  .file-status{font-size:12px;margin-top:8px;padding:8px 10px;border-radius:7px;}
+  .file-status.ok{background:var(--success-bg);color:#0E5C33;}
+  .file-status.err{background:var(--danger-bg);color:#8C231D;}
+  .empty-sample{padding:26px 10px;text-align:center;color:var(--text-soft);font-size:13px;line-height:1.6;}
+</style>
+{% endverbatim %}
+</head>
+<body>
+<div class="wrap">
+
+  <div class="breadcrumb"><a href="/" style="color:inherit;text-decoration:none">Inicio</a> &nbsp;›&nbsp; <a href="{% url 'auditoria_detalle' audit.id %}" style="color:inherit;text-decoration:none">{{ audit.title }}</a> &nbsp;›&nbsp; <a href="{% url 'muestreo_page' audit.id %}" style="color:inherit;text-decoration:none">Planificación</a> &nbsp;›&nbsp; <b>Muestreo</b></div>
+
+  <div class="page-header">
+    <div>
+      <h1>Muestreo de auditoría</h1>
+      <p>{{ audit.identidad }} · {{ audit.title }} · parámetros importados desde Planificación</p>
+    </div>
+    <span class="std-badge">✓ NIA 530 — Muestreo de auditoría</span>
+  </div>
+{% verbatim %}
+  <div class="tabs">
+    <div class="tab tab-disabled"><div class="tab-icon">▦</div><span class="tab-title">Aleatorio simple</span><span class="tab-sub">Cuentas homogéneas</span></div>
+    <div class="tab tab-disabled"><div class="tab-icon">▤</div><span class="tab-title">Estratificado</span><span class="tab-sub">Poblaciones con valores dispares</span></div>
+    <div class="tab active"><div class="tab-icon">Q</div><span class="tab-title">Monetario (MUM)</span><span class="tab-sub">Saldos: bancos, inventarios, CxC</span></div>
+    <div class="tab tab-disabled"><div class="tab-icon">✓</div><span class="tab-title">Por atributos</span><span class="tab-sub">Pruebas de controles</span></div>
+    <div class="tab tab-disabled"><div class="tab-icon">★</div><span class="tab-title">Por criterio</span><span class="tab-sub">Partidas inusuales / significativas</span></div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: PARAMETERS -->
+    <div>
+      <div class="card">
+        <h2>Monetario (MUM) — Unidad Monetaria</h2>
+        <p class="card-sub">Método de muestreo de atributos monetarios (Probability-Proportional-to-Size). El riesgo de selección crece con el monto de cada partida, por lo que es apropiado cuando se espera un bajo número de errores y no se prevé subvaluación.</p>
+
+        <div class="field">
+          <label>Importar detalle transaccional <span style="font-weight:400;color:var(--text-soft)">(Excel — opcional)</span></label>
+          <label class="dropzone" for="fileInput">
+            <div class="dz-title">📁 Clic para subir el Excel de parámetros</div>
+            <div class="dz-sub">Columnas requeridas: N.º Documento · Descripción · Fecha · Monto</div>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+          </label>
+          <div id="file-status"></div>
+          <div class="btn-row" style="margin-top:8px;">
+            <button type="button" class="btn btn-ghost" onclick="downloadTemplate()">⬇ Descargar formato (Excel)</button>
+          </div>
+          <div class="hint">Al importar, el <b>Valor en libros (BV)</b> y el <b>N.º de partidas</b> se calculan automáticamente desde el archivo, y la muestra final se presenta con los documentos reales en lugar de solo montos.</div>
+        </div>
+
+        <div class="field">
+          <label>Valor en libros de la población — BV (Q)</label>
+          <input type="number" id="bv" value="1245890" min="0" oninput="calc()">
+          <div class="hint">Suma total de los saldos de la cuenta a muestrear (mayor auxiliar importado). Se completa solo al subir el Excel.</div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Materialidad de ejecución — TE (Q)</label>
+            <input type="number" id="te" value="54949" min="1" oninput="calc()">
+            <div class="hint">Error tolerable, importado de Planificación. Guía práctica: normalmente entre <b>50% y 75% de la materialidad de planificación (NIA 320)</b>; usar el extremo inferior del rango en cuentas de mayor riesgo (RI/RC alto) y el superior en cuentas de bajo riesgo. Ej.: si la materialidad global es Q100,000, TE suele quedar entre Q50,000 y Q75,000.</div>
+          </div>
+          <div class="field">
+            <label>Error esperado — EE (Q)</label>
+            <input type="number" id="ee" value="8000" min="0" oninput="calc()">
+            <div class="hint">Guía práctica: tomar como base el <b>error real detectado en la auditoría anterior</b> para esta cuenta (o el promedio de los últimos ciclos), ajustado por cambios en el negocio o los controles. Si es primera auditoría al cliente o no hay antecedentes, usar 0 o un estimado conservador. Mantener EE por debajo de ~50% de TE — valores más altos disparan el tamaño de muestra (ver aviso amarillo) y valores ≥ TE bloquean el cálculo por no ser viables en MUM.</div>
+          </div>
+        </div>
+
+        <div class="row2">
+          <div class="field">
+            <label>Nivel de confianza</label>
+            <select id="conf" onchange="calc()">
+              <option value="99">99% — FC 4.61</option>
+              <option value="95" selected>95% — FC 3.00</option>
+              <option value="90">90% — FC 2.31</option>
+              <option value="85">85% — FC 1.90</option>
+              <option value="80">80% — FC 1.61</option>
+              <option value="75">75% — FC 1.39</option>
+              <option value="70">70% — FC 1.21</option>
+            </select>
+            <div class="hint">Define el factor de confiabilidad (FC). Sube el % en cuentas de mayor riesgo (RI/RC alto).</div>
+          </div>
+          <div class="field">
+            <label>N.º de partidas en la población <span style="font-weight:400;color:var(--text-soft)">(opcional)</span></label>
+            <input type="number" id="npop" value="500" min="0" oninput="calc()">
+            <div class="hint">Solo informativo — no interviene en el cálculo MUM. Se completa solo al subir el Excel.</div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="randomStart()">🎲 Generar nuevo punto de inicio</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT: RESULTS -->
+    <div>
+      <div class="card">
+        <h2>Resumen ejecutivo</h2>
+        <p class="card-sub">Recalculado en vivo según NIA 530 — método clásico de muestreo por unidad monetaria (PPS).</p>
+        <div id="banners"></div>
+
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">Factor de confiabilidad</div><div class="kpi-value mono" id="k-fc">—</div></div>
+          <div class="kpi"><div class="kpi-label">Relación EE / TE</div><div class="kpi-value mono" id="k-ratio">—</div></div>
+          <div class="kpi"><div class="kpi-label">Intervalo de muestreo</div><div class="kpi-value mono" id="k-si">—</div></div>
+          <div class="kpi highlight"><div class="kpi-label">Tamaño de muestra final</div><div class="kpi-value mono" id="k-n">—</div></div>
+        </div>
+
+        <h2 style="margin-top:4px;">Memoria de cálculo</h2>
+        <p class="card-sub">Trazabilidad exigida para el papel de trabajo — cada fórmula con las cifras aplicadas.</p>
+        <div class="trail" id="trail"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <h2>Muestra seleccionada</h2>
+    <p class="card-sub" id="sample-sub">Suba el Excel de detalle transaccional para ver aquí la muestra con los documentos reales.</p>
+    <div class="sel-scroll">
+      <table class="sel">
+        <thead><tr><th>#</th><th>N.º Documento</th><th>Descripción</th><th>Fecha</th><th>Monto</th></tr></thead>
+        <tbody id="sel-body"></tbody>
+      </table>
+    </div>
+    <div class="sel-foot"><span id="sel-count"></span><span id="sel-note"></span></div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="downloadExcel()">⬇ Descargar muestra en Excel</button>
+    </div>
+  </div>
+
+
+  <p class="footnote">
+    Metodología: muestreo clásico por unidad monetaria (Probability-Proportional-to-Size) conforme a los lineamientos de diseño y selección de muestras de la NIA 530. Los factores de confiabilidad corresponden a la distribución de Poisson para cero errores esperados; el factor de expansión ajusta el tamaño de muestra cuando se anticipan errores, conforme a la práctica de muestreo estadístico de atributos monetarios. El auditor debe documentar y justificar profesionalmente el nivel de confianza, la materialidad de ejecución y el error esperado utilizados.
+  </p>
+</div>
+
+<script>
+const RF = {99:4.61, 95:3.00, 90:2.31, 85:1.90, 80:1.61, 75:1.39, 70:1.21};
+const fmt = n => 'Q' + Math.round(n).toLocaleString('es-GT');
+const fmt2 = n => n.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2});
+// La fecha del reporte llega como fecha de Excel: se muestra dd/mm/aaaa tanto
+// en pantalla como en la muestra descargada.
+const fmtFecha = v => {
+  if(v instanceof Date && !isNaN(v)){
+    const dd = String(v.getDate()).padStart(2,'0');
+    const mm = String(v.getMonth()+1).padStart(2,'0');
+    return dd + '/' + mm + '/' + v.getFullYear();
+  }
+  return v == null ? '' : String(v);
+};
+let lastResult = null;
+let poblacion = null; // [{doc, desc, fecha, monto}] cuando se importa el Excel
+
+function parseWorkbook(wb){
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  // El reporte del mayor auxiliar trae arriba los datos de Empresa / Auditoría /
+  // Cuenta, así que la fila de encabezados no es la primera: se busca la fila
+  // que tenga 'documento' y 'monto' y se lee desde ahí.
+  const filas = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+  let filaEncabezado = 0;
+  for(let i = 0; i < Math.min(filas.length, 15); i++){
+    const textos = (filas[i] || []).map(c => String(c).toLowerCase());
+    if(textos.some(t => t.includes('documento')) && textos.some(t => t.includes('monto'))){
+      filaEncabezado = i;
+      break;
+    }
+  }
+  const json = XLSX.utils.sheet_to_json(sheet, {defval:'', range: filaEncabezado});
+  if(!json.length) return {error: 'La hoja está vacía o solo tiene el encabezado sin filas de datos debajo.'};
+  const keys = Object.keys(json[0]);
+  const findKey = (patterns) => keys.find(k => patterns.some(p => k.toString().toLowerCase().includes(p)));
+  const kDoc = findKey(['documento','n° doc','n.º doc','no. doc','num']);
+  const kDesc = findKey(['descrip']);
+  const kFecha = findKey(['fecha']);
+  const kMonto = findKey(['monto','valor','importe']);
+
+  const missing = [];
+  if(!kDoc) missing.push('N.º Documento');
+  if(!kDesc) missing.push('Descripción');
+  if(!kFecha) missing.push('Fecha');
+  if(!kMonto) missing.push('Monto');
+  if(missing.length){
+    return {error: 'No se encontraron las columnas: ' + missing.join(', ') + '. Encabezados detectados: ' + keys.join(', ')};
+  }
+
+  const rows = json.map(row => ({
+    doc: row[kDoc] ?? '',
+    desc: row[kDesc] ?? '',
+    fecha: row[kFecha] ?? '',
+    monto: parseFloat(row[kMonto]) || 0
+  })).filter(r => r.monto > 0);
+
+  if(!rows.length){
+    return {error: 'El archivo tiene encabezados válidos pero ninguna fila de datos con Monto mayor a 0. Agregue las filas de partidas debajo del encabezado.'};
+  }
+  return {rows};
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  const statusEl = document.getElementById('file-status');
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const data = new Uint8Array(evt.target.result);
+      // cellDates: Excel guarda las fechas como número de serie; sin esto la
+      // columna Fecha salía como '45432' en la muestra descargada.
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      const result = parseWorkbook(wb);
+      if(result.error){
+        poblacion = null;
+        statusEl.className = 'file-status err';
+        statusEl.textContent = '⚠ ' + result.error;
+        return;
+      }
+      const rows = result.rows;
+      poblacion = rows;
+      const suma = rows.reduce((a,r)=>a+r.monto,0);
+      document.getElementById('bv').value = Math.round(suma);
+      document.getElementById('npop').value = rows.length;
+      statusEl.className = 'file-status ok';
+      statusEl.textContent = '✓ ' + rows.length + ' partidas importadas · Suma ' + fmt(suma);
+      calc();
+    }catch(err){
+      poblacion = null;
+      statusEl.className = 'file-status err';
+      statusEl.textContent = '⚠ No se pudo leer el archivo (formato no reconocido). Use un .xlsx, .xls o .csv válido.';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+
+function calc(){
+  const bv = parseFloat(document.getElementById('bv').value) || 0;
+  const te = parseFloat(document.getElementById('te').value) || 0;
+  const ee = parseFloat(document.getElementById('ee').value) || 0;
+  const conf = parseInt(document.getElementById('conf').value);
+  const fc = RF[conf];
+
+  const banners = document.getElementById('banners');
+  banners.innerHTML = '';
+
+  if(bv<=0 || te<=0){
+    banners.innerHTML = '<div class="banner danger"><span>⚠</span><div><b>Datos incompletos.</b> Ingrese un valor en libros (BV) y una materialidad de ejecución (TE) mayores a cero.</div></div>';
+    clearResults(); return;
+  }
+  if(te > bv){
+    banners.innerHTML = '<div class="banner warn"><span>⚠</span><div><b>Revisar parámetros.</b> La materialidad de ejecución (TE) es mayor al valor en libros de la población — verifique que TE corresponda a esta cuenta.</div></div>';
+  }
+
+  const ratio = ee/te;
+  const si0 = te/fc;
+  const n0 = bv/si0;
+
+  let fe=null, n=null, siAdj=null, startBase=null;
+
+  if(ratio >= 1){
+    banners.innerHTML += '<div class="banner danger"><span>✕</span><div><b>MUM no recomendado.</b> El error esperado (EE) es igual o mayor a la materialidad de ejecución (TE). La NIA 530 requiere que EE sea sustancialmente menor a TE; en caso contrario, el tamaño de muestra resulta poco práctico. Considere reducir el error esperado, aumentar la materialidad, examinar la población al 100% o usar estratificación.</div></div>';
+    clearResults(true, {fc, ratio, si0, n0});
+    return;
+  }
+
+  fe = 1/(1-ratio);
+  const nRaw = n0*fe;
+  n = Math.max(1, Math.ceil(nRaw));
+  siAdj = bv/n;
+
+  if(ratio >= 0.6){
+    banners.innerHTML += '<div class="banner warn"><span>⚠</span><div><b>Error esperado elevado.</b> La relación EE/TE ('+ (ratio*100).toFixed(0) +'%) expande significativamente la muestra. Verifique el sustento del error esperado antes de fijar el tamaño final.</div></div>';
+  }
+  if(n > bv/1 && bv>0){ /* n cannot exceed BV in monetary units, informative only */ }
+
+  document.getElementById('k-fc').textContent = fc.toFixed(2);
+  document.getElementById('k-ratio').textContent = (ratio*100).toFixed(1)+'%';
+  document.getElementById('k-si').textContent = fmt(siAdj);
+  document.getElementById('k-n').textContent = 'n = ' + n;
+
+  document.getElementById('trail').innerHTML = `
+    <div><span class="step-label">1. Factor de confiabilidad (FC)</span> — según ${conf}% de confianza (tabla NIA 530, cero errores esperados)<br>
+    <span class="step-eq">FC =</span> <span class="step-result">${fc.toFixed(2)}</span></div>
+    <hr>
+    <div><span class="step-label">2. Intervalo de muestreo base (SI₀)</span><br>
+    <span class="step-eq">SI₀ = TE ÷ FC = ${fmt(te)} ÷ ${fc.toFixed(2)} =</span> <span class="step-result">${fmt(si0)}</span></div>
+    <hr>
+    <div><span class="step-label">3. Tamaño de muestra básico (n₀)</span><br>
+    <span class="step-eq">n₀ = BV ÷ SI₀ = ${fmt(bv)} ÷ ${fmt(si0)} =</span> <span class="step-result">${nRaw.toFixed(1)}</span></div>
+    <hr>
+    <div><span class="step-label">4. Factor de expansión por error esperado (FE)</span><br>
+    <span class="step-eq">FE = 1 ÷ (1 − EE÷TE) = 1 ÷ (1 − ${fmt2(ratio)}) =</span> <span class="step-result">${fe.toFixed(3)}</span></div>
+    <hr>
+    <div><span class="step-label">5. Tamaño de muestra ajustado (n)</span><br>
+    <span class="step-eq">n = n₀ × FE = ${nRaw.toFixed(1)} × ${fe.toFixed(3)} → redondeado hacia arriba =</span> <span class="step-result">n = ${n}</span></div>
+    <hr>
+    <div><span class="step-label">6. Intervalo de muestreo final (SI)</span> — recalculado con n definitivo<br>
+    <span class="step-eq">SI = BV ÷ n = ${fmt(bv)} ÷ ${n} =</span> <span class="step-result">${fmt(siAdj)}</span></div>
+  `;
+
+  lastResult = {bv, te, ee, fc, n, siAdj};
+  buildSelection(bv, n, siAdj);
+}
+
+function clearResults(danger, partial){
+  document.getElementById('k-ratio').textContent = partial ? (partial.ratio*100).toFixed(1)+'%' : '—';
+  document.getElementById('k-fc').textContent = partial ? partial.fc.toFixed(2) : '—';
+  document.getElementById('k-si').textContent = '—';
+  document.getElementById('k-n').textContent = '—';
+  document.getElementById('trail').innerHTML = danger
+    ? '<span style="color:#FCA5A5;">El cálculo se detiene aquí — corrija EE o TE para continuar (ver aviso arriba).</span>'
+    : '<span style="color:#94A3B8;">Complete los parámetros para generar la memoria de cálculo.</span>';
+  document.getElementById('sel-body').innerHTML='';
+  document.getElementById('sel-count').textContent='';
+  document.getElementById('sel-note').textContent='';
+  document.getElementById('sample-sub').textContent = 'Suba el Excel de detalle transaccional para ver aquí la muestra con los documentos reales.';
+  window._sampleRows = null;
+  lastResult = null;
+}
+
+let lastStart = null;
+
+function buildSelection(bv, n, si){
+  let start = lastStart;
+  if(!start || start<=0 || start>si){
+    start = Math.round((Math.random()*si)*100)/100;
+  }
+  lastStart = start;
+
+  const points = [];
+  for(let k=0;k<n;k++){
+    const point = start + k*si;
+    if(point > bv) break;
+    points.push(point);
+  }
+
+  const body = document.getElementById('sel-body');
+  const sub = document.getElementById('sample-sub');
+  const showMax = 60;
+
+  if(!poblacion || !poblacion.length){
+    sub.textContent = 'Suba el Excel de detalle transaccional para ver aquí la muestra con los documentos reales.';
+    body.innerHTML = `<tr><td colspan="5"><div class="empty-sample">Aún no se ha importado el detalle transaccional.<br>Se generaron ${points.length} puntos de selección internamente — súbalo arriba para mapearlos a documentos reales.</div></td></tr>`;
+    document.getElementById('sel-count').textContent = points.length + ' puntos de selección (sin documentos)';
+    document.getElementById('sel-note').textContent = 'Punto de inicio: ' + fmt(start);
+    window._sampleRows = points.map((p,i)=>({idx:i+1, doc:'', desc:'', fecha:'', monto:p}));
+    return;
+  }
+
+  // Selección MUM sin repetir documentos (NIA 530):
+  //  · las partidas con monto >= intervalo son individualmente significativas
+  //    y se examinan al 100 %, una sola vez;
+  //  · el resto se recorre de forma sistemática, donde cada punto cae
+  //    forzosamente en una partida distinta porque todas miden menos que el
+  //    intervalo. Sin esto, una partida grande absorbía varios puntos y salía
+  //    repetida en la muestra.
+  const significativas = poblacion.filter(r => r.monto >= si);
+  const resto = poblacion.filter(r => r.monto < si);
+
+  const sample = significativas.map(r => ({
+    doc:r.doc, desc:r.desc, fecha:r.fecha, monto:r.monto, punto:null
+  }));
+
+  let cum = 0;
+  const cumRows = resto.map(r => { cum += r.monto; return {...r, cumAfter: cum}; });
+  let indice = 0;
+  let punto = start;
+  while(punto <= cum && indice < cumRows.length){
+    while(indice < cumRows.length && cumRows[indice].cumAfter < punto){ indice++; }
+    if(indice >= cumRows.length) break;
+    const r = cumRows[indice];
+    sample.push({doc:r.doc, desc:r.desc, fecha:r.fecha, monto:r.monto, punto:punto});
+    indice++;
+    punto += si;
+  }
+  sample.forEach((r, i) => { r.idx = i + 1; });
+
+  sub.textContent = 'Documentos reales seleccionados a partir del detalle transaccional importado (' + poblacion.length + ' partidas).';
+  body.innerHTML = sample.slice(0,showMax).map(r =>
+    `<tr><td>${r.idx}</td><td class="mono">${r.doc}</td><td>${r.desc}</td><td>${fmtFecha(r.fecha)}</td><td class="mono">${fmt(r.monto)}</td></tr>`
+  ).join('');
+  document.getElementById('sel-count').textContent = sample.length + ' documentos distintos seleccionados (n calculado = ' + n + ')';
+  document.getElementById('sel-note').textContent = sample.length>showMax ? 'Mostrando primeros '+showMax+' — descargue el Excel para el listado completo' : ('Punto de inicio: ' + fmt(start));
+  window._sampleRows = sample;
+}
+
+function randomStart(){
+  lastStart = null;
+  calc();
+}
+
+function downloadTemplate(){
+  const header = ['N. Documento','Descripción','Fecha','Monto'];
+  const ejemplo = [
+    ['FAC-0001','Ejemplo de descripción de la partida','01/01/2025', 12500],
+    ['FAC-0002','Ejemplo de descripción de la partida','15/01/2025', 8300]
+  ];
+  const ws = XLSX.utils.aoa_to_sheet([header, ...ejemplo]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Detalle transaccional');
+  XLSX.writeFile(wb, 'formato_detalle_transaccional.xlsx');
+}
+
+function downloadExcel(){
+  if(!window._sampleRows || !window._sampleRows.length){ alert('Calcule la muestra primero.'); return; }
+  const hasDocs = poblacion && poblacion.length;
+  const header = hasDocs
+    ? ['#','N.º Documento','Descripción','Fecha','Monto','Punto de selección']
+    : ['#','Punto de selección (Q)'];
+  const rows = window._sampleRows.map(r => hasDocs
+    ? [r.idx, r.doc, r.desc, fmtFecha(r.fecha), Math.round(r.monto), r.punto == null ? '100 %' : Math.round(r.punto)]
+    : [r.idx, Math.round(r.monto)]
+  );
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Muestra MUM');
+  XLSX.writeFile(wb, 'muestra_MUM.xlsx');
+}
+
+calc();
+</script>
+{% endverbatim %}
+</body>
+</html>

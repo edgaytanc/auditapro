@@ -104,6 +104,22 @@ def muestreo_page(request, audit_id):
 
 
 @login_required
+def muestreo_mum(request, audit_id):
+    """
+    Página de Muestreo MUM (NIA 530) con el HTML que entregó el cliente.
+
+    Se integró tal cual: el cálculo, la memoria de cálculo, la importación del
+    detalle transaccional y la descarga de la muestra en Excel funcionan dentro
+    de la propia página. Solo se sustituyeron los dos datos del encabezado por
+    los de la auditoría real.
+    """
+    audit, error = _obtener_auditoria(request, audit_id)
+    if error:
+        return error
+    return render(request, 'auditoria/muestreo/muestreo_mum.html', {'audit': audit})
+
+
+@login_required
 def muestreo_calcular(request, audit_id):
     """
     Calcula el tamaño de muestra y la selección de elementos.
