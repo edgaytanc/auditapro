@@ -529,6 +529,15 @@ def descargar_documento_auditoria(request, audit_id):
                 "[NOMBRE_SUPERVISOR]": replacements.get("[NOMBRE_SUPERVISOR]", ""),
             })
 
+            # 🧩 Paso 3b: referencia propia del papel en el recuadro 'Ref.'
+            try:
+                from auditoria.services.referencias import obtener_ref, inyectar_ref_propia_word
+                ref_propia = obtener_ref(audit.tipoAuditoria, carpeta, documento, audit_id=audit.id)
+                if ref_propia:
+                    doc = inyectar_ref_propia_word(doc, ref_propia)
+            except Exception as e:
+                print(f"Aviso: no se pudo inyectar la referencia en {documento}: {e}")
+
             # 🧩 Paso 4: guardar en buffer
             buffer = BytesIO()
             doc.save(buffer)
@@ -586,7 +595,9 @@ def descargar_documento_auditoria(request, audit_id):
             # Referencia propia del papel de trabajo en el encabezado ('Ref.')
             try:
                 from auditoria.services.referencias import obtener_ref, inyectar_ref_propia
-                ref_propia = obtener_ref(audit.tipoAuditoria, carpeta, documento)
+                # audit_id es necesario para respetar la referencia que el
+                # auditor fijó a mano; sin él siempre ganaba la automática.
+                ref_propia = obtener_ref(audit.tipoAuditoria, carpeta, documento, audit_id=audit.id)
                 if ref_propia:
                     wb = inyectar_ref_propia(wb, ref_propia)
             except Exception:

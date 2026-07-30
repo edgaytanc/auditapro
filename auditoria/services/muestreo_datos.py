@@ -183,12 +183,16 @@ def parsear_mayor_auxiliar(archivo):
 # ---------------------------------------------------------------------------
 
 def _mapear_por_indice(resultado, partidas):
-    """Métodos por índice (aleatorio simple, estratificado, atributos)."""
+    """
+    Métodos que seleccionan por índice de partida (aleatorio simple,
+    estratificado, atributos y ahora también MUS y criterio, que resuelven la
+    partida real durante el cálculo).
+    """
     detalle = []
     for item in resultado['seleccion']:
         indice = item.get('indice')
         if indice is None:
-            return None  # selección sin índice (p. ej. criterio): sin mapeo
+            return None  # selección sin índice: sin mapeo
         if indice > len(partidas):
             raise ValueError(
                 f"La selección incluye la partida {indice}, pero el archivo importado "
@@ -196,13 +200,20 @@ def _mapear_por_indice(resultado, partidas):
                 "de filas del mayor auxiliar."
             )
         partida = partidas[indice - 1]
-        detalle.append({
+        fila = {
             'no': item['numero'],
             'documento': partida['documento'],
             'descripcion': partida['descripcion'],
             'fecha': partida['fecha'],
             'monto': partida['monto'],
-        })
+        }
+        # La marca explica por qué entró la partida (100 %, sistemática,
+        # complementaria) y viaja al papel de trabajo.
+        if item.get('marca'):
+            fila['marca'] = item['marca']
+        if item.get('punto') is not None:
+            fila['punto'] = item['punto']
+        detalle.append(fila)
     return detalle
 
 
@@ -249,11 +260,18 @@ def mapear_seleccion_a_partidas(resultado, partidas):
     """
     Convierte la selección del servicio de muestreo en filas con las partidas
     REALES del archivo importado. Devuelve None cuando el mapeo no aplica
-    (método por criterio o selección sin índices), para que el papel de trabajo
-    se genere igual que en el modo manual.
+    (selección sin índices ni puntos), para que el papel de trabajo se genere
+    igual que en el modo manual.
+
+    MUS y Por Criterio ya resuelven la partida durante el cálculo (por eso
+    llevan 'indice'); el mapeo por punto monetario queda solo como respaldo
+    para selecciones antiguas sin índice.
     """
     if not partidas:
         return None
+    seleccion = resultado.get('seleccion') or []
+    if seleccion and seleccion[0].get('indice') is not None:
+        return _mapear_por_indice(resultado, partidas)
     if resultado.get('metodo') == 'mus':
         return _mapear_mus(resultado, partidas)
     if resultado.get('metodo') == 'criterio':
@@ -274,7 +292,8 @@ PARAMETROS_DERIVABLES = {
     'estratificado': {'sigma': 'sigma'},
     'mus': {'valor_libros': 'bv'},
     'atributos': {'poblacion': 'n'},
-    'criterio': {},
+    # Por Criterio: el Valor Monetario Total sale de la suma del detalle
+    'criterio': {'valor_total': 'bv'},
 }
 
 

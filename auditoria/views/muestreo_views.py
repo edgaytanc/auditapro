@@ -34,6 +34,18 @@ CLAVE_SESION_DETALLE = 'muestreo_detalle'
 TAMANO_MAXIMO_MB = 10
 
 
+def _clave_parametros(parametros):
+    """
+    Parámetros que identifican la muestra, sin el detalle transaccional.
+
+    En 'Por Criterio' el auditor puede pegar miles de partidas: esas no viajan
+    en la URL de descarga, así que tampoco forman parte de la clave con la que
+    se reconoce la muestra guardada en la sesión.
+    """
+    return {clave: valor for clave, valor in (parametros or {}).items()
+            if clave != 'partidas'}
+
+
 def _verificar_acceso(request, audit):
     """
     Verifica que el usuario tenga acceso a la auditoría (mismo patrón que
@@ -127,6 +139,22 @@ def muestreo_calcular(request, audit_id):
         logger.error(f"Error inesperado en muestreo_calcular (auditoría {audit_id}): {e}")
         return JsonResponse({'success': False, 'error': 'Error inesperado al calcular la muestra.'}, status=500)
 
+    # En 'Por Criterio' el detalle pegado no viaja en la URL de descarga, así
+    # que la muestra calculada se guarda para que el Excel salga igual que en
+    # pantalla sin volver a pedir las partidas.
+    if metodo == 'criterio':
+        detalle = muestreo_datos.mapear_seleccion_a_partidas(
+            resultado, parametros.get('partidas') or [])
+        if detalle:
+            resultado['detalle_partidas'] = detalle
+        request.session[CLAVE_SESION_DETALLE] = {
+            'audit_id': audit.id,
+            'metodo': metodo,
+            'parametros': _clave_parametros(parametros),
+            'resultado': resultado,
+        }
+        request.session.modified = True
+
     return JsonResponse({'success': True, 'data': resultado})
 
 
@@ -201,7 +229,11 @@ def muestreo_importar_datos(request, audit_id):
     parametros = muestreo_datos.completar_parametros(metodo, parametros, datos_archivo)
 
     try:
-        resultado = muestreo_nia530.calcular_muestreo(metodo, parametros, audit_id=audit.id)
+        # MUS y Por Criterio seleccionan partidas REALES: necesitan el detalle
+        resultado = muestreo_nia530.calcular_muestreo(
+            metodo, parametros, audit_id=audit.id,
+            partidas=datos_archivo['partidas'],
+        )
     except ValueError as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
     except Exception as e:
@@ -217,13 +249,17 @@ def muestreo_importar_datos(request, audit_id):
 
     if detalle:
         resultado['detalle_partidas'] = detalle
-        request.session[CLAVE_SESION_DETALLE] = {
-            'audit_id': audit.id,
-            'metodo': metodo,
-            'parametros': parametros,
-            'detalle': detalle,
-        }
-        request.session.modified = True
+
+    # Se guarda la muestra tal como se calculó, para que el Excel descargado sea
+    # EXACTAMENTE el que el auditor vio en pantalla (evidencia reproducible).
+    # El archivo subido no se guarda: solo este resultado.
+    request.session[CLAVE_SESION_DETALLE] = {
+        'audit_id': audit.id,
+        'metodo': metodo,
+        'parametros': _clave_parametros(parametros),
+        'resultado': resultado,
+    }
+    request.session.modified = True
 
     return JsonResponse({
         'success': True,
@@ -292,19 +328,30 @@ def muestreo_descargar(request, audit_id):
     if not isinstance(parametros, dict):
         return JsonResponse({'success': False, 'error': "El parámetro 'parametros' debe ser un objeto JSON."}, status=400)
 
-    try:
-        resultado = muestreo_nia530.calcular_muestreo(metodo, parametros, audit_id=audit.id)
-    except ValueError as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=400)
-
-    # Partidas reales de la última importación, si corresponden a esta misma
-    # muestra (mismo método y parámetros).
+    # Si la muestra se generó desde un Excel de datos, se descarga EXACTAMENTE
+    # la que se calculó entonces (misma auditoría, método y parámetros): así el
+    # papel de trabajo coincide con lo que el auditor vio, sin recalcular.
     guardado = request.session.get(CLAVE_SESION_DETALLE)
-    if (guardado
-            and guardado.get('audit_id') == audit.id
-            and guardado.get('metodo') == metodo
-            and guardado.get('parametros') == parametros):
-        resultado['detalle_partidas'] = guardado['detalle']
+    reutilizable = (
+        guardado
+        and guardado.get('audit_id') == audit.id
+        and guardado.get('metodo') == metodo
+        and guardado.get('parametros') == _clave_parametros(parametros)
+    )
+
+    resultado = None
+    if reutilizable and guardado.get('resultado'):
+        resultado = guardado['resultado']
+
+    if resultado is None:
+        try:
+            resultado = muestreo_nia530.calcular_muestreo(
+                metodo, parametros, audit_id=audit.id)
+        except ValueError as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=400)
+        # Compatibilidad con muestras guardadas por la versión anterior
+        if reutilizable and guardado.get('detalle'):
+            resultado['detalle_partidas'] = guardado['detalle']
 
     info = _info_auditoria(audit)
 

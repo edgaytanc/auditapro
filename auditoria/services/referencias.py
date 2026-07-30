@@ -303,6 +303,15 @@ def _celda_destino_derecha(sheet, cell):
 # Hueco de la referencia dentro de la propia etiqueta: 'Ref.      XXXXXX'
 _PATRON_HUECO_REF = re.compile(r'(x{3,})', re.IGNORECASE)
 
+# Un recuadro cuyo contenido completo es un código de referencia: 'PL-1.1',
+# 'B-4', 'INF-05', 'A-1', 'CC-BG'...  (las plantillas Word lo traen así)
+_PATRON_TOKEN_REF = re.compile(
+    r'^(?:PL|INF|PRA|CC|ER|[A-JR])-?\d+(?:[.\-]\d+)*$', re.IGNORECASE)
+
+# Recuadro que solo trae la etiqueta, sin valor: 'Ref.' / 'Ref'
+# (deliberadamente NO coincide con encabezados de columna como 'REF. PT')
+_PATRON_SOLO_ETIQUETA_REF = re.compile(r'^ref\.?$', re.IGNORECASE)
+
 
 def inyectar_ref_propia(workbook, ref):
     """
@@ -342,3 +351,178 @@ def inyectar_ref_propia(workbook, ref):
             if procesada:
                 break
     return workbook
+
+
+# ---------------------------------------------------------------------------
+# Referencia propia en plantillas Word
+# ---------------------------------------------------------------------------
+
+def _textos_de(nodo):
+    """Elementos <w:t> contenidos en *nodo*, en orden de lectura."""
+    from docx.oxml.ns import qn
+    return nodo.findall('.//' + qn('w:t'))
+
+
+def _texto_unido(elementos):
+    """Texto completo de un grupo de <w:t> (Word parte las palabras en runs)."""
+    return ''.join(elemento.text or '' for elemento in elementos)
+
+
+def _escribir_en_grupo(elementos, valor):
+    """Escribe *valor* en el primer <w:t> y vacía los demás del grupo."""
+    elementos[0].text = valor
+    for elemento in elementos[1:]:
+        elemento.text = ''
+
+
+def _valor_ref_para_grupo(elementos, ref):
+    """
+    Decide qué texto debe quedar en un grupo de <w:t> (un recuadro, una celda o
+    un párrafo) para que muestre la referencia, o None si ese grupo no es el
+    hueco de la referencia.
+
+    Word reparte el texto entre varios runs ('PL-1' + '.2'), así que se evalúa
+    el contenido unido.
+    """
+    if not elementos:
+        return None
+    unido = _texto_unido(elementos)
+    if not unido.strip():
+        return None
+
+    # Los recuadros de logo comparten forma con los de referencia: no se tocan
+    if 'LOGO' in unido.upper():
+        return None
+
+    plano = unido.strip()
+    compacto = re.sub(r'\s+', '', plano)
+
+    # 1) Hueco explícito DETRÁS de la etiqueta: 'Ref.   XXXXXX'.
+    #    Se exige la etiqueta porque en estas plantillas un 'XXXX' suelto es el
+    #    hueco de OTRO dato (nombre de la entidad, 'UDAI No. [XXXX-XXXX]'...) y
+    #    no debe secuestrarlo la referencia.
+    if (_normalizar_texto(plano).startswith('ref')
+            and _PATRON_HUECO_REF.search(plano)):
+        return _PATRON_HUECO_REF.sub(ref, plano, count=1)
+
+    # 2) El recuadro ya trae un código de referencia de la plantilla: se sustituye
+    if _PATRON_TOKEN_REF.match(compacto):
+        return ref
+
+    # 3) Solo la etiqueta, sin valor ('Ref.')
+    if _PATRON_SOLO_ETIQUETA_REF.match(compacto):
+        return f"Ref. {ref}"
+
+    return None
+
+
+def _firma_grupo(elementos):
+    """Identidad del contenido de un grupo, para detectar copias del recuadro."""
+    return re.sub(r'\s+', '', _texto_unido(elementos)).upper()
+
+
+def _partes_con_encabezados(documento):
+    """Documento + sus encabezados y pies, donde también vive el recuadro."""
+    partes = [documento.element.body]
+    for seccion in documento.sections:
+        for contenedor in (seccion.header, seccion.first_page_header,
+                           seccion.even_page_header, seccion.footer,
+                           seccion.first_page_footer, seccion.even_page_footer):
+            try:
+                if contenedor is not None:
+                    partes.append(contenedor._element)
+            except Exception:
+                # Alguna variante de encabezado puede no existir en la plantilla
+                continue
+    return partes
+
+
+def _grupos_candidatos(partes, limite_parrafos=25):
+    """
+    Grupos de <w:t> donde puede vivir la referencia, en orden de prioridad:
+    primero los cuadros de texto (el caso habitual) y después los párrafos del
+    inicio del cuerpo y de los encabezados.
+    """
+    from docx.oxml.ns import qn
+
+    cuadros, parrafos = [], []
+    for parte in partes:
+        for cuadro in parte.findall('.//' + qn('w:txbxContent')):
+            cuadros.append(_textos_de(cuadro))
+        # Los párrafos que ya están dentro de un cuadro no se repiten aquí
+        dentro_de_cuadro = {
+            id(elemento)
+            for cuadro in parte.findall('.//' + qn('w:txbxContent'))
+            for elemento in cuadro.findall('.//' + qn('w:p'))
+        }
+        contador = 0
+        for parrafo in parte.findall('.//' + qn('w:p')):
+            if id(parrafo) in dentro_de_cuadro:
+                continue
+            if contador >= limite_parrafos:
+                break
+            contador += 1
+            parrafos.append(_textos_de(parrafo))
+    return cuadros + parrafos
+
+
+def _agregar_recuadro_ref(documento, ref):
+    """
+    Añade la referencia arriba a la derecha cuando la plantilla no trae recuadro.
+
+    Así ningún papel de trabajo en Word queda sin su Ref., igual que en Excel.
+    """
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    if documento.paragraphs:
+        parrafo = documento.paragraphs[0].insert_paragraph_before()
+    else:
+        parrafo = documento.add_paragraph()
+    ejecucion = parrafo.add_run(f"Ref. {ref}")
+    ejecucion.bold = True
+    parrafo.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    return documento
+
+
+def inyectar_ref_propia_word(documento, ref):
+    """
+    Escribe la referencia propia del papel en la plantilla Word.
+
+    Las plantillas oficiales resuelven el recuadro 'Ref.' de varias formas y
+    ninguna es alcanzable con la API de párrafos de python-docx:
+
+      · cuadro de texto (w:txbxContent) en el cuerpo — el caso más común,
+        con el código de la plantilla dentro ('PL-1.1', 'INF-2', 'B-4');
+      · cuadro de texto o texto suelto en el encabezado de página;
+      · hueco 'XXXXXX' o etiqueta 'Ref.' sin valor.
+
+    Se cubren todas y, si la plantilla no trae recuadro, se agrega la
+    referencia arriba a la derecha. Nunca se pisan los recuadros de logo ni
+    los encabezados de columna tipo 'REF. PT'.
+
+    Word guarda cada forma DOS veces (mc:Choice moderno y mc:Fallback heredado),
+    así que el recuadro se rellena en TODAS sus copias: si solo se escribiera la
+    primera, Word podía seguir mostrando el código viejo de la plantilla.
+    """
+    if not ref:
+        return documento
+
+    grupos = _grupos_candidatos(_partes_con_encabezados(documento))
+
+    # Primer grupo que sea el hueco de la referencia
+    objetivo = None
+    for elementos in grupos:
+        valor = _valor_ref_para_grupo(elementos, ref)
+        if valor is not None:
+            objetivo = (_firma_grupo(elementos), valor)
+            break
+
+    if objetivo is None:
+        # La plantilla no trae recuadro: se agrega arriba a la derecha
+        return _agregar_recuadro_ref(documento, ref)
+
+    firma_objetivo, valor = objetivo
+    for elementos in grupos:
+        if _firma_grupo(elementos) == firma_objetivo:
+            _escribir_en_grupo(elementos, valor)
+    return documento

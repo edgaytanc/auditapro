@@ -138,16 +138,32 @@ def generar_excel(info_auditoria, resultado):
     detalle = resultado.get('detalle_partidas')
 
     if detalle:
-        filas_seleccion = [
-            (item['no'], item['documento'], item['descripcion'],
-             item['fecha'], item['monto'], '')
-            for item in detalle
-        ]
-        _escribir_tabla(
-            hoja_seleccion, 1, "Partidas seleccionadas",
-            ["Nº", "N.º Documento", "Descripción", "Fecha", "Monto", "Marca"],
-            filas_seleccion, anchos=[8, 20, 46, 14, 18, 12],
-        )
+        # Cuando la selección explica POR QUÉ entró cada partida (100 %,
+        # sistemática, complementaria) esa columna viaja al papel de trabajo.
+        hay_criterio = any(item.get('marca') for item in detalle)
+        if hay_criterio:
+            filas_seleccion = [
+                (item['no'], item['documento'], item['descripcion'],
+                 item['fecha'], item['monto'], item.get('marca', ''), '')
+                for item in detalle
+            ]
+            _escribir_tabla(
+                hoja_seleccion, 1, "Partidas seleccionadas",
+                ["Nº", "N.º Documento", "Descripción", "Fecha", "Monto",
+                 "Criterio de selección", "Marca"],
+                filas_seleccion, anchos=[8, 20, 46, 14, 18, 32, 12],
+            )
+        else:
+            filas_seleccion = [
+                (item['no'], item['documento'], item['descripcion'],
+                 item['fecha'], item['monto'], '')
+                for item in detalle
+            ]
+            _escribir_tabla(
+                hoja_seleccion, 1, "Partidas seleccionadas",
+                ["Nº", "N.º Documento", "Descripción", "Fecha", "Monto", "Marca"],
+                filas_seleccion, anchos=[8, 20, 46, 14, 18, 12],
+            )
     else:
         filas_seleccion = [
             (item['numero'], item['elemento'], '')

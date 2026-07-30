@@ -75,18 +75,30 @@ function ocultarResultados() {
 // Recolección de parámetros por método
 // ---------------------------------------------------------------------------
 
-function recolectarPartidas() {
-    const filas = document.querySelectorAll('#tablaPartidas tbody tr');
+// Por Criterio: el detalle transaccional puede venir pegado en el textarea
+// (N.º Documento [tab] Descripción [tab] Fecha [tab] Monto). Se tolera el
+// separador tabulador y también el punto y coma.
+function recolectarPartidasPegadas() {
+    const texto = (document.getElementById('c_pegado') || {}).value || '';
     const partidas = [];
-    filas.forEach(fila => {
-        const descripcion = fila.querySelector('.p-descripcion').value.trim();
-        const monto = fila.querySelector('.p-monto').value;
-        const criterio = fila.querySelector('.p-criterio').value.trim();
-        if (descripcion || monto || criterio) {
-            partidas.push({ descripcion: descripcion, monto: Number(monto || 0), criterio: criterio });
-        }
+    texto.split('\n').forEach(linea => {
+        if (!linea.trim()) { return; }
+        const celdas = linea.split(linea.indexOf('\t') >= 0 ? '\t' : ';');
+        if (celdas.length < 4) { return; }
+        const monto = parseFloat(String(celdas[3]).replace(/[^\d.,-]/g, '').replace(/,/g, ''));
+        if (isNaN(monto)) { return; }
+        partidas.push({
+            documento: (celdas[0] || '').trim(),
+            descripcion: (celdas[1] || '').trim(),
+            fecha: (celdas[2] || '').trim(),
+            monto: monto
+        });
     });
     return partidas;
+}
+
+function totalPegado() {
+    return recolectarPartidasPegadas().reduce((suma, p) => suma + p.monto, 0);
 }
 
 function recolectarParametros() {
@@ -130,8 +142,22 @@ function recolectarParametros() {
             semilla: valorSemilla('a_semilla')
         };
     }
-    // criterio
-    return { partidas: recolectarPartidas() };
+    // criterio: criterios de monto sobre el detalle transaccional
+    const parametros = {
+        porcentaje_examinar: valorNumero('c_pct'),
+        monto_mayor: valorNumero('c_mayor'),
+        monto_menor: valorNumero('c_menor')
+    };
+    const total = document.getElementById('c_total');
+    if (total && total.value !== '') {
+        parametros.valor_total = Number(total.value);
+    }
+    // En modo manual (sin Excel) las partidas van dentro de los parámetros
+    const pegadas = recolectarPartidasPegadas();
+    if (pegadas.length) {
+        parametros.partidas = pegadas;
+    }
+    return parametros;
 }
 
 // ---------------------------------------------------------------------------
@@ -200,15 +226,28 @@ function renderResultado(data) {
     const detalle = data.detalle_partidas;
     const filas = detalle || data.seleccion;
 
-    let filasHtml = detalle
-        ? '<tr><th>Nº</th><th>N.º Documento</th><th>Descripción</th><th>Fecha</th><th>Monto</th></tr>'
-        : '<tr><th>Nº</th><th>Elemento seleccionado</th></tr>';
+    // Cuando la selección explica por qué entró cada partida (100 %,
+    // sistemática, complementaria) se muestra esa columna.
+    const conCriterio = detalle && filas.some(item => item.marca);
+
+    let filasHtml;
+    if (detalle) {
+        filasHtml = '<tr><th>Nº</th><th>N.º Documento</th><th>Descripción</th>' +
+            '<th>Fecha</th><th>Monto</th>' +
+            (conCriterio ? '<th>Criterio de selección</th>' : '') + '</tr>';
+    } else {
+        filasHtml = '<tr><th>Nº</th><th>Elemento seleccionado</th></tr>';
+    }
 
     filas.slice(0, LIMITE_FILAS_SELECCION).forEach(item => {
         const fila = document.createElement('tr');
-        const celdas = detalle
-            ? [item.no, item.documento, item.descripcion, item.fecha, item.monto]
-            : [item.numero, item.elemento];
+        let celdas;
+        if (detalle) {
+            celdas = [item.no, item.documento, item.descripcion, item.fecha, item.monto];
+            if (conCriterio) { celdas.push(item.marca || ''); }
+        } else {
+            celdas = [item.numero, item.elemento];
+        }
         celdas.forEach(valor => {
             const celda = document.createElement('td');
             celda.textContent = valor;
@@ -234,6 +273,15 @@ function renderResultado(data) {
 // Descargas
 // ---------------------------------------------------------------------------
 
+// El detalle transaccional puede tener miles de partidas: nunca viaja en la
+// URL de descarga. El servidor ya guardó la muestra calculada en la sesión y la
+// reconoce con el resto de los parámetros.
+function parametrosParaUrl(parametros) {
+    const copia = Object.assign({}, parametros || {});
+    delete copia.partidas;
+    return copia;
+}
+
 function descargarMuestreo(formato) {
     if (!ultimoCalculo) {
         mostrarError('Primero calcule la muestra antes de descargar el papel de trabajo.');
@@ -241,7 +289,8 @@ function descargarMuestreo(formato) {
     }
     const url = muestreoDescargarUrl +
         '?metodo=' + encodeURIComponent(ultimoCalculo.metodo) +
-        '&parametros=' + encodeURIComponent(JSON.stringify(ultimoCalculo.parametros)) +
+        '&parametros=' + encodeURIComponent(
+            JSON.stringify(parametrosParaUrl(ultimoCalculo.parametros))) +
         '&formato=excel';
     window.location.href = url;
 }
@@ -251,25 +300,25 @@ document.querySelectorAll('.dl-btn[data-formato]').forEach(boton => {
 });
 
 // ---------------------------------------------------------------------------
-// Tabla de partidas (método Por Criterio)
+// Método Por Criterio: Valor Monetario Total desde el detalle pegado
 // ---------------------------------------------------------------------------
 
-function agregarFilaPartida() {
-    const cuerpo = document.querySelector('#tablaPartidas tbody');
-    const fila = document.createElement('tr');
-    fila.innerHTML =
-        '<td><input type="text" class="p-descripcion" placeholder="Ej. Factura 1234 — Proveedor XYZ"></td>' +
-        '<td><input type="number" class="p-monto" min="0" step="0.01" placeholder="0.00"></td>' +
-        '<td><input type="text" class="p-criterio" placeholder="Ej. Partida inusual / mayor a materialidad"></td>' +
-        '<td><button type="button" class="quitar-partida-btn" title="Quitar partida">✕</button></td>';
-    fila.querySelector('.quitar-partida-btn').addEventListener('click', () => fila.remove());
-    cuerpo.appendChild(fila);
+const botonTotalCriterio = document.getElementById('c_totalBtn');
+if (botonTotalCriterio) {
+    botonTotalCriterio.addEventListener('click', () => {
+        const total = totalPegado();
+        if (!total) {
+            estadoImportacion(
+                'Pegue el detalle transaccional (o suba el Excel) para calcular el ' +
+                'Valor Monetario Total.', 'error');
+            return;
+        }
+        document.getElementById('c_total').value = Math.round(total * 100) / 100;
+        estadoImportacion(
+            'Valor Monetario Total calculado desde el detalle pegado: ' +
+            total.toLocaleString('es-GT', { minimumFractionDigits: 2 }), 'ok');
+    });
 }
-
-document.getElementById('agregarPartidaBtn').addEventListener('click', agregarFilaPartida);
-
-// Comenzar con una fila vacía en la tabla de criterio
-agregarFilaPartida();
 
 // ---------------------------------------------------------------------------
 // Importación del Excel de datos (mayor auxiliar)
@@ -295,7 +344,8 @@ const CAMPOS_DERIVABLES_ARCHIVO = {
     estratificado: { sigma: 'e_sigma' },
     mus: { valor_libros: 'm_bv' },
     atributos: { poblacion: 'a_N' },
-    criterio: {}
+    // Por Criterio: el Valor Monetario Total sale de la suma del archivo
+    criterio: { valor_total: 'c_total' }
 };
 
 function importarDatosMuestreo() {

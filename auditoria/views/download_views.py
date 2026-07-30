@@ -46,6 +46,17 @@ def download_document(request, audit_id, folder, filename):
                 logger.warning(f"No se pudieron agregar marcas de auditoría para {filename}: {e}")
                 # Continuar con la descarga incluso si las marcas fallan
 
+            # Referencia propia del papel de trabajo en el recuadro 'Ref.'
+            # (en Word vive en un cuadro de texto o en el encabezado, no en los
+            # párrafos, por eso necesita su propio inyector)
+            try:
+                from auditoria.services.referencias import obtener_ref, inyectar_ref_propia_word
+                ref_propia = obtener_ref(audit.tipoAuditoria, folder, filename, audit_id=audit.id)
+                if ref_propia:
+                    doc = inyectar_ref_propia_word(doc, ref_propia)
+            except Exception as e:
+                logger.warning(f"No se pudo inyectar la referencia propia en Word para {filename}: {e}")
+
             doc.save(buffer)
             content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
@@ -179,12 +190,33 @@ def download_document_by_pattern(request, audit_id, pattern):
         # Procesar y devolver el documento
         try:
             buffer = io.BytesIO()
+            # La referencia propia se inyecta también por esta ruta (la que
+            # abren los hipervínculos del Word), para que el papel descargado
+            # llegue igual que desde el árbol de papeles de trabajo.
+            try:
+                from auditoria.services.referencias import obtener_ref
+                ref_propia = obtener_ref(audit.tipoAuditoria, folder, filename, audit_id=audit.id)
+            except Exception:
+                ref_propia = None
+
             if filename.lower().endswith('.docx'):
                 doc = modify_document_word(template_path, audit)
+                if ref_propia:
+                    try:
+                        from auditoria.services.referencias import inyectar_ref_propia_word
+                        doc = inyectar_ref_propia_word(doc, ref_propia)
+                    except Exception as e:
+                        logger.warning(f"No se pudo inyectar la referencia en {filename}: {e}")
                 doc.save(buffer)
                 content_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             elif filename.lower().endswith('.xlsx'):
                 wb = modify_document_excel(template_path, audit)
+                if ref_propia:
+                    try:
+                        from auditoria.services.referencias import inyectar_ref_propia
+                        wb = inyectar_ref_propia(wb, ref_propia)
+                    except Exception as e:
+                        logger.warning(f"No se pudo inyectar la referencia en {filename}: {e}")
                 wb.save(buffer)
                 content_type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             else:
