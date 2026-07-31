@@ -53,7 +53,8 @@ def _anio_de(fecha):
     return fecha.year if fecha else None
 
 
-def actualizar_anios_desde_import(audit_id, fecha_cierre_anterior, fecha_cierre_actual):
+def actualizar_anios_desde_import(audit_id, fecha_cierre_anterior, fecha_cierre_actual,
+                                  fechas_cortes=None):
     """
     Actualiza los años a partir de las fechas de corte del Excel importado.
 
@@ -73,6 +74,16 @@ def actualizar_anios_desde_import(audit_id, fecha_cierre_anterior, fecha_cierre_
     # únicamente el año actual. No se inventa un 'año actual - 1'.
     if anio_actual and anio_anterior == anio_actual:
         anio_anterior = None
+        # ...salvo que OTRA columna de corte sí traiga un ejercicio anterior.
+        # El archivo del cliente pone el cierre anterior en la columna D
+        # ('Al 31/12/2025') y deja E y H en el año actual: sin mirar todas las
+        # fechas, el comparativo de dos años quedaba vacío.
+        anteriores = [
+            _anio_de(fecha) for fecha in (fechas_cortes or [])
+            if _anio_de(fecha) and _anio_de(fecha) < anio_actual
+        ]
+        if anteriores:
+            anio_anterior = max(anteriores)
 
     if anio_actual is None and anio_anterior is None:
         return anios_de_auditoria(audit_id)

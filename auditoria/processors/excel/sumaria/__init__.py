@@ -189,12 +189,19 @@ def process_sumaria_file(
     titulo = None
     subcuentas = []
     if not _seccion_de_archivo(file_name):
-        cuenta_archivo = (determinar_cuenta_por_nombre_archivo(file_name)
-                          or _cuenta_generica(balances, fechas_semestrales, file_name))
-        if cuenta_archivo:
-            titulo = cuenta_archivo
+        cuenta_area = determinar_cuenta_por_nombre_archivo(file_name)
+        if cuenta_area:
+            # Cédula de un área concreta (Caja y Bancos, Inventarios...): lista
+            # el detalle de subcuentas, igual que las cédulas de Revisoría.
+            titulo = cuenta_area
             subcuentas = _subcuentas_de_cuenta(
-                audit_id, balances, cuenta_archivo, fechas_semestrales)
+                audit_id, balances, cuenta_area, fechas_semestrales)
+        else:
+            # Cédula genérica de 'OTRAS CEDULAS SUMARIAS': el cliente pidió
+            # CUENTA Y CANTIDAD, así que se escribe la cuenta misma y NO sus
+            # subcuentas (antes salían los nombres de las subcuentas en vez de
+            # la cuenta).
+            titulo = _cuenta_generica(balances, fechas_semestrales, file_name)
 
     for hoja in workbook.worksheets:
         layout = detectar_layout(hoja)

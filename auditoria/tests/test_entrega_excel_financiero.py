@@ -258,9 +258,9 @@ class LayoutSumariaTestCase(TestCase):
 
     def test_sumarias_especializadas_no_se_tocan(self):
         """
-        Patrimonio, Activos Fijos y Estado de Resultados son análisis con
-        columnas propias: el escritor debe dejarlas intactas en vez de
-        descuadrarlas con los saldos del balance.
+        Patrimonio, Activos Fijos y Estado de Resultados: el cliente envió
+        el 31JUL sus plantillas con la cuadrícula estándar, así que ahora
+        deben recibir las cuentas y sus cantidades.
         """
         especializadas = [
             os.path.join('4 PRUEBAS SUSTANTIVAS', '11  AUDITORIA PATRIMONIO',
@@ -270,11 +270,14 @@ class LayoutSumariaTestCase(TestCase):
             os.path.join('4 PRUEBAS SUSTANTIVAS', '13  AUDITORIA DE ESTADO RESULTADOS',
                          '2_SUMARIA_ESTADO_DE_RESULTADOS.xlsx'),
         ]
+        # 31JUL: el cliente sustituyó estas plantillas por versiones con la
+        # cuadrícula estándar, precisamente para que SÍ reciban las cuentas y
+        # sus cantidades. Se comprueba que la cuadrícula se detecta.
         for ruta in especializadas:
             wb = self._abrir(ruta)
             detectados = [detectar_layout(hoja) for hoja in wb.worksheets]
-            self.assertTrue(all(l is None for l in detectados),
-                            f'{ruta} no debería tratarse como sumaria de saldos')
+            self.assertTrue(any(l is not None for l in detectados),
+                            f'{ruta} debería recibir las cuentas del balance')
 
 
 # ---------------------------------------------------------------------

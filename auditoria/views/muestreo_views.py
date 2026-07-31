@@ -93,7 +93,31 @@ def _info_auditoria(audit):
 
 @login_required
 def muestreo_page(request, audit_id):
-    """Página del módulo de muestreo: formulario de parámetros por método."""
+    """
+    Página del módulo de Muestreo NIA 530.
+
+    Es el HTML que entregó el cliente (Monetario MUM, Por Atributos y Por
+    Criterio), integrado tal cual: el cálculo, la memoria de cálculo, la
+    importación del detalle transaccional y la descarga de la muestra en Excel
+    funcionan dentro de la propia página.
+    """
+    audit, error = _obtener_auditoria(request, audit_id)
+    if error:
+        return error
+    return render(request, 'auditoria/muestreo/muestreo_nia530_cliente.html', {
+        'audit': audit,
+        'nombre_auditoria': f"{audit.title} - {audit.identidad}",
+    })
+
+
+@login_required
+def muestreo_page_motor(request, audit_id):
+    """
+    Página anterior del muestreo (motor del servidor con los 5 métodos).
+
+    Se conserva accesible porque genera el papel de trabajo en Excel desde el
+    servidor; la página principal es la que entregó el cliente.
+    """
     audit, error = _obtener_auditoria(request, audit_id)
     if error:
         return error

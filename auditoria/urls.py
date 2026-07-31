@@ -47,6 +47,9 @@ urlpatterns = [
          name='muestreo_formato_datos'),
     # Página MUM entregada por el cliente, integrada tal cual
     path('muestreo/<int:audit_id>/mum/', muestreo_views.muestreo_mum, name='muestreo_mum'),
+    # Página anterior con el motor de muestreo del servidor (5 métodos)
+    path('muestreo/<int:audit_id>/motor/', muestreo_views.muestreo_page_motor,
+         name='muestreo_page_motor'),
 
     # Parámetros editables por el auditor (años y referencias)
     path('detalle/<int:audit_id>/anios/', parametros_views.anios_auditoria, name='anios_auditoria'),

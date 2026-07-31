@@ -265,7 +265,26 @@ def importar_formato_subcuentas(workbook, audit_id):
     # Cortes de cierre (E y H) → balances ANUALES para los escritores de 2 años.
     # Se procesa E antes que H para que, si ambas fechas coinciden,
     # prevalezca el valor del corte actual (columna H).
-    columnas_anuales = (4, 7)
+    # Columnas cuyo saldo se guarda además como ANUAL (lo que usan los cuadros
+    # comparativos de dos años). Son los cierres E y H y, cuando el archivo
+    # trae un ejercicio anterior en otra columna de corte, también el cierre de
+    # ESE año: sin él, el Análisis Horizontal/Vertical dejaba vacía la columna
+    # del año anterior.
+    columnas_anuales = [4, 7]
+    _anio_actual_cierre = getattr(fechas_columnas.get(7), 'year', None)
+    if _anio_actual_cierre:
+        _cierres_previos = {}
+        for _col, _fecha in fechas_columnas.items():
+            if _fecha is None or _fecha.year >= _anio_actual_cierre:
+                continue
+            # de cada año anterior se toma su corte más reciente
+            if (_fecha.year not in _cierres_previos
+                    or _fecha > _cierres_previos[_fecha.year][1]):
+                _cierres_previos[_fecha.year] = (_col, _fecha)
+        for _col, _ in _cierres_previos.values():
+            if _col not in columnas_anuales:
+                columnas_anuales.append(_col)
+    columnas_anuales = tuple(columnas_anuales)
 
     if all(fecha is None for fecha in fechas_columnas.values()):
         return False, "❌ No se pudieron leer las fechas de corte (C6, D6, E6, H6)."
@@ -277,6 +296,9 @@ def importar_formato_subcuentas(workbook, audit_id):
         audit_id,
         fecha_cierre_anterior=fechas_columnas.get(4),  # Columna E
         fecha_cierre_actual=fechas_columnas.get(7),    # Columna H
+        # Todas las fechas de corte (C, D, E, H): si el ejercicio anterior está
+        # en la columna D, el comparativo de dos años lo toma de ahí.
+        fechas_cortes=list(fechas_columnas.values()),
     )
 
     # 2.ter) Cortes tal cual venían en el archivo (columnas C/D/E/H): los
@@ -336,13 +358,34 @@ def importar_formato_subcuentas(workbook, audit_id):
         if not nombre_cuenta or _es_anotacion(nombre_cuenta):
             continue
 
-        # Sin ningún importe en las columnas de corte no es una cuenta: son las
-        # notas que el cliente escribe entre las filas de la hoja.
+        # Una cuenta SIN importes también se importa: el cliente pidió que el
+        # nombre aparezca igual en las cédulas y las cantidades queden en
+        # blanco. Solo se exige que la fila tenga un código en la columna A o
+        # algún importe, para no confundir con las notas sueltas de la hoja.
         importes = [
             _parse_numero(row[col_idx]) if len(row) > col_idx else None
             for col_idx, fecha in fechas_columnas.items() if fecha is not None
         ]
+        tiene_codigo = _norm(colA) not in ('',)
+        if not tiene_codigo and all(valor is None for valor in importes):
+            continue
+
+        # Cuentas sin ningún importe: se registran con valor 0 en el corte de
+        # cierre para que la cuenta exista y su renglón salga en blanco.
         if all(valor is None for valor in importes):
+            fecha_cierre = next(
+                (f for c, f in sorted(fechas_columnas.items()) if f is not None), None)
+            if fecha_cierre is not None:
+                BalanceCuentas.objects.update_or_create(
+                    audit=audit_instance,
+                    tipo_balance="SEMESTRAL",
+                    fecha_corte=fecha_cierre,
+                    seccion=current_section,
+                    nombre_cuenta=nombre_cuenta,
+                    tipo_cuenta="NT",
+                    defaults={"valor": 0},
+                )
+                cuentas_importadas += 1
             continue
 
         # 3.a) Saldos SEMESTRALES (las 4 fechas) → centralizadoras y sumarias

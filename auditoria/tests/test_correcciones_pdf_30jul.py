@@ -220,6 +220,18 @@ class PaginaMuestreoMUM(TestCase):
         self.cliente = Client()
         self.cliente.force_login(self.jefe)
 
+    def test_pagina_muestreo_es_la_del_cliente(self):
+        """La página principal de muestreo es el HTML que entregó el cliente."""
+        respuesta = self.cliente.get(
+            reverse('muestreo_page', args=[self.auditoria.id]))
+        self.assertEqual(respuesta.status_code, 200)
+        html = respuesta.content.decode('utf-8')
+        for esperado in ['Monetario (MUM)', 'Por Atributos', 'Por Criterio',
+                         'Memoria de cálculo', 'downloadSample']:
+            self.assertIn(esperado, html, f'Falta del HTML del cliente: {esperado}')
+        self.assertIn('ABC123', html)
+        self.assertNotIn('Empresa ABC S.A.', html)
+
     def test_pagina_mum_abre_y_conserva_el_contenido(self):
         respuesta = self.cliente.get(
             reverse('muestreo_mum', args=[self.auditoria.id]))
@@ -240,7 +252,7 @@ class PaginaMuestreoMUM(TestCase):
 
     def test_enlace_desde_la_pagina_de_muestreo(self):
         respuesta = self.cliente.get(
-            reverse('muestreo_page', args=[self.auditoria.id]))
+            reverse('muestreo_page_motor', args=[self.auditoria.id]))
         self.assertEqual(respuesta.status_code, 200)
         self.assertIn(reverse('muestreo_mum', args=[self.auditoria.id]),
                       respuesta.content.decode('utf-8'))
