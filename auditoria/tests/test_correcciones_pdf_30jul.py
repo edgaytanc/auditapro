@@ -256,3 +256,68 @@ class PaginaMuestreoMUM(TestCase):
         self.assertEqual(respuesta.status_code, 200)
         self.assertIn(reverse('muestreo_mum', args=[self.auditoria.id]),
                       respuesta.content.decode('utf-8'))
+
+
+class ComparativoYSaldosIniciales(TestCase):
+    """
+    Reporte del 31JUL: '1_Comparativo_Registros' y '2_Prueba_Saldos_Iniciales'
+    no pegaban los saldos al importar el Excel Financiero.
+    """
+
+    FECHAS = ['2025-01-01', '2025-12-31', '2026-12-31']
+
+    def _balances(self):
+        balances = {}
+        for fecha in self.FECHAS:
+            for nombre, valor in [('Efectivo y Equivalentes', 150000),
+                                  ('Cuentas por Cobrar', 150000),
+                                  ('Activo Intangible', 0)]:
+                balances[f'ANUAL-{fecha}-Activo-{nombre}-NT'] = valor
+            balances[f'ANUAL-{fecha}-Pasivo-Cuentas por Pagar-NT'] = 150000
+        return balances
+
+    def test_comparativo_pega_los_saldos(self):
+        from openpyxl import Workbook
+
+        from auditoria.processors.excel.comparativo_saldos_2026 import (
+            process_comparativo_registros_2026)
+
+        libro = Workbook()
+        hoja = libro.active
+        hoja['A22'] = 'COMPARATIVO DE SALDOS'
+        hoja['A23'] = 'No.'
+        hoja['B23'] = 'Cuenta / Rubro'
+        for indice, nombre in enumerate(
+                ['  Efectivo y Equivalentes', '  Cuentas por Cobrar',
+                 '  Intangibles', 'Activos Corrientes'], start=24):
+            hoja.cell(row=indice, column=2, value=nombre)
+        hoja['C27'] = 100  # importe de ejemplo de la plantilla
+
+        process_comparativo_registros_2026(libro, self._balances())
+        self.assertEqual(hoja['C24'].value, 150000)
+        self.assertEqual(hoja['C25'].value, 150000)
+        # 'Intangibles' ↔ 'Activo Intangible' (plural y nombre distinto)
+        self.assertEqual(hoja['C26'].value, 0)
+        # Un rubro que la auditoría no tiene: se limpia el ejemplo
+        self.assertIsNone(hoja['C27'].value)
+
+    def test_saldos_iniciales_pega_periodo_anterior_y_actual(self):
+        from openpyxl import Workbook
+
+        from auditoria.processors.excel.comparativo_saldos_2026 import (
+            process_prueba_saldos_iniciales_2026)
+
+        libro = Workbook()
+        hoja = libro.active
+        hoja['A17'] = 'VERIFICACIÓN DE SALDOS'
+        hoja['A18'] = 'No.'
+        hoja['B18'] = 'Cuenta'
+        hoja.cell(row=19, column=2, value='Efectivo y Equivalentes')
+        hoja.cell(row=20, column=2, value='Cuentas por Cobrar')
+
+        process_prueba_saldos_iniciales_2026(libro, self._balances())
+        # Cierre del ejercicio anterior (2025) en las dos columnas: la prueba
+        # busca justamente que coincidan (diferencia cero).
+        self.assertEqual(hoja['C19'].value, 150000)
+        self.assertEqual(hoja['D19'].value, 150000)
+        self.assertEqual(hoja['C20'].value, 150000)

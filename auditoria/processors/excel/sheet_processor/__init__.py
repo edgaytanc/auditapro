@@ -11,6 +11,12 @@ from ..centralizadoras import process_centralizadora_file
 from ..sumaria import process_sumaria_file
 from ..importance_relativa import process_importance_relative
 from ..ratios_financieros import process_ratios_financieros
+from ..comparativo_saldos_2026 import (
+    es_comparativo_registros,
+    es_prueba_saldos_iniciales,
+    process_comparativo_registros_2026,
+    process_prueba_saldos_iniciales_2026,
+)
 from .normalizar_balances import normalizar_balances
 from ....utils.replacements_utils import get_replacements_config
 import os
@@ -158,6 +164,14 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd,
                   file_name == "21 ANÁLISIS VERTICAL DE BALANCE GENERAL.xlsx") and balances_normalizados:
                 workbook = process_horizontal_vertical_analysis(
                     workbook, balances_normalizados)
+            elif es_comparativo_registros(file_name) and balances_normalizados:
+                # Plantilla 2026: no pegaba los saldos de los Estados Financieros
+                workbook = process_comparativo_registros_2026(
+                    workbook, balances_normalizados, registros_auxiliares)
+            elif es_prueba_saldos_iniciales(file_name) and balances_normalizados:
+                # Plantilla 2026: no pegaba el saldo final/inicial de los períodos
+                workbook = process_prueba_saldos_iniciales_2026(
+                    workbook, balances_normalizados, saldos_iniciales)
             elif file_name == "6 Prueba de Saldos Iniciales.xlsx" and balances_normalizados and saldos_iniciales:
                 workbook = process_initial_balance_tests(
                     workbook, balances_normalizados, saldos_iniciales)
