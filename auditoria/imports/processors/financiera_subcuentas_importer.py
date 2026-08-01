@@ -273,15 +273,15 @@ def importar_formato_subcuentas(workbook, audit_id):
     columnas_anuales = [4, 7]
     _anio_actual_cierre = getattr(fechas_columnas.get(7), 'year', None)
     if _anio_actual_cierre:
-        _cierres_previos = {}
-        for _col, _fecha in fechas_columnas.items():
-            if _fecha is None or _fecha.year >= _anio_actual_cierre:
-                continue
-            # de cada año anterior se toma su corte más reciente
-            if (_fecha.year not in _cierres_previos
-                    or _fecha > _cierres_previos[_fecha.year][1]):
-                _cierres_previos[_fecha.year] = (_col, _fecha)
-        for _col, _ in _cierres_previos.values():
+        # Todas las columnas de ejercicios anteriores, de la fecha más antigua
+        # a la más reciente: así el saldo del año lo fija su corte más nuevo,
+        # pero si ese corte viene vacío para una cuenta se conserva el de la
+        # columna anterior (el archivo del cliente deja 31/12 en blanco para
+        # varias cuentas del Patrimonio y solo llena el corte de apertura).
+        _previas = sorted(
+            ((_fecha, _col) for _col, _fecha in fechas_columnas.items()
+             if _fecha is not None and _fecha.year < _anio_actual_cierre))
+        for _, _col in _previas:
             if _col not in columnas_anuales:
                 columnas_anuales.append(_col)
     columnas_anuales = tuple(columnas_anuales)
