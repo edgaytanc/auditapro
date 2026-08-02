@@ -158,6 +158,34 @@ def generate_audit_document(req, audit_id):
 
 
 
+def nombres_auditor_y_jefe(audit, usuario=None):
+    """
+    Nombres que se escriben en 'Elaboró' (auditor) y 'Revisó' (jefe/supervisor).
+
+    Los datos salen del acceso al sistema, como pidió el cliente:
+      · En grupo: el auditor son los usuarios asignados y el jefe es quien creó
+        la auditoría.
+      · Individual: no hay usuarios asignados, así que el auditor es el propio
+        usuario que entró al sistema (antes se escribía 'Sin asignar').
+    """
+    def _nombre(usuario_modelo):
+        if not usuario_modelo:
+            return ""
+        return (usuario_modelo.get_full_name() or usuario_modelo.username or "").strip()
+
+    auditores_qs = getattr(audit, "assigned_users", None)
+    auditores = list(auditores_qs.all()) if auditores_qs else []
+    auditor_nombre = ", ".join(n for n in (_nombre(u) for u in auditores) if n)
+
+    jefe_nombre = _nombre(audit.audit_manager)
+
+    if not auditor_nombre:
+        # Auditor individual: sus datos vienen de su propio acceso
+        auditor_nombre = _nombre(usuario) or jefe_nombre
+
+    return auditor_nombre or "Sin asignar", jefe_nombre or "Sin asignar"
+
+
 @login_required
 def generar_documento_modal(request, audit_id):
     try:
@@ -165,13 +193,9 @@ def generar_documento_modal(request, audit_id):
     except Audit.DoesNotExist:
         return JsonResponse({"error": "Auditoría no encontrada."}, status=404)
 
-    # Auditor(es) desde assigned_users (exactamente como te funcionaba)
-    auditores_qs = getattr(audit, "assigned_users", None)
-    auditores = auditores_qs.all() if auditores_qs else []
-    auditor_nombre = ", ".join([(u.get_full_name() or u.username) for u in auditores]) or "Sin asignar"
-
-    # Supervisor desde audit_manager (exactamente como te funcionaba)
-    supervisor_nombre = audit.audit_manager.get_full_name() if audit.audit_manager else "Sin asignar"
+    # Datos tomados del acceso del usuario (auditor individual o en grupo)
+    auditor_nombre, supervisor_nombre = nombres_auditor_y_jefe(
+        audit, getattr(request, "user", None))
 
     html = render_to_string(
         "auditoria/modals/generar_documento_modal.html",
@@ -304,6 +328,11 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
     celdas "Elaboro"/"Reviso" (y "Fecha" debajo). Esta función localiza esas
     celdas ancla y escribe el dato en la celda contigua derecha, solo si está
     vacía (no pisa datos existentes).
+
+    Cada plantilla rotula ese bloque a su manera —"Elaboro"/"Reviso" en unas y
+    "Hecho por"/"Revisado por" en las nuevas cédulas sumarias—, así que se
+    reconocen todas las variantes para que los datos peguen en TODAS las
+    plantillas, como pidió el cliente.
     """
     import unicodedata
 
@@ -312,10 +341,24 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
         s = "".join(c for c in s if unicodedata.category(c) != "Mn")
         return s.strip().rstrip(":").strip().lower()
 
+    # etiqueta del papel -> (nombre a escribir, fecha del bloque)
+    datos_auditor = (auditor_nombre, fecha_elaboracion)
+    datos_jefe = (supervisor_nombre, fecha_aprobacion)
     objetivos = {
-        "elaboro": (auditor_nombre, fecha_elaboracion),
-        "reviso": (supervisor_nombre, fecha_aprobacion),
+        # variantes del bloque del auditor
+        "elaboro": datos_auditor,
+        "elaborado por": datos_auditor,
+        "hecho por": datos_auditor,
+        "preparado por": datos_auditor,
+        # variantes del bloque del jefe / supervisor
+        "reviso": datos_jefe,
+        "revisado por": datos_jefe,
+        "aprobado por": datos_jefe,
     }
+    # Nota: no se usan etiquetas sueltas como "Auditor" o "Supervisor" porque
+    # aparecen dentro del texto de algunos papeles (los cuestionarios, por
+    # ejemplo) y el dato terminaría escrito en medio de una pregunta.
+    escrito = False
     for sh in wb.worksheets:
         max_row = min(sh.max_row or 1, 30)
         max_col = min(sh.max_column or 1, 20)
@@ -330,12 +373,49 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
                 destino = sh.cell(row=cell.row, column=cell.column + 1)
                 if destino.value in (None, ""):
                     destino.value = nombre
+                    escrito = True
                 # "Fecha" en la fila siguiente del mismo bloque
                 abajo = sh.cell(row=cell.row + 1, column=cell.column)
                 if isinstance(abajo.value, str) and _norm(abajo.value) == "fecha":
                     destino_fecha = sh.cell(row=cell.row + 1, column=cell.column + 1)
                     if fecha and destino_fecha.value in (None, ""):
                         destino_fecha.value = fecha
+
+    if not escrito:
+        _crear_bloque_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
+                                   fecha_elaboracion, fecha_aprobacion)
+
+
+def _crear_bloque_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
+                               fecha_elaboracion, fecha_aprobacion):
+    """
+    Crea el bloque Elaboró / Revisó cuando la plantilla no lo trae.
+
+    Varias plantillas (sobre todo las de Revisoría Fiscal) no tienen todavía el
+    recuadro de identificación, así que sin esto los datos del auditor no
+    llegaban a esas cédulas. Se escribe en columnas libres a la derecha del
+    contenido, sin pisar nada de la plantilla.
+    """
+    from openpyxl.styles import Font
+
+    hoja = wb.worksheets[0]
+    columna = min((hoja.max_column or 1) + 2, 24)
+    filas = [
+        ("Elaboro:", auditor_nombre),
+        ("Fecha:", fecha_elaboracion),
+        ("Reviso:", supervisor_nombre),
+        ("Fecha:", fecha_aprobacion),
+    ]
+    for desplazamiento, (etiqueta, valor) in enumerate(filas):
+        fila = 2 + desplazamiento
+        celda_etiqueta = hoja.cell(row=fila, column=columna)
+        celda_valor = hoja.cell(row=fila, column=columna + 1)
+        if celda_etiqueta.value in (None, "") and celda_valor.value in (None, ""):
+            celda_etiqueta.value = etiqueta
+            celda_etiqueta.font = Font(bold=True)
+            celda_valor.value = valor or ""
+    hoja.column_dimensions[hoja.cell(row=2, column=columna).column_letter].width = 14
+    hoja.column_dimensions[hoja.cell(row=2, column=columna + 1).column_letter].width = 26
 
 
 def _apply_word_replacements(file_path, replacements):
@@ -457,10 +537,8 @@ def descargar_documento_auditoria(request, audit_id):
     replacements = build_replacements_dict(replacements_config, audit, fecha_inicio, fecha_fin)
 
     # --- Reemplazos personalizados tuyos ---
-    auditores_qs = getattr(audit, "assigned_users", None)
-    auditores = auditores_qs.all() if auditores_qs else []
-    auditor_nombre = ", ".join([(u.get_full_name() or u.username) for u in auditores]) or "Sin asignar"
-    supervisor_nombre = audit.audit_manager.get_full_name() if audit.audit_manager else "Sin asignar"
+    auditor_nombre, supervisor_nombre = nombres_auditor_y_jefe(
+        audit, getattr(request, "user", None))
 
     replacements["[NOMBRE_AUDITOR]"]    = auditor_nombre
     replacements["[NOMBRE_SUPERVISOR]"] = supervisor_nombre
@@ -538,6 +616,16 @@ def descargar_documento_auditoria(request, audit_id):
             except Exception as e:
                 print(f"Aviso: no se pudo inyectar la referencia en {documento}: {e}")
 
+            # 🧩 Paso 3c: MARCAS DE AUDITORÍA.
+            # Sin esto, al generar el documento con los datos del auditor se
+            # perdían las marcas que ya se habían cargado y verificadas en la
+            # cédula: los datos llegaban pero la marca desaparecía.
+            try:
+                from auditoria.services.audit_mark_processor import AuditMarkProcessor
+                doc = AuditMarkProcessor(audit.id, documento).process_word_document(doc)
+            except Exception as e:
+                print(f"Aviso: no se pudieron aplicar las marcas en {documento}: {e}")
+
             # 🧩 Paso 4: guardar en buffer
             buffer = BytesIO()
             doc.save(buffer)
@@ -602,6 +690,14 @@ def descargar_documento_auditoria(request, audit_id):
                     wb = inyectar_ref_propia(wb, ref_propia)
             except Exception:
                 pass
+
+            # MARCAS DE AUDITORÍA: se aplican también aquí para que el papel
+            # descargado traiga JUNTOS los datos del auditor y sus marcas.
+            try:
+                from auditoria.services.audit_mark_processor import AuditMarkProcessor
+                wb = AuditMarkProcessor(audit.id, documento).process_excel_document(wb)
+            except Exception as e:
+                print(f"Aviso: no se pudieron aplicar las marcas en {documento}: {e}")
 
             bio = BytesIO()
             wb.save(bio)
