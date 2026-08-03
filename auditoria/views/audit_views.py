@@ -355,21 +355,63 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
         "revisado por": datos_jefe,
         "aprobado por": datos_jefe,
     }
-    # Nota: no se usan etiquetas sueltas como "Auditor" o "Supervisor" porque
-    # aparecen dentro del texto de algunos papeles (los cuestionarios, por
-    # ejemplo) y el dato terminaría escrito en medio de una pregunta.
-    escrito = False
+    # Etiquetas sueltas: las hojas de Revisoría (K-1, K-2...) rotulan el recuadro
+    # como "Auditor" y "Supervisor". Se aceptan SOLO cuando forman parte de un
+    # recuadro de identificación (hay una etiqueta 'Fecha ...' a un par de filas),
+    # porque esas mismas palabras aparecen dentro del texto de los cuestionarios.
+    sueltas = {"auditor": datos_auditor, "supervisor": datos_jefe}
+    # Fechas con nombre propio dentro del recuadro
+    fechas_sueltas = {
+        "fecha elaboracion": fecha_elaboracion,
+        "fecha de elaboracion": fecha_elaboracion,
+        "fecha aprobacion": fecha_aprobacion,
+        "fecha de aprobacion": fecha_aprobacion,
+        "fecha revision": fecha_aprobacion,
+        "fecha de revision": fecha_aprobacion,
+    }
+
+    def _es_recuadro(sh, cell):
+        """True si alrededor de la celda hay una etiqueta de fecha del recuadro."""
+        for delta in (-3, -2, -1, 1, 2, 3):
+            fila = cell.row + delta
+            if fila < 1:
+                continue
+            vecino = sh.cell(row=fila, column=cell.column).value
+            if isinstance(vecino, str) and _norm(vecino).startswith("fecha"):
+                return True
+        return False
+    # Cada hoja del libro es un papel de trabajo por sí misma (ÍNDICE, K-1,
+    # K-2...), así que se recorren TODAS y la que no tenga recuadro recibe uno.
     for sh in wb.worksheets:
-        max_row = min(sh.max_row or 1, 30)
-        max_col = min(sh.max_column or 1, 20)
+        if _hoja_sin_contenido(sh):
+            continue
+        escrito = False
+        max_row = min(sh.max_row or 1, 40)
+        max_col = min(sh.max_column or 1, 24)
         for row in sh.iter_rows(min_row=1, max_row=max_row, max_col=max_col):
             for cell in row:
                 if not isinstance(cell.value, str):
                     continue
                 clave = _norm(cell.value)
-                if clave not in objetivos:
+
+                # Etiqueta de fecha con nombre propio ('Fecha Elaboración')
+                if clave in fechas_sueltas:
+                    destino = sh.cell(row=cell.row, column=cell.column + 1)
+                    valor = fechas_sueltas[clave]
+                    if valor and destino.value in (None, ""):
+                        destino.value = valor
+                        escrito = True
                     continue
-                nombre, fecha = objetivos[clave]
+
+                if clave in sueltas:
+                    if not _es_recuadro(sh, cell):
+                        continue
+                    nombre, fecha = sueltas[clave]
+                elif clave in objetivos:
+                    nombre, fecha = objetivos[clave]
+                else:
+                    continue
+
                 destino = sh.cell(row=cell.row, column=cell.column + 1)
                 if destino.value in (None, ""):
                     destino.value = nombre
@@ -381,15 +423,22 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
                     if fecha and destino_fecha.value in (None, ""):
                         destino_fecha.value = fecha
 
-    if not escrito:
-        _crear_bloque_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
-                                   fecha_elaboracion, fecha_aprobacion)
+        if not escrito:
+            _crear_bloque_auditor_jefe(sh, auditor_nombre, supervisor_nombre,
+                                       fecha_elaboracion, fecha_aprobacion)
 
 
-def _crear_bloque_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
+def _hoja_sin_contenido(sh):
+    """True si la hoja está vacía (no se le agrega el recuadro)."""
+    if (sh.max_row or 0) <= 1 and (sh.max_column or 0) <= 1:
+        return sh.cell(row=1, column=1).value in (None, "")
+    return False
+
+
+def _crear_bloque_auditor_jefe(hoja, auditor_nombre, supervisor_nombre,
                                fecha_elaboracion, fecha_aprobacion):
     """
-    Crea el bloque Elaboró / Revisó cuando la plantilla no lo trae.
+    Crea el bloque Elaboró / Revisó en una hoja que no lo trae.
 
     Varias plantillas (sobre todo las de Revisoría Fiscal) no tienen todavía el
     recuadro de identificación, así que sin esto los datos del auditor no
@@ -398,7 +447,6 @@ def _crear_bloque_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
     """
     from openpyxl.styles import Font
 
-    hoja = wb.worksheets[0]
     columna = min((hoja.max_column or 1) + 2, 24)
     filas = [
         ("Elaboro:", auditor_nombre),

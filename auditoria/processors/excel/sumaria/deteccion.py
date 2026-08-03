@@ -32,6 +32,9 @@ _SECCIONES_REPARTIBLES = ("Activo", "Pasivo")
 _MAPEO_CUENTAS: dict[str, str] = {
     "CAJA": "Caja y Bancos",
     "BANCO": "Caja y Bancos",
+    # Los papeles de Revisoría nombran esta área por la cuenta del Excel
+    "EFECTIVO": "Caja y Bancos",
+    "EQUIVALENTE": "Caja y Bancos",
     "COBRAR": "Cuentas por Cobrar",
     "CLIENTE": "Cuentas por Cobrar",
     "INVENTARIO": "Inventarios",

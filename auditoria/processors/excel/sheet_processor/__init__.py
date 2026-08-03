@@ -64,6 +64,22 @@ def _es_analisis_hv_2026(file_name):
     return bool(_PATRON_ANALISIS_HV.match(normalizado))
 
 
+def _libro_tiene_hoja_sumaria(workbook):
+    """
+    True si alguna hoja del libro es una cédula sumaria.
+
+    Los papeles de Revisoría agrupan varias cédulas en un mismo archivo y la
+    sumaria no es la primera hoja ('B-SUM CÉDULA SUMARIA' es la tercera de
+    3.2 INVERSIONES), así que el nombre del archivo no basta para reconocerla.
+    """
+    for hoja in workbook.worksheets:
+        nombre = unicodedata.normalize('NFD', str(hoja.title or ''))
+        nombre = ''.join(c for c in nombre if unicodedata.category(c) != 'Mn').upper()
+        if 'SUMARIA' in nombre or '-SUM' in nombre:
+            return True
+    return False
+
+
 def process_excel_sheets(workbook, tables_config, replacements, data_bd,
                          file_path=None, audit_id=None):
     """
@@ -179,7 +195,11 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd,
                 workbook = process_centralizadora_file(
                     workbook, balances_normalizados, ajustes_reclasificaciones,
                     file_name, audit_id=audit_id)
-            elif "SUMARIA" in file_name.upper() and balances_normalizados:
+            elif ("SUMARIA" in file_name.upper()
+                  or _libro_tiene_hoja_sumaria(workbook)) and balances_normalizados:
+                # El nombre del archivo no siempre dice 'SUMARIA': en Revisoría
+                # la cédula vive dentro del libro, en una hoja como
+                # 'B-SUM CÉDULA SUMARIA' (tercera hoja de 3.2 INVERSIONES).
                 workbook = process_sumaria_file(
                     workbook, balances_normalizados, ajustes_reclasificaciones,
                     file_name, audit_id=audit_id)

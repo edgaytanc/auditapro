@@ -166,8 +166,28 @@ class AuditMarkProcessor:
             return wb
 
     def _add_marks_to_excel(self, wb, marks):
-        """Agrega sección de marcas al final de la hoja Excel."""
-        ws = wb.active
+        """
+        Agrega la sección de marcas al final de CADA hoja del libro.
+
+        Los papeles de Revisoría traen varias hojas (ÍNDICE, K-1, K-2...) y cada
+        una es un papel de trabajo por sí misma, así que todas deben llevar sus
+        marcas. Antes solo se escribía en la hoja activa y las demás quedaban
+        sin marcas.
+        """
+        for hoja in wb.worksheets:
+            if self._hoja_vacia(hoja):
+                continue
+            self._add_marks_to_sheet(hoja, marks)
+
+    @staticmethod
+    def _hoja_vacia(ws):
+        """True si la hoja no tiene ningún contenido (no se le agregan marcas)."""
+        if (ws.max_row or 0) <= 1 and (ws.max_column or 0) <= 1:
+            return ws.cell(row=1, column=1).value in (None, '')
+        return False
+
+    def _add_marks_to_sheet(self, ws, marks):
+        """Agrega la sección de marcas al final de una hoja concreta."""
 
         # Encontrar última fila con datos reales
         last_row = 0
