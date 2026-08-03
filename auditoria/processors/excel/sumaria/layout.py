@@ -45,12 +45,33 @@ _ETIQUETAS_CUENTA = (
     'cuenta',
     'descripcion',
     'componente',
+    # Las cédulas de Revisoría rotulan la columna 'Subcuenta' / 'Sub Cuenta'.
+    # Van al final para que 'Cuenta' siga ganando cuando existan las dos.
+    'subcuenta',
+    'sub cuenta',
+    'sub-cuenta',
 )
 
 _ETIQUETAS_REF = ('ref. pt', 'ref p/t', 'ref.p/t', 'ref pt', 'ref. p/t', 'ref')
 _ETIQUETAS_CODIGO = ('codigo', 'cod.', 'cod')
 _ETIQUETAS_DEBE = ('debe', 'debito', 'cargo')
 _ETIQUETAS_HABER = ('haber', 'credito', 'abono')
+
+# Banda que corona las columnas de corte cuando la plantilla NO trae impresas
+# las fechas: las cédulas de Revisoría dejan esos rótulos en blanco porque las
+# fechas salen del Excel Financiero que se importe.
+_ETIQUETAS_SALDO = (
+    'saldos s/ balance',
+    'saldo s/ balance',
+    'saldos s/balance',
+    'saldo s/balance',
+    'saldos segun balance',
+    'saldo segun balance',
+    'saldos segun auditoria',
+    'saldo segun auditoria',
+    'saldos s/ auditoria',
+    'saldos s/auditoria',
+)
 
 _PATRON_FECHA_TEXTO = re.compile(r'(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})')
 # La fila de totales puede venir precedida por el símbolo de sumatoria
@@ -140,10 +161,18 @@ def _buscar_columna_cuenta(hoja):
 
 
 def _etiquetas_de_columna(hoja, fila_encabezado, columna):
-    """Rótulo de grupo (fila del encabezado) y de detalle (fila siguiente)."""
+    """
+    Rótulos de una columna: la banda superior, el encabezado y el detalle.
+
+    La banda superior es la fila anterior al encabezado. Las cédulas de
+    Revisoría ponen ahí 'SALDOS S/ BALANCE GENERAL' y 'SALDOS SEGÚN AUDITORÍA'
+    y dejan la fila del encabezado en blanco para las fechas.
+    """
+    banda = (hoja.cell(row=fila_encabezado - 1, column=columna).value
+             if fila_encabezado > 1 else None)
     grupo = hoja.cell(row=fila_encabezado, column=columna).value
     detalle = hoja.cell(row=fila_encabezado + 1, column=columna).value
-    return grupo, detalle
+    return banda, grupo, detalle
 
 
 def _localizar_fila_datos(hoja, desde, col_numero, col_cuenta):
@@ -152,12 +181,21 @@ def _localizar_fila_datos(hoja, desde, col_numero, col_cuenta):
     defecto, la primera fila con contenido bajo el encabezado.
     """
     for fila in range(desde, min(hoja.max_row, desde + 8) + 1):
+        valor_cuenta = hoja.cell(row=fila, column=col_cuenta).value
+
+        # La fila de totales cierra la cuadrícula: si se llega a ella es que la
+        # plantilla viene sin filas de muestra y los datos empiezan justo bajo
+        # el encabezado. Devolverla haría que la primera cuenta se escribiera
+        # sobre el 'Suma' (caso de D-SUM, H-SUM e I-SUM de Revisoría).
+        if isinstance(valor_cuenta, str) and _PATRON_TOTAL.match(valor_cuenta):
+            break
+
         if col_numero:
             valor = hoja.cell(row=fila, column=col_numero).value
             if isinstance(valor, int) or (
                     isinstance(valor, str) and valor.strip().isdigit()):
                 return fila
-        if hoja.cell(row=fila, column=col_cuenta).value not in (None, ''):
+        if valor_cuenta not in (None, ''):
             return fila
     return desde
 
@@ -186,7 +224,7 @@ def detectar_layout(hoja: Worksheet):
     usa_fila_detalle = False
 
     for columna in range(1, min(hoja.max_column, COLUMNAS_BUSQUEDA) + 1):
-        grupo, detalle = _etiquetas_de_columna(hoja, fila_encabezado, columna)
+        banda, grupo, detalle = _etiquetas_de_columna(hoja, fila_encabezado, columna)
         etiqueta_grupo = _norm(grupo)
         etiqueta_detalle = _norm(detalle)
 
@@ -200,6 +238,11 @@ def detectar_layout(hoja: Worksheet):
         if _es_fecha(detalle):
             cols_saldo.append(columna)
             usa_fila_detalle = True
+            continue
+        # …o la banda superior las agrupa bajo 'SALDOS S/ BALANCE GENERAL'
+        # y la fecha aún no está escrita (cédulas de Revisoría).
+        if not etiqueta_grupo and _coincide(_norm(banda), _ETIQUETAS_SALDO):
+            cols_saldo.append(columna)
             continue
 
         if _coincide(etiqueta_grupo, _ETIQUETAS_DEBE) or _coincide(etiqueta_detalle, _ETIQUETAS_DEBE):
