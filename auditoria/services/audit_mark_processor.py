@@ -15,6 +15,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+MIN_RATIO_COINCIDENCIA = 0.8
+
+
+def nombres_coinciden(normalizado_marca, normalizado_archivo,
+                      min_ratio=MIN_RATIO_COINCIDENCIA):
+    """
+    True si una marca con `normalizado_marca` se pega en `normalizado_archivo`.
+
+    Regla única del sistema: igualdad, o que uno contenga al otro cubriendo al
+    menos `min_ratio` del más largo. Vive aquí para que el aviso de la carga de
+    marcas use exactamente el mismo criterio con el que luego se pegan.
+    """
+    if not normalizado_marca or not normalizado_archivo:
+        return False
+
+    if normalizado_marca == normalizado_archivo:
+        return True
+
+    if normalizado_marca in normalizado_archivo:
+        return len(normalizado_marca) / len(normalizado_archivo) >= min_ratio
+
+    if normalizado_archivo in normalizado_marca:
+        return len(normalizado_archivo) / len(normalizado_marca) >= min_ratio
+
+    return False
+
+
 class AuditMarkProcessor:
     """Procesa documentos para inyectar marcas de auditoría coincidentes."""
 
@@ -75,7 +102,6 @@ class AuditMarkProcessor:
         )
 
         matched_marks = []
-        min_ratio = 0.8
 
         for mark in marks:
             if not mark.work_paper_number:
@@ -86,22 +112,7 @@ class AuditMarkProcessor:
                 continue
 
             normalized_wp = self.normalize_text(mark.work_paper_number)
-
-            # Emparejamiento con ratio mínimo de similitud
-            is_match = False
-
-            if normalized_wp == self.normalized_filename:
-                is_match = True
-            elif normalized_wp in self.normalized_filename:
-                ratio = len(normalized_wp) / len(self.normalized_filename)
-                if ratio >= min_ratio:
-                    is_match = True
-            elif self.normalized_filename in normalized_wp:
-                ratio = len(self.normalized_filename) / len(normalized_wp)
-                if ratio >= min_ratio:
-                    is_match = True
-
-            if is_match:
+            if nombres_coinciden(normalized_wp, self.normalized_filename):
                 matched_marks.append(mark)
 
         return matched_marks

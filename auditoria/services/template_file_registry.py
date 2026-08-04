@@ -164,6 +164,12 @@ class TemplateFileRegistry:
         internal_base = os.path.join(settings.BASE_DIR, 'static', 'templates_base_interna')
         self._scan_directory(internal_base, is_internal=True)
 
+        # Escanear templates de Revisoría Fiscal. Faltaban en el registro, así
+        # que al validar una marca de ese módulo no se encontraba la plantilla
+        # y el sistema no podía sugerir el nombre correcto.
+        revisoria_base = os.path.join(settings.BASE_DIR, 'static', 'templates_base_revisoria')
+        self._scan_directory(revisoria_base, is_internal=False)
+
         logger.info(f"Escaneo completado: {len(self.files)} archivos encontrados")
 
     def _scan_directory(self, base_path, is_internal=False):
