@@ -64,6 +64,7 @@ class AuditMarkImportService:
         self.marks_skipped_white = 0
         self.marks_skipped_yellow = 0
         self.marks_skipped_invalid = 0
+        self.marks_skipped_empty = 0
         self.marks_corrected = 0
         self.errors = []
         self.avisos = []
@@ -132,11 +133,23 @@ class AuditMarkImportService:
                     continue
 
                 if self._is_green_row(row_cells):
+                    # La plantilla MODELO trae filas verdes vacías al final
+                    # para que el auditor agregue sus marcas. No son marcas
+                    # inválidas: contarlas como tales daba «16 omitidas por
+                    # inválidas» y parecía que el catálogo estaba desfasado.
+                    if self._fila_vacia(row_cells):
+                        self.marks_skipped_empty += 1
+                        continue
+
                     mark_data = self._extract_mark_from_row(row_cells, row_idx)
                     if mark_data:
                         marks.append(mark_data)
                     else:
                         self.marks_skipped_invalid += 1
+                        self.errors.append(
+                            f"Fila {row_idx}: falta el símbolo o la descripción, "
+                            f"así que la marca no se pudo importar."
+                        )
                 else:
                     has_data = any(cell.value for cell in row_cells[:4])
                     if has_data:
@@ -148,6 +161,14 @@ class AuditMarkImportService:
 
         wb.close()
         return marks
+
+    @staticmethod
+    def _fila_vacia(row_cells):
+        """True si la fila no trae símbolo, descripción ni papel de trabajo."""
+        return not any(
+            celda.value is not None and str(celda.value).strip()
+            for celda in row_cells[:3]
+        )
 
     def _extract_mark_from_row(self, row_cells, row_idx):
         """Extrae datos de marca de una fila (3 columnas)."""
@@ -260,6 +281,7 @@ class AuditMarkImportService:
             'marks_skipped_white': self.marks_skipped_white,
             'marks_skipped_yellow': self.marks_skipped_yellow,
             'marks_skipped_invalid': self.marks_skipped_invalid,
+            'marks_skipped_empty': self.marks_skipped_empty,
             'marks_corrected': self.marks_corrected,
             'avisos': self.avisos,
             'errors': self.errors

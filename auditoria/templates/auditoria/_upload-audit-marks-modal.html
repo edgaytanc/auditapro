@@ -180,6 +180,7 @@ function submitAuditMarks(event) {
                 <p style="margin: 5px 0; color: #155724;">⚪ <strong>Omitidas (blancas):</strong> ${data.marks_skipped_white}</p>
                 <p style="margin: 5px 0; color: #155724;">🟡 <strong>Omitidas (ejemplos):</strong> ${data.marks_skipped_yellow}</p>
                 <p style="margin: 5px 0; color: #155724;">❌ <strong>Omitidas (inválidas):</strong> ${data.marks_skipped_invalid}</p>
+                ${data.marks_skipped_empty ? `<p style="margin: 5px 0; color: #155724;">➖ <strong>Filas vacías del catálogo:</strong> ${data.marks_skipped_empty}</p>` : ''}
                 ${data.marks_corrected ? `<p style="margin: 5px 0; color: #155724;">🔄 <strong>Nombres corregidos por el sistema:</strong> ${data.marks_corrected}</p>` : ''}
             `;
 

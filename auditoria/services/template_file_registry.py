@@ -12,6 +12,7 @@ from pathlib import Path
 from django.conf import settings
 from django.core.cache import cache
 from auditoria.config.exclusion_rules import is_excluded
+from auditoria.services.nombres_papeles import normalizar_nombre_papel
 
 logger = logging.getLogger(__name__)
 
@@ -39,27 +40,10 @@ class TemplateFile:
 
     def _normalize_name(self):
         """
-        Normaliza el nombre del archivo para matching.
-
-        Proceso:
-        1. Eliminar números iniciales (ej: "2 " de "2 SUMARIA...")
-        2. Eliminar extensiones de archivo
-        3. Convertir a mayúsculas y eliminar caracteres no alfanuméricos
+        Identificador comparable del archivo (única normalización del sistema,
+        la misma que usan el validador y el procesador de marcas).
         """
-        text = self.filename
-
-        # Paso 1: Eliminar números iniciales (incluyendo decimales) y espacios
-        # Ejemplos: "2 " → "", "4.1 " → "", "10 " → ""
-        text = re.sub(r'^\d+(\.\d+)?\s*', '', text)
-
-        # Paso 2: Eliminar extensiones
-        text = re.sub(r'\.(xlsx|docx|xls|doc|pdf)$', '', text, flags=re.IGNORECASE)
-
-        # Paso 3: Normalización estándar
-        text = text.upper()
-        text = re.sub(r'[^A-Z0-9]', '', text)
-
-        return text
+        return normalizar_nombre_papel(self.filename)
 
     def _get_display_name(self):
         """

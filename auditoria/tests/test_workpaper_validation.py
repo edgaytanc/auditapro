@@ -41,11 +41,20 @@ class ExclusionRulesTestCase(TestCase):
     """Test de reglas de exclusión"""
 
     def test_keyword_exclusion_programa(self):
-        """PROGRAMA debe ser excluido"""
-        result = is_excluded("PROGRAMA AUDITORIA")
+        """
+        PROGRAMA se excluye en Word, no en Excel.
+
+        En Word el bloque de marcas se inserta en el cuerpo y descoloca los
+        hipervínculos del programa; en Excel se agrega al final de la hoja y no
+        los toca. El cliente reportó que
+        '1_PROGRAMA_DE_AUDITORIA_ACTIVOS_FIJOS.xlsx' se quedaba sin marcas.
+        """
+        result = is_excluded("PROGRAMA AUDITORIA.docx")
         self.assertTrue(result['is_excluded'])
         self.assertEqual(result['rule_type'], 'keyword')
         self.assertIn('hipervínculos', result['reason'].lower())
+
+        self.assertFalse(is_excluded("PROGRAMA AUDITORIA.xlsx")['is_excluded'])
 
     def test_keyword_exclusion_plantilla(self):
         """plantilla debe ser excluido"""
@@ -76,9 +85,9 @@ class ExclusionRulesTestCase(TestCase):
 
     def test_case_insensitive_keyword(self):
         """Keywords deben ser case-insensitive"""
-        result1 = is_excluded("PROGRAMA")
-        result2 = is_excluded("programa")
-        result3 = is_excluded("Programa")
+        result1 = is_excluded("PROGRAMA.docx")
+        result2 = is_excluded("programa.docx")
+        result3 = is_excluded("Programa.docx")
 
         self.assertTrue(result1['is_excluded'])
         self.assertTrue(result2['is_excluded'])
@@ -189,12 +198,21 @@ class AuditMarkProcessorTestCase(TestCase):
         # Actualizado árbol 2026
         processor = AuditMarkProcessor(
             audit_id=self.audit.id,
-            filename="1_PROGRAMA_AUDITORIA_CAJA_BANCOS.xlsx"
+            filename="1_PROGRAMA_AUDITORIA_CAJA_BANCOS.docx"
         )
         should_process, reason = processor.should_process_file()
         self.assertFalse(should_process)
         self.assertIsNotNone(reason)
         self.assertIn('hipervínculo', reason.lower())
+
+    def test_should_process_file_programa_excel_si_recibe_marcas(self):
+        """El programa de auditoría EN EXCEL sí recibe sus marcas."""
+        processor = AuditMarkProcessor(
+            audit_id=self.audit.id,
+            filename="1_PROGRAMA_DE_AUDITORIA_ACTIVOS_FIJOS.xlsx"
+        )
+        should_process, _ = processor.should_process_file()
+        self.assertTrue(should_process)
 
     def test_should_process_file_temp_excluded(self):
         """Archivos temporales deben ser excluidos"""
@@ -213,7 +231,7 @@ class AuditMarkProcessorTestCase(TestCase):
             audit=self.audit,
             symbol="✓",
             description="Test mark",
-            work_paper_number="PROGRAMA"
+            work_paper_number="config"
         )
 
         processor = AuditMarkProcessor(
@@ -389,11 +407,11 @@ class TemplateFileTestCase(TestCase):
 
     def test_template_file_exclusion_detection(self):
         """TemplateFile debe detectar archivos excluidos"""
-        # Actualizado árbol 2026
+        # El programa EN WORD sigue excluido; el de Excel ya recibe marcas.
         template_file = TemplateFile(
-            filename="1_PROGRAMA_AUDITORIA_CAJA_BANCOS.xlsx",
+            filename="1_PROGRAMA_AUDITORIA_CAJA_BANCOS.docx",
             folder="4 PRUEBAS SUSTANTIVAS/1 CAJA Y BANCOS",
-            full_path="/test/programa.xlsx",
+            full_path="/test/programa.docx",
             is_internal=False
         )
 
@@ -460,7 +478,7 @@ class WorkPaperValidatorIntegrationTestCase(TestCase):
         """Test validación de work paper excluido"""
         validator = WorkPaperValidator(use_cache=False)
 
-        result = validator.validate_work_paper_name("PROGRAMA")
+        result = validator.validate_work_paper_name("config")
 
         self.assertTrue(result.is_excluded)
         self.assertIsNotNone(result.exclusion_reason)
@@ -488,7 +506,7 @@ class WorkPaperValidatorIntegrationTestCase(TestCase):
             audit=self.audit,
             symbol="◊",
             description="Excluded mark",
-            work_paper_number="PROGRAMA"
+            work_paper_number="config"
         )
         AuditMark.objects.create(
             audit=self.audit,

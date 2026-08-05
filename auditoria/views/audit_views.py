@@ -370,6 +370,31 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
         "fecha de revision": fecha_aprobacion,
     }
 
+    def _celda_escribible(sh, fila, columna, origen=None):
+        """
+        Celda donde SÍ se puede escribir en (fila, columna).
+
+        Si la celda pertenece a un rango combinado se devuelve su ancla, que es
+        la que Excel muestra; escribir en cualquier otra reventaba con
+        «'MergedCell' object attribute 'value' is read-only» y la descarga
+        devolvía error 500. Devuelve None si el ancla es la propia etiqueta
+        (`origen`) o no hay dónde escribir.
+        """
+        from openpyxl.cell.cell import MergedCell
+
+        celda = sh.cell(row=fila, column=columna)
+        if not isinstance(celda, MergedCell):
+            return celda
+
+        for rango in sh.merged_cells.ranges:
+            if (rango.min_row <= fila <= rango.max_row
+                    and rango.min_col <= columna <= rango.max_col):
+                ancla = sh.cell(row=rango.min_row, column=rango.min_col)
+                if origen is not None and ancla.coordinate == origen.coordinate:
+                    return None
+                return ancla
+        return None
+
     def _es_recuadro(sh, cell):
         """True si alrededor de la celda hay una etiqueta de fecha del recuadro."""
         for delta in (-3, -2, -1, 1, 2, 3):
@@ -396,9 +421,9 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
 
                 # Etiqueta de fecha con nombre propio ('Fecha Elaboración')
                 if clave in fechas_sueltas:
-                    destino = sh.cell(row=cell.row, column=cell.column + 1)
+                    destino = _celda_escribible(sh, cell.row, cell.column + 1, cell)
                     valor = fechas_sueltas[clave]
-                    if valor and destino.value in (None, ""):
+                    if valor and destino is not None and destino.value in (None, ""):
                         destino.value = valor
                         escrito = True
                     continue
@@ -412,15 +437,16 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
                 else:
                     continue
 
-                destino = sh.cell(row=cell.row, column=cell.column + 1)
-                if destino.value in (None, ""):
+                destino = _celda_escribible(sh, cell.row, cell.column + 1, cell)
+                if destino is not None and destino.value in (None, ""):
                     destino.value = nombre
                     escrito = True
                 # "Fecha" en la fila siguiente del mismo bloque
                 abajo = sh.cell(row=cell.row + 1, column=cell.column)
                 if isinstance(abajo.value, str) and _norm(abajo.value) == "fecha":
-                    destino_fecha = sh.cell(row=cell.row + 1, column=cell.column + 1)
-                    if fecha and destino_fecha.value in (None, ""):
+                    destino_fecha = _celda_escribible(
+                        sh, cell.row + 1, cell.column + 1, abajo)
+                    if fecha and destino_fecha is not None and destino_fecha.value in (None, ""):
                         destino_fecha.value = fecha
 
         if not escrito:
@@ -447,23 +473,56 @@ def _crear_bloque_auditor_jefe(hoja, auditor_nombre, supervisor_nombre,
     """
     from openpyxl.styles import Font
 
-    columna = min((hoja.max_column or 1) + 2, 24)
     filas = [
         ("Elaboro:", auditor_nombre),
         ("Fecha:", fecha_elaboracion),
         ("Reviso:", supervisor_nombre),
         ("Fecha:", fecha_aprobacion),
     ]
+    columna = _columna_libre_para_bloque(hoja, primera_fila=2,
+                                         alto=len(filas), ancho=2)
+    if not columna:
+        return
+
     for desplazamiento, (etiqueta, valor) in enumerate(filas):
         fila = 2 + desplazamiento
         celda_etiqueta = hoja.cell(row=fila, column=columna)
         celda_valor = hoja.cell(row=fila, column=columna + 1)
-        if celda_etiqueta.value in (None, "") and celda_valor.value in (None, ""):
-            celda_etiqueta.value = etiqueta
-            celda_etiqueta.font = Font(bold=True)
-            celda_valor.value = valor or ""
+        celda_etiqueta.value = etiqueta
+        celda_etiqueta.font = Font(bold=True)
+        celda_valor.value = valor or ""
     hoja.column_dimensions[hoja.cell(row=2, column=columna).column_letter].width = 14
     hoja.column_dimensions[hoja.cell(row=2, column=columna + 1).column_letter].width = 26
+
+
+def _columna_libre_para_bloque(hoja, primera_fila, alto, ancho):
+    """
+    Primera columna a la derecha del contenido donde caben `alto` x `ancho`
+    celdas libres, o None si no la hay.
+
+    Antes se usaba `min(max_column + 2, 24)` a ciegas: ese tope caía dentro de
+    un rango combinado en varias plantillas y la descarga reventaba con
+    «'MergedCell' object attribute 'value' is read-only», así que el botón
+    «Datos Auditor y Jefe» devolvía error 500 y no bajaba nada.
+    """
+    from openpyxl.cell.cell import MergedCell
+
+    inicio = (hoja.max_column or 1) + 2
+    for columna in range(inicio, inicio + 12):
+        if columna + ancho - 1 > 16384:          # límite de columnas de Excel
+            return None
+        libre = True
+        for fila in range(primera_fila, primera_fila + alto):
+            for desplazamiento in range(ancho):
+                celda = hoja.cell(row=fila, column=columna + desplazamiento)
+                if isinstance(celda, MergedCell) or celda.value not in (None, ""):
+                    libre = False
+                    break
+            if not libre:
+                break
+        if libre:
+            return columna
+    return None
 
 
 def _apply_word_replacements(file_path, replacements):

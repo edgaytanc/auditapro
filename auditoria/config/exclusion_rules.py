@@ -6,9 +6,13 @@ Define qué archivos/nombres NO deben recibir marcas de auditoría.
 
 EXCLUSION_KEYWORDS = {
     "PROGRAMA": {
+        # En Word el bloque de marcas se inserta en el cuerpo y descoloca los
+        # hipervínculos del programa. En Excel se agrega al final de la hoja,
+        # debajo del contenido, así que no los toca: el cliente reportó que
+        # '1_PROGRAMA_DE_AUDITORIA_ACTIVOS_FIJOS.xlsx' no recibía sus marcas.
         "reason": "Contiene hipervínculos críticos a otros documentos.",
         "severity": "strict",
-        "applies_to": ["docx", "xlsx"],
+        "applies_to": ["docx"],
     },
     "plantilla": {
         "reason": "Archivo de plantilla del sistema.",
@@ -68,14 +72,41 @@ EXCLUSION_EXTENSIONS = {
 EXCLUSION_EXACT_MATCHES = {}
 
 
+def _extension_de(text):
+    """'1 PROGRAMA.xlsx' → 'xlsx'; None si el texto no trae extensión."""
+    if not text or '.' not in text:
+        return None
+    extension = text.rsplit('.', 1)[-1].lower()
+    return extension if extension.isalpha() and len(extension) <= 5 else None
+
+
 def check_keyword_exclusion(text):
-    """Verifica si el texto contiene alguna palabra clave de exclusión."""
+    """
+    Verifica si el texto contiene alguna palabra clave de exclusión.
+
+    Se respeta el `applies_to` de cada regla, que hasta ahora se declaraba pero
+    no se usaba: 'PROGRAMA' excluía también los .xlsx, y por eso los programas
+    de auditoría en Excel se quedaban sin marcas. Cuando el texto no trae
+    extensión (el nombre del papel de trabajo de una marca) solo se aplican las
+    reglas generales: del tipo de archivo ya se encarga la comprobación que se
+    hace sobre el nombre real del documento.
+    """
     if not text:
         return (False, None, None)
 
     text_upper = text.upper()
+    extension = _extension_de(text)
+
     for keyword, config in EXCLUSION_KEYWORDS.items():
-        if keyword.upper() in text_upper:
+        if keyword.upper() not in text_upper:
+            continue
+
+        aplica_a = config.get('applies_to') or ['all']
+        if 'all' in aplica_a:
+            return (True, config['reason'], config['severity'])
+        if extension is None or extension in aplica_a:
+            if extension is None:
+                continue
             return (True, config['reason'], config['severity'])
 
     return (False, None, None)

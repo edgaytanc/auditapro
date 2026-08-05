@@ -315,45 +315,151 @@ _SIGLAS_NO_REF = {'NIA', 'ISA', 'ISO', 'NIC', 'NIIF', 'IFRS', 'IAS', 'NAGA'}
 # (deliberadamente NO coincide con encabezados de columna como 'REF. PT')
 _PATRON_SOLO_ETIQUETA_REF = re.compile(r'^ref\.?$', re.IGNORECASE)
 
+# Etiquetas que rotulan el recuadro de la referencia PROPIA del papel. Se exige
+# que la celda sea solo la etiqueta: un texto que meramente empiece por 'ref'
+# ('Referencia cruzada', 'REF' como encabezado de columna) no es el recuadro, y
+# escribir a su derecha pisaría el encabezado de al lado.
+# OJO: 'Ref P/T' y 'Ref. PT' NO van aquí. Ésos rotulan la COLUMNA de
+# referencias de cada cuenta dentro de las centralizadoras y las sumarias, y
+# escribir a su lado mete la referencia del papel ('4.17') donde va la de la
+# cuenta ('G-1').
+_ETIQUETAS_RECUADRO_REF = {'ref', 'ref.', 'referencia', 'referencia:'}
+
 
 def inyectar_ref_propia(workbook, ref):
     """
     Escribe la referencia propia del papel en el recuadro 'Ref.' del encabezado
     (filas 1-12, columnas 1-15) de cada hoja.
 
-    Las plantillas oficiales resuelven ese recuadro de dos maneras:
-      · 'Ref.' en una celda y el hueco en la de al lado, o
-      · 'Ref.      XXXXXX' todo en la misma celda.
-    Se cubren las dos. Nunca se pisa un valor que el auditor ya haya escrito.
+    Las plantillas oficiales resuelven ese recuadro de tres maneras:
+      · 'Ref.' en una celda y el hueco en la de al lado,
+      · 'Ref.      XXXXXX' todo en la misma celda, o
+      · no lo traen: entonces se crea, como ya se hace con el recuadro del
+        auditor.
+
+    El valor que trae la plantilla es de muestra —el papel se genera de nuevo
+    desde la plantilla en cada descarga—, así que SE SUSTITUYE. Antes solo se
+    escribía si la celda estaba vacía y por eso la referencia «no cambiaba»
+    dentro del archivo (2 CENTRALIZADORA BALANCE.xlsx y compañía).
     """
     if not ref:
         return workbook
 
+    alguna_hoja_con_recuadro = False
     for sheet in workbook.worksheets:
-        max_row = min(sheet.max_row or 1, 12)
-        max_col = min(sheet.max_column or 1, 15)
-        procesada = False
-        for row in sheet.iter_rows(min_row=1, max_row=max_row, min_col=1, max_col=max_col):
-            for cell in row:
-                if not isinstance(cell.value, str):
-                    continue
-                if not _normalizar_texto(cell.value).startswith('ref'):
-                    continue
+        if _escribir_ref_en_hoja(sheet, ref):
+            alguna_hoja_con_recuadro = True
 
-                # Caso 'Ref.      XXXXXX': se rellena el hueco en la misma celda
-                if _PATRON_HUECO_REF.search(cell.value):
-                    cell.value = _PATRON_HUECO_REF.sub(ref, cell.value, count=1)
-                    procesada = True
-                    break
+    # Ninguna hoja trae el recuadro: se crea en la primera con contenido.
+    if not alguna_hoja_con_recuadro:
+        for sheet in workbook.worksheets:
+            if _crear_recuadro_ref(sheet, ref):
+                break
 
-                destino = _celda_destino_derecha(sheet, cell)
-                if destino is not None and destino.value in (None, ''):
-                    destino.value = ref
-                procesada = True
-                break
-            if procesada:
-                break
     return workbook
+
+
+def _escribir_ref_en_hoja(sheet, ref):
+    """Rellena el recuadro 'Ref.' de *sheet*. True si la hoja lo tenía."""
+    # El recuadro vive en el encabezado, pero en las plantillas anchas queda
+    # bastante a la derecha (columna 13-14 en Revisoría), así que no basta con
+    # mirar las 15 primeras columnas.
+    max_row = min(sheet.max_row or 1, 12)
+    max_col = min(sheet.max_column or 1, 30)
+
+    for row in sheet.iter_rows(min_row=1, max_row=max_row, min_col=1, max_col=max_col):
+        for cell in row:
+            if not isinstance(cell.value, str):
+                continue
+
+            # Caso 'Ref.      XXXXXX': se rellena el hueco en la misma celda
+            if (_normalizar_texto(cell.value).startswith('ref')
+                    and _PATRON_HUECO_REF.search(cell.value)):
+                cell.value = _PATRON_HUECO_REF.sub(ref, cell.value, count=1)
+                return True
+
+            if _normalizar_texto(cell.value) not in _ETIQUETAS_RECUADRO_REF:
+                continue
+
+            for destino in (_celda_destino_derecha(sheet, cell),
+                            _celda_destino_abajo(sheet, cell)):
+                if destino is not None and _es_celda_de_referencia(destino):
+                    destino.value = ref
+                    return True
+    return False
+
+
+def _es_celda_de_referencia(celda):
+    """
+    True si *celda* es el hueco de la referencia y no otro dato de la plantilla.
+
+    Se acepta si está vacía, si trae el hueco 'XXXX' o si trae un código de
+    referencia de muestra ('A-1', 'PL-1.1', '2.4'): ese valor lo pone la
+    plantilla y por eso la referencia «no cambiaba» al descargar. Cualquier
+    otro texto —el encabezado de la columna de al lado, por ejemplo— se
+    respeta.
+    """
+    valor = celda.value
+    if valor in (None, ''):
+        return True
+    if not isinstance(valor, str):
+        return False
+
+    texto = valor.strip()
+    if _PATRON_HUECO_REF.fullmatch(texto):
+        return True
+    if not _PATRON_TOKEN_REF.match(texto):
+        return False
+    # 'NIA-530' se parece a una referencia pero es normativa
+    return texto.split('-')[0].upper() not in _SIGLAS_NO_REF
+
+
+def _celda_destino_abajo(sheet, cell):
+    """Celda editable justo debajo de *cell*, o None."""
+    from openpyxl.cell.cell import MergedCell
+
+    fila = cell.row + 1
+    for rango in sheet.merged_cells.ranges:
+        if rango.min_row <= cell.row <= rango.max_row and rango.min_col <= cell.column <= rango.max_col:
+            fila = rango.max_row + 1
+            break
+    destino = sheet.cell(row=fila, column=cell.column)
+    return None if isinstance(destino, MergedCell) else destino
+
+
+def _crear_recuadro_ref(sheet, ref):
+    """
+    Crea el recuadro 'Ref.' en una hoja que no lo trae, a la derecha del
+    encabezado. Devuelve True si se pudo escribir.
+
+    Varias plantillas (las de Detección de Fraudes y varias cédulas de
+    Revisoría) no tienen el recuadro, y sin esto la referencia del papel no
+    aparecía por ningún lado dentro del archivo descargado.
+    """
+    from openpyxl.cell.cell import MergedCell
+    from openpyxl.styles import Alignment, Font
+
+    if (sheet.max_row or 0) <= 1 and (sheet.max_column or 0) <= 1:
+        if sheet.cell(row=1, column=1).value in (None, ''):
+            return False
+
+    inicio = (sheet.max_column or 1) + 2
+    for columna in range(inicio, inicio + 12):
+        etiqueta = sheet.cell(row=1, column=columna)
+        valor = sheet.cell(row=1, column=columna + 1)
+        if isinstance(etiqueta, MergedCell) or isinstance(valor, MergedCell):
+            continue
+        if etiqueta.value not in (None, '') or valor.value not in (None, ''):
+            continue
+
+        etiqueta.value = 'Ref.'
+        etiqueta.font = Font(bold=True)
+        etiqueta.alignment = Alignment(horizontal='right')
+        valor.value = ref
+        sheet.column_dimensions[etiqueta.column_letter].width = 8
+        sheet.column_dimensions[valor.column_letter].width = 14
+        return True
+    return False
 
 
 # ---------------------------------------------------------------------------

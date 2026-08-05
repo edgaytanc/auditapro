@@ -80,6 +80,68 @@ def _libro_tiene_hoja_sumaria(workbook):
     return False
 
 
+# Encabezados que la plantilla rotula en una celda y deja el valor en la de al
+# lado ('Entidad Auditada:' | <vacía>). El reemplazo por texto no los alcanza
+# porque en esas plantillas no hay ningún hueco que sustituir: la celda del
+# valor viene vacía. Es el caso de los papeles de Detección de Fraudes.
+_ETIQUETAS_ENCABEZADO = {
+    'entidad auditada': '[IDENTIDAD]',
+    'entidad': '[IDENTIDAD]',
+    'empresa': '[IDENTIDAD]',
+    'entidad o empresa': '[IDENTIDAD]',
+    'cliente': '[IDENTIDAD]',
+    'razon social': '[IDENTIDAD]',
+    'periodo auditado': '[FECHA_RANGO]',
+    'periodo': '[FECHA_RANGO]',
+    'ejercicio auditado': '[FECHA_RANGO]',
+}
+
+# Hueco propio de la plantilla: '[NOMBRE DEL CLIENTE]', '[EMPRESA]'... Es un
+# marcador, no un dato del auditor, así que sí se sustituye.
+_HUECO_PLANTILLA = re.compile(r'^\s*\[[^\]]+\]\s*$')
+
+
+def _etiqueta_normalizada(valor):
+    """'Entidad Auditada:' → 'entidad auditada'."""
+    texto = unicodedata.normalize('NFD', str(valor))
+    texto = ''.join(c for c in texto if unicodedata.category(c) != 'Mn')
+    return ' '.join(texto.replace(':', ' ').lower().split())
+
+
+def _rellenar_etiquetas_de_encabezado(sheet, replacements):
+    """
+    Escribe entidad y período en la celda contigua a su etiqueta cuando la
+    plantilla la deja vacía. Nunca pisa un valor que ya venga escrito.
+    """
+    from openpyxl.cell.cell import MergedCell
+
+    max_row = min(sheet.max_row or 1, 15)
+    max_col = min(sheet.max_column or 1, 12)
+
+    for fila in range(1, max_row + 1):
+        for columna in range(1, max_col + 1):
+            celda = sheet.cell(row=fila, column=columna)
+            if not isinstance(celda.value, str) or ':' not in celda.value:
+                continue
+
+            clave = _ETIQUETAS_ENCABEZADO.get(_etiqueta_normalizada(celda.value))
+            if not clave:
+                continue
+
+            texto = replacements.get(clave)
+            if not texto:
+                continue
+
+            destino = sheet.cell(row=fila, column=columna + 1)
+            if isinstance(destino, MergedCell):
+                continue
+            vacia = destino.value in (None, '')
+            hueco = isinstance(destino.value, str) and _HUECO_PLANTILLA.match(destino.value)
+            if not (vacia or hueco):
+                continue
+            destino.value = texto
+
+
 def process_excel_sheets(workbook, tables_config, replacements, data_bd,
                          file_path=None, audit_id=None):
     """
@@ -135,6 +197,9 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd,
                     nuevo_valor = replace_text(valor_original, replacements, reglas_regex)
                     if nuevo_valor != valor_original:
                         cell.value = nuevo_valor
+
+        # Encabezados rotulados ('Entidad Auditada:' + celda vacía al lado)
+        _rellenar_etiquetas_de_encabezado(sheet, replacements)
 
     if file_path:
         file_name = os.path.basename(file_path)
