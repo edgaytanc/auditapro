@@ -38,11 +38,10 @@
             📅 Años de la auditoría
         </button>
 
-        {% if audit.tipoAuditoria != 'R' %}
+        {# El muestreo va en los TRES módulos: Financiera, Interna y Revisoría #}
         <button onclick="window.location.href='{% url 'muestreo_page' audit_id=audit.id %}'" class="download-button">
             🎯 Muestreo NIA 530
         </button>
-        {% endif %}
 
         <button onclick="openAuditMarksModal()" class="download-button" style="background-color: #6c757d;">
             <svg xmlns="http://www.w3.org/2000/svg" class="icon-img" fill="currentColor" viewBox="0 0 16 16">
