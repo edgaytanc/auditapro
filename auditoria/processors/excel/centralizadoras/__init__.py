@@ -12,7 +12,8 @@ from .tipos import (
 )
 
 
-def process_centralizadora_file(workbook, balances, ajustes_reclasificaciones, file_name):
+def process_centralizadora_file(workbook, balances, ajustes_reclasificaciones,
+                                file_name, audit_id=None):
     """
     Procesa archivos CENTRALIZADORA según su tipo
 
@@ -20,6 +21,8 @@ def process_centralizadora_file(workbook, balances, ajustes_reclasificaciones, f
         workbook: El libro de Excel a procesar
         balances: Diccionario con los balances financieros
         file_name: Nombre del archivo a procesar
+        audit_id: id de la auditoría; permite rotular las columnas con las
+            fechas de corte REALES del Excel importado (si están guardadas)
 
     Returns:
         El libro de Excel procesado
@@ -28,6 +31,25 @@ def process_centralizadora_file(workbook, balances, ajustes_reclasificaciones, f
     fechas_semestrales = obtener_todas_fechas_semestrales(balances)
     if not fechas_semestrales:
         return workbook
+
+    # Cortes reales del último Excel Financiero importado (o None si la
+    # auditoría se cargó con el formato clásico).
+    try:
+        from auditoria.services.cortes_excel import cortes_de_auditoria
+        cortes = cortes_de_auditoria(audit_id)
+    except Exception:
+        cortes = None
+
+    # Guarda: si los cortes guardados no corresponden a los balances actuales
+    # (p. ej. luego se reimportó un archivo del formato clásico), se ignoran.
+    if cortes:
+        fechas_guardadas = {
+            f.isoformat()
+            for f in list(cortes.get('cortes') or []) + [cortes.get('actual')]
+            if f
+        }
+        if not fechas_guardadas & set(fechas_semestrales):
+            cortes = None
 
     # Mapeo de tipos de archivo a secciones y funciones de procesamiento
     tipos_archivo = {
@@ -89,6 +111,7 @@ def process_centralizadora_file(workbook, balances, ajustes_reclasificaciones, f
         cuentas_por_fecha,
         fechas_semestrales,
         ajustes_reclasificaciones,
+        cortes=cortes,
     )
 
     return workbook

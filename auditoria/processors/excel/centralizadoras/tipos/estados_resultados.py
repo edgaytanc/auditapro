@@ -1,19 +1,13 @@
-from ..fechas import preparar_fechas_excel, insertar_fechas_en_celdas
+from ..fechas import resolver_fechas_columnas, insertar_fechas_en_celdas
 from ..inserter import procesar_seccion_centralizadora
 from ..utils import buscar_fila_por_valor
 
-def insertar_datos_estado_resultados(workbook, cuentas_por_fecha, fechas_semestrales, ajustes_reclasificaciones):
+def insertar_datos_estado_resultados(workbook, cuentas_por_fecha, fechas_semestrales,
+                                     ajustes_reclasificaciones, cortes=None):
     sheet = workbook.active
 
-    fechas_año_viejo, fecha_mas_reciente, _, _, fechas_excel = preparar_fechas_excel(fechas_semestrales)
+    fechas_columnas, fechas_excel = resolver_fechas_columnas(fechas_semestrales, cortes)
     insertar_fechas_en_celdas(sheet, fechas_excel)
-
-    fechas_columnas = {
-        'D': fechas_año_viejo[0],
-        'E': fechas_año_viejo[1],
-        'F': fechas_año_viejo[2],
-        'I': fecha_mas_reciente
-    }
 
     procesar_seccion_centralizadora(
         sheet=sheet,

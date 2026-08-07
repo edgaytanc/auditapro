@@ -8,7 +8,7 @@ import html
 import urllib.parse
 import unicodedata
 from django.conf import settings
-from auditoria.services.referencias import obtener_ref, vinculos_de
+from auditoria.services.referencias import obtener_ref, ref_manual, vinculos_de
 
 def normalize_text(text):
     """
@@ -119,23 +119,37 @@ def crear_mensaje_error(titulo, mensaje):
     </html>
     """
 
-def _generar_pill_referencia(tipo_auditoria, current_path, nombre):
+def _generar_pill_referencia(tipo_auditoria, current_path, nombre, audit_id=None):
     """
-    Genera la pastilla 'Ref. X' del papel de trabajo (informativa: el tooltip
-    muestra los papeles vinculados automáticamente). Cadena vacía si el
-    archivo no tiene referencia conocida.
+    Genera la pastilla 'Ref. X' del papel de trabajo. Es editable: al pulsarla
+    el auditor puede fijar su propia referencia, que el sistema respeta y pega
+    en la plantilla al descargarla. El tooltip muestra los papeles vinculados.
+    Cadena vacía si el archivo no tiene referencia conocida.
     """
     if not tipo_auditoria:
         return ''
-    ref = obtener_ref(tipo_auditoria, current_path.replace('\\', '/'), nombre)
+    carpeta = current_path.replace('\\', '/')
+    ref = obtener_ref(tipo_auditoria, carpeta, nombre, audit_id=audit_id)
     if not ref:
         return ''
+
+    manual = bool(ref_manual(audit_id, carpeta, nombre))
     vinculos = vinculos_de(ref, tipo_auditoria)
-    if vinculos:
-        title = "Vinculado automáticamente con: " + ", ".join(vinculos)
+    if manual:
+        title = "Referencia fijada por el auditor. Clic para editarla."
+    elif vinculos:
+        title = ("Vinculado automáticamente con: " + ", ".join(vinculos)
+                 + ". Clic para fijar una referencia propia.")
     else:
-        title = "Sin vínculos automáticos registrados para este papel."
-    return f'<span class="ref-pill" title="{html.escape(title)}">Ref. {html.escape(ref)}</span>'
+        title = "Referencia automática. Clic para fijar una referencia propia."
+
+    clase = 'ref-pill ref-pill-manual' if manual else 'ref-pill'
+    return (
+        f'<span class="{clase}" title="{html.escape(title)}" role="button" tabindex="0" '
+        f'data-carpeta="{html.escape(carpeta)}" data-archivo="{html.escape(nombre)}" '
+        f'data-ref="{html.escape(ref)}" data-manual="{"1" if manual else "0"}" '
+        f'onclick="editarReferencia(this)">Ref. {html.escape(ref)}</span>'
+    )
 
 def generar_html_estructura(estructura, audit_id, current_path='', user_verified=False, tipo_auditoria=None):
     """
@@ -180,7 +194,7 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
             download_url = f"/auditoria/download/{audit_id}/{folder_encoded}/{filename_encoded}"
 
             # Pastilla de referencia automática del papel de trabajo
-            ref_pill = _generar_pill_referencia(tipo_auditoria, current_path, nombre)
+            ref_pill = _generar_pill_referencia(tipo_auditoria, current_path, nombre, audit_id)
 
             # aunque el usuario no esté verificado
             is_investment_folder = (current_path and 

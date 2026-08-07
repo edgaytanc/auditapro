@@ -271,3 +271,55 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* --------------------------------------------------------------------------
+   Importación del Excel de datos (mayor auxiliar)
+   -------------------------------------------------------------------------- */
+
+.import-datos {
+    margin-top: 22px;
+    padding: 16px 18px;
+    border: 1px dashed #c3d3e0;
+    border-radius: 8px;
+    background-color: #f7fafc;
+}
+
+.import-datos h3 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    color: #17405c;
+}
+
+.import-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.import-row input[type="file"] {
+    flex: 1 1 260px;
+    min-width: 220px;
+    padding: 6px 8px;
+    border: 1px solid #ccd5dd;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.import-estado {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #5a6672;
+    min-height: 18px;
+}
+
+.import-estado.ok {
+    color: #1c8a4b;
+    font-weight: 600;
+}
+
+.import-estado.error {
+    color: #c0392b;
+    font-weight: 600;
+}

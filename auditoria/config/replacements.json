@@ -121,11 +121,13 @@
   },
   "patrones_regex": [
     {
-      "pattern": "Entidad\\s+X{3,}",
+      "_comentario": "Encabezado 'Entidad <hueco>' de las plantillas 2026. El hueco se escribe con distintas letras repetidas segun la plantilla ('Entidad XXXXXXXX', 'Entidad SSSSSSSS'), por eso se detecta cualquier letra repetida 3 o mas veces y no solo la X.",
+      "pattern": "Entidad\\s+([A-Za-z])\\1{2,}",
       "reemplazar_por": "[ENTIDAD_ETIQUETA]"
     },
     {
-      "pattern": "Del \\d{1,2} de [A-Za-z\u00c1\u00c9\u00cd\u00d3\u00da\u00e1\u00e9\u00ed\u00f3\u00fa]+ al \\d{1,2} de [A-Za-z\u00c1\u00c9\u00cd\u00d3\u00da\u00e1\u00e9\u00ed\u00f3\u00fa]+ de \\d{4}",
+      "_comentario": "Periodo del encabezado. Tolera que falte el 'al' y que el primer mes traiga o no su anio, porque las plantillas oficiales mezclan las tres formas (p. ej. 'Del 01 de Enero 31 de Diciembre de 2025').",
+      "pattern": "Del\\s+\\d{1,2}\\s+de\\s+[A-Za-z\u00c1\u00c9\u00cd\u00d3\u00da\u00e1\u00e9\u00ed\u00f3\u00fa]+(?:\\s+de\\s+\\d{4})?\\s+(?:al\\s+)?\\d{1,2}\\s+de\\s+[A-Za-z\u00c1\u00c9\u00cd\u00d3\u00da\u00e1\u00e9\u00ed\u00f3\u00fa]+\\s+de\\s+\\d{4}",
       "reemplazar_por": "[FECHA_RANGO]"
     },
     {

@@ -2,8 +2,16 @@
    Lee el contexto dinámico desde window.MUESTREO_CTX (mismo patrón que
    window.AUDIT_CTX en auditoria_detalle.js). */
 
-const { audit_id: muestreoAuditId, calcular_url: muestreoCalcularUrl, descargar_url: muestreoDescargarUrl } =
-    window.MUESTREO_CTX || { audit_id: null, calcular_url: null, descargar_url: null };
+const {
+    audit_id: muestreoAuditId,
+    calcular_url: muestreoCalcularUrl,
+    descargar_url: muestreoDescargarUrl,
+    importar_url: muestreoImportarUrl,
+    formato_url: muestreoFormatoUrl
+} = window.MUESTREO_CTX || {
+    audit_id: null, calcular_url: null, descargar_url: null,
+    importar_url: null, formato_url: null
+};
 
 let metodoActivo = 'aleatorio_simple';
 let ultimoCalculo = null; // { metodo, parametros } del último cálculo exitoso
@@ -67,18 +75,30 @@ function ocultarResultados() {
 // Recolección de parámetros por método
 // ---------------------------------------------------------------------------
 
-function recolectarPartidas() {
-    const filas = document.querySelectorAll('#tablaPartidas tbody tr');
+// Por Criterio: el detalle transaccional puede venir pegado en el textarea
+// (N.º Documento [tab] Descripción [tab] Fecha [tab] Monto). Se tolera el
+// separador tabulador y también el punto y coma.
+function recolectarPartidasPegadas() {
+    const texto = (document.getElementById('c_pegado') || {}).value || '';
     const partidas = [];
-    filas.forEach(fila => {
-        const descripcion = fila.querySelector('.p-descripcion').value.trim();
-        const monto = fila.querySelector('.p-monto').value;
-        const criterio = fila.querySelector('.p-criterio').value.trim();
-        if (descripcion || monto || criterio) {
-            partidas.push({ descripcion: descripcion, monto: Number(monto || 0), criterio: criterio });
-        }
+    texto.split('\n').forEach(linea => {
+        if (!linea.trim()) { return; }
+        const celdas = linea.split(linea.indexOf('\t') >= 0 ? '\t' : ';');
+        if (celdas.length < 4) { return; }
+        const monto = parseFloat(String(celdas[3]).replace(/[^\d.,-]/g, '').replace(/,/g, ''));
+        if (isNaN(monto)) { return; }
+        partidas.push({
+            documento: (celdas[0] || '').trim(),
+            descripcion: (celdas[1] || '').trim(),
+            fecha: (celdas[2] || '').trim(),
+            monto: monto
+        });
     });
     return partidas;
+}
+
+function totalPegado() {
+    return recolectarPartidasPegadas().reduce((suma, p) => suma + p.monto, 0);
 }
 
 function recolectarParametros() {
@@ -122,8 +142,22 @@ function recolectarParametros() {
             semilla: valorSemilla('a_semilla')
         };
     }
-    // criterio
-    return { partidas: recolectarPartidas() };
+    // criterio: criterios de monto sobre el detalle transaccional
+    const parametros = {
+        porcentaje_examinar: valorNumero('c_pct'),
+        monto_mayor: valorNumero('c_mayor'),
+        monto_menor: valorNumero('c_menor')
+    };
+    const total = document.getElementById('c_total');
+    if (total && total.value !== '') {
+        parametros.valor_total = Number(total.value);
+    }
+    // En modo manual (sin Excel) las partidas van dentro de los parámetros
+    const pegadas = recolectarPartidasPegadas();
+    if (pegadas.length) {
+        parametros.partidas = pegadas;
+    }
+    return parametros;
 }
 
 // ---------------------------------------------------------------------------
@@ -186,23 +220,46 @@ function renderResultado(data) {
         ? 'Semilla de selección utilizada: ' + data.semilla + ' (consérvela para reproducir la muestra — evidencia NIA 530).'
         : 'Selección dirigida: no se utiliza semilla aleatoria.';
 
-    // Tabla de selección (se muestran las primeras filas; la descarga trae todas)
+    // Tabla de selección (se muestran las primeras filas; la descarga trae todas).
+    // Si la muestra se generó desde el Excel de datos, se listan las partidas reales.
     const tabla = document.getElementById('tablaSeleccion');
-    let filasHtml = '<tr><th>Nº</th><th>Elemento seleccionado</th></tr>';
-    data.seleccion.slice(0, LIMITE_FILAS_SELECCION).forEach(item => {
+    const detalle = data.detalle_partidas;
+    const filas = detalle || data.seleccion;
+
+    // Cuando la selección explica por qué entró cada partida (100 %,
+    // sistemática, complementaria) se muestra esa columna.
+    const conCriterio = detalle && filas.some(item => item.marca);
+
+    let filasHtml;
+    if (detalle) {
+        filasHtml = '<tr><th>Nº</th><th>N.º Documento</th><th>Descripción</th>' +
+            '<th>Fecha</th><th>Monto</th>' +
+            (conCriterio ? '<th>Criterio de selección</th>' : '') + '</tr>';
+    } else {
+        filasHtml = '<tr><th>Nº</th><th>Elemento seleccionado</th></tr>';
+    }
+
+    filas.slice(0, LIMITE_FILAS_SELECCION).forEach(item => {
         const fila = document.createElement('tr');
-        const celdaNumero = document.createElement('td');
-        celdaNumero.textContent = item.numero;
-        const celdaElemento = document.createElement('td');
-        celdaElemento.textContent = item.elemento;
-        fila.appendChild(celdaNumero);
-        fila.appendChild(celdaElemento);
+        let celdas;
+        if (detalle) {
+            celdas = [item.no, item.documento, item.descripcion, item.fecha, item.monto];
+            if (conCriterio) { celdas.push(item.marca || ''); }
+        } else {
+            celdas = [item.numero, item.elemento];
+        }
+        celdas.forEach(valor => {
+            const celda = document.createElement('td');
+            celda.textContent = valor;
+            fila.appendChild(celda);
+        });
         filasHtml += fila.outerHTML;
     });
     tabla.innerHTML = filasHtml;
+
     const nota = document.getElementById('notaSeleccion');
-    if (data.seleccion.length > LIMITE_FILAS_SELECCION) {
-        nota.textContent = '… y ' + (data.seleccion.length - LIMITE_FILAS_SELECCION) +
+    if (filas.length > LIMITE_FILAS_SELECCION) {
+        nota.textContent = '… y ' + (filas.length - LIMITE_FILAS_SELECCION) +
             ' elementos más (incluidos completos en la descarga).';
     } else {
         nota.textContent = '';
@@ -216,6 +273,15 @@ function renderResultado(data) {
 // Descargas
 // ---------------------------------------------------------------------------
 
+// El detalle transaccional puede tener miles de partidas: nunca viaja en la
+// URL de descarga. El servidor ya guardó la muestra calculada en la sesión y la
+// reconoce con el resto de los parámetros.
+function parametrosParaUrl(parametros) {
+    const copia = Object.assign({}, parametros || {});
+    delete copia.partidas;
+    return copia;
+}
+
 function descargarMuestreo(formato) {
     if (!ultimoCalculo) {
         mostrarError('Primero calcule la muestra antes de descargar el papel de trabajo.');
@@ -223,8 +289,9 @@ function descargarMuestreo(formato) {
     }
     const url = muestreoDescargarUrl +
         '?metodo=' + encodeURIComponent(ultimoCalculo.metodo) +
-        '&parametros=' + encodeURIComponent(JSON.stringify(ultimoCalculo.parametros)) +
-        '&formato=' + encodeURIComponent(formato);
+        '&parametros=' + encodeURIComponent(
+            JSON.stringify(parametrosParaUrl(ultimoCalculo.parametros))) +
+        '&formato=excel';
     window.location.href = url;
 }
 
@@ -233,22 +300,122 @@ document.querySelectorAll('.dl-btn[data-formato]').forEach(boton => {
 });
 
 // ---------------------------------------------------------------------------
-// Tabla de partidas (método Por Criterio)
+// Método Por Criterio: Valor Monetario Total desde el detalle pegado
 // ---------------------------------------------------------------------------
 
-function agregarFilaPartida() {
-    const cuerpo = document.querySelector('#tablaPartidas tbody');
-    const fila = document.createElement('tr');
-    fila.innerHTML =
-        '<td><input type="text" class="p-descripcion" placeholder="Ej. Factura 1234 — Proveedor XYZ"></td>' +
-        '<td><input type="number" class="p-monto" min="0" step="0.01" placeholder="0.00"></td>' +
-        '<td><input type="text" class="p-criterio" placeholder="Ej. Partida inusual / mayor a materialidad"></td>' +
-        '<td><button type="button" class="quitar-partida-btn" title="Quitar partida">✕</button></td>';
-    fila.querySelector('.quitar-partida-btn').addEventListener('click', () => fila.remove());
-    cuerpo.appendChild(fila);
+const botonTotalCriterio = document.getElementById('c_totalBtn');
+if (botonTotalCriterio) {
+    botonTotalCriterio.addEventListener('click', () => {
+        const total = totalPegado();
+        if (!total) {
+            estadoImportacion(
+                'Pegue el detalle transaccional (o suba el Excel) para calcular el ' +
+                'Valor Monetario Total.', 'error');
+            return;
+        }
+        document.getElementById('c_total').value = Math.round(total * 100) / 100;
+        estadoImportacion(
+            'Valor Monetario Total calculado desde el detalle pegado: ' +
+            total.toLocaleString('es-GT', { minimumFractionDigits: 2 }), 'ok');
+    });
 }
 
-document.getElementById('agregarPartidaBtn').addEventListener('click', agregarFilaPartida);
+// ---------------------------------------------------------------------------
+// Importación del Excel de datos (mayor auxiliar)
+//
+// El archivo NO se guarda en el sistema: se sube, el servidor lo lee en
+// memoria, genera la muestra y lo descarta. Para repetir el cálculo hay que
+// volver a subirlo.
+// ---------------------------------------------------------------------------
 
-// Comenzar con una fila vacía en la tabla de criterio
-agregarFilaPartida();
+function estadoImportacion(mensaje, tipo) {
+    const caja = document.getElementById('importEstado');
+    if (!caja) return;
+    caja.textContent = mensaje || '';
+    caja.className = 'import-estado' + (tipo ? ' ' + tipo : '');
+}
+
+// Parámetros que se deducen del archivo por método → id del campo del
+// formulario. Al generar la muestra DESDE EL ARCHIVO, estos campos se
+// deducen del propio Excel (población, desviación y valor en libros): el
+// valor precargado del formulario no debe pisar los datos reales del archivo.
+const CAMPOS_DERIVABLES_ARCHIVO = {
+    aleatorio_simple: { poblacion: 's_N', sigma: 's_sigma' },
+    estratificado: { sigma: 'e_sigma' },
+    mus: { valor_libros: 'm_bv' },
+    atributos: { poblacion: 'a_N' },
+    // Por Criterio: el Valor Monetario Total sale de la suma del archivo
+    criterio: { valor_total: 'c_total' }
+};
+
+function importarDatosMuestreo() {
+    const entrada = document.getElementById('archivoDatos');
+    if (!entrada || !entrada.files.length) {
+        estadoImportacion('Seleccione primero el Excel de datos (mayor auxiliar).', 'error');
+        return;
+    }
+
+    // Los parámetros derivables se toman SIEMPRE del archivo subido
+    const parametros = recolectarParametros();
+    const camposDerivables = CAMPOS_DERIVABLES_ARCHIVO[metodoActivo] || {};
+    Object.keys(camposDerivables).forEach(clave => { parametros[clave] = null; });
+
+    const formData = new FormData();
+    formData.append('archivo_datos', entrada.files[0]);
+    formData.append('metodo', metodoActivo);
+    formData.append('parametros', JSON.stringify(parametros));
+
+    estadoImportacion('Leyendo el archivo y generando la muestra…', '');
+    document.getElementById('errorBox').style.display = 'none';
+
+    fetch(muestreoImportarUrl, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken() },
+        body: formData
+    })
+        .then(respuesta => respuesta.json())
+        .then(datos => {
+            if (!datos.success) {
+                estadoImportacion('', '');
+                mostrarError(datos.error || 'No se pudo procesar el archivo.');
+                return;
+            }
+            ultimoCalculo = {
+                metodo: metodoActivo,
+                parametros: datos.parametros_aplicados
+            };
+            // Reflejar en el formulario los valores deducidos del archivo,
+            // para que el auditor VEA la población/desviación/valor en libros
+            // con los que realmente se generó la muestra.
+            const aplicados = datos.parametros_aplicados || {};
+            Object.entries(camposDerivables).forEach(([clave, idCampo]) => {
+                const campo = document.getElementById(idCampo);
+                if (campo && aplicados[clave] !== undefined && aplicados[clave] !== null) {
+                    campo.value = Math.round(aplicados[clave] * 100) / 100;
+                }
+            });
+            const origen = datos.origen || {};
+            estadoImportacion(
+                `${datos.mensaje} · Cuenta: ${origen.cuenta || 'no indicada'} · ` +
+                `Población (N): ${origen.partidas}`,
+                'ok'
+            );
+            renderResultado(datos.data);
+            // El archivo ya se descartó en el servidor; se limpia el selector
+            entrada.value = '';
+        })
+        .catch(() => {
+            estadoImportacion('', '');
+            mostrarError('Error inesperado al subir el archivo de datos.');
+        });
+}
+
+function descargarFormatoDatos() {
+    if (muestreoFormatoUrl) window.location.href = muestreoFormatoUrl;
+}
+
+const botonImportar = document.getElementById('importarDatosBtn');
+if (botonImportar) botonImportar.addEventListener('click', importarDatosMuestreo);
+
+const botonFormato = document.getElementById('formatoDatosBtn');
+if (botonFormato) botonFormato.addEventListener('click', descargarFormatoDatos);

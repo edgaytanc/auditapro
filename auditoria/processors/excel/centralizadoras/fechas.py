@@ -99,6 +99,74 @@ def preparar_fechas_excel(fechas_semestrales):
 
     return fechas_año_viejo, fecha_mas_reciente, año_mas_viejo, año_mas_reciente, fechas_excel
 
+def preparar_fechas_con_cortes(cortes):
+    """
+    Variante de `preparar_fechas_excel` para auditorías que importaron el
+    Excel Financiero 2026: usa las fechas de corte REALES del archivo
+    (columnas C/D/E/H de la hoja ESTADOS FINANCIEROS) en lugar de fabricar
+    'Al 01/01/{año}'.
+
+    Args:
+        cortes: dict {'cortes': [f1, f2, f3], 'actual': f4} con date o None
+            (lo que devuelve `auditoria.services.cortes_excel.cortes_de_auditoria`)
+
+    Returns:
+        (fechas_columnas, fechas_excel):
+            fechas_columnas: {'D': 'YYYY-MM-DD', ...} solo con los cortes que
+                el archivo trae (los vacíos quedan fuera y su columna en blanco)
+            fechas_excel: {'D12': 'Al DD/MM/YYYY', ...} rótulos reales
+    """
+    fechas_columnas = {}
+    fechas_excel = {}
+
+    # TODAS las columnas de corte entran al mapeo aunque el archivo no traiga
+    # esa fecha: con fecha None el escritor deja la celda EN BLANCO (así no
+    # quedan los importes de muestra de la plantilla junto a cuentas reales)
+    # y el rótulo de muestra se limpia.
+    lista_cortes = list(cortes.get('cortes') or [])
+    while len(lista_cortes) < 3:
+        lista_cortes.append(None)
+
+    for columna, fecha in zip(('D', 'E', 'F'), lista_cortes):
+        if fecha:
+            fechas_columnas[columna] = fecha.isoformat()
+            fechas_excel[f'{columna}12'] = f"Al {fecha.strftime('%d/%m/%Y')}"
+        else:
+            fechas_columnas[columna] = None
+            fechas_excel[f'{columna}12'] = ''
+
+    # 'SALDOS SEGÚN AUDITORIA' (col. I) = corte del año actual; si el archivo
+    # no trae la columna H, se usa el corte de cierre disponible más reciente.
+    actual = cortes.get('actual') or next(
+        (f for f in reversed(lista_cortes) if f), None)
+    if actual:
+        fechas_columnas['I'] = actual.isoformat()
+        fechas_excel['I12'] = f"Al {actual.strftime('%d/%m/%Y')}"
+
+    return fechas_columnas, fechas_excel
+
+
+def resolver_fechas_columnas(fechas_semestrales, cortes=None):
+    """
+    Devuelve (fechas_columnas, fechas_excel) para una centralizadora.
+
+    Con `cortes` del Excel Financiero 2026 → fechas reales del archivo.
+    Sin ellos (importaciones clásicas) → comportamiento histórico.
+    """
+    if cortes:
+        return preparar_fechas_con_cortes(cortes)
+
+    fechas_año_viejo, fecha_mas_reciente, _, _, fechas_excel = (
+        preparar_fechas_excel(fechas_semestrales))
+    fechas_columnas = {
+        'D': fechas_año_viejo[0],
+        'E': fechas_año_viejo[1],
+        'F': fechas_año_viejo[2],
+        'I': fecha_mas_reciente,
+    }
+    return fechas_columnas, fechas_excel
+
+
 def insertar_fechas_en_celdas(sheet, fechas_excel):
     """
     Inserta las fechas en las celdas correspondientes

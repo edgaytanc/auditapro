@@ -38,6 +38,27 @@ def _wipe_import_data(audit_id: int) -> None:
     RevisoriaSubcuenta.objects.filter(audit_id=audit_id).delete()
 
 
+def _limpiar_parametros_excel_financiero(audit_id: int) -> None:
+    """
+    Borra de `ParametrosAuditoria` los cortes y totales guardados por el
+    Excel Financiero 2026. Se llama cuando la auditoría importa después un
+    archivo del formato CLÁSICO: sin esta limpieza, las centralizadoras y
+    sumarias seguirían rotulando columnas con las fechas del archivo anterior
+    y Materialidad/IR podrían servir totales de otro ejercicio.
+    (No toca los años ni la edición manual del auditor.)
+    """
+    from auditoria.models import ParametrosAuditoria
+
+    ParametrosAuditoria.objects.filter(audit_id=audit_id).update(
+        fecha_corte1_excel=None,
+        fecha_corte2_excel=None,
+        fecha_corte3_excel=None,
+        fecha_corte_actual_excel=None,
+        ingresos_totales_excel=None,
+        utilidad_antes_impuestos_excel=None,
+    )
+
+
 @login_required
 def importar_cuentas_contables(request, audit_id):
     if request.method == 'POST':
@@ -110,6 +131,12 @@ def importar_cuentas_contables(request, audit_id):
                 # Financiera/Interna formato clásico: solo import
                 # (no se toca nada existente)
                 success, message = importer.process_file()
+
+                # Si esta auditoría había importado antes el Excel Financiero
+                # 2026, sus cortes/totales guardados ya no corresponden al
+                # archivo clásico recién cargado: se limpian.
+                if success:
+                    _limpiar_parametros_excel_financiero(audit_id)
 
             return JsonResponse(
                 {"success": success, "message": message},
