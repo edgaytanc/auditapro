@@ -4,9 +4,11 @@ Contiene funciones de normalización, rutas, mensajes de error y generación de 
 """
 
 import os
+import html
 import urllib.parse
 import unicodedata
 from django.conf import settings
+from auditoria.services.referencias import obtener_ref, ref_manual, vinculos_de
 
 def normalize_text(text):
     """
@@ -117,10 +119,42 @@ def crear_mensaje_error(titulo, mensaje):
     </html>
     """
 
-def generar_html_estructura(estructura, audit_id, current_path='', user_verified=False):
+def _generar_pill_referencia(tipo_auditoria, current_path, nombre, audit_id=None):
+    """
+    Genera la pastilla 'Ref. X' del papel de trabajo. Es editable: al pulsarla
+    el auditor puede fijar su propia referencia, que el sistema respeta y pega
+    en la plantilla al descargarla. El tooltip muestra los papeles vinculados.
+    Cadena vacía si el archivo no tiene referencia conocida.
+    """
+    if not tipo_auditoria:
+        return ''
+    carpeta = current_path.replace('\\', '/')
+    ref = obtener_ref(tipo_auditoria, carpeta, nombre, audit_id=audit_id)
+    if not ref:
+        return ''
+
+    manual = bool(ref_manual(audit_id, carpeta, nombre))
+    vinculos = vinculos_de(ref, tipo_auditoria)
+    if manual:
+        title = "Referencia fijada por el auditor. Clic para editarla."
+    elif vinculos:
+        title = ("Vinculado automáticamente con: " + ", ".join(vinculos)
+                 + ". Clic para fijar una referencia propia.")
+    else:
+        title = "Referencia automática. Clic para fijar una referencia propia."
+
+    clase = 'ref-pill ref-pill-manual' if manual else 'ref-pill'
+    return (
+        f'<span class="{clase}" title="{html.escape(title)}" role="button" tabindex="0" '
+        f'data-carpeta="{html.escape(carpeta)}" data-archivo="{html.escape(nombre)}" '
+        f'data-ref="{html.escape(ref)}" data-manual="{"1" if manual else "0"}" '
+        f'onclick="editarReferencia(this)">Ref. {html.escape(ref)}</span>'
+    )
+
+def generar_html_estructura(estructura, audit_id, current_path='', user_verified=False, tipo_auditoria=None):
     """
     Genera HTML recursivo para la estructura de carpetas.
-    """ 
+    """
     if not estructura:
         return ""
     html = "<ul>"
@@ -139,7 +173,7 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
                     <img src="/static/icons/carpeta.svg" class="icon-img" alt="📂"/> {nombre}
                 </button>
                 <div id="{folder_id}" style="display: none;">
-                    {generar_html_estructura(contenido, audit_id, new_path, user_verified)}
+                    {generar_html_estructura(contenido, audit_id, new_path, user_verified, tipo_auditoria)}
                 </div>
             </li>
             """
@@ -158,7 +192,10 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
             folder_encoded = urllib.parse.quote(current_path.replace('\\', '/')) if current_path else ''
             filename_encoded = urllib.parse.quote(nombre)
             download_url = f"/auditoria/download/{audit_id}/{folder_encoded}/{filename_encoded}"
-            
+
+            # Pastilla de referencia automática del papel de trabajo
+            ref_pill = _generar_pill_referencia(tipo_auditoria, current_path, nombre, audit_id)
+
             # aunque el usuario no esté verificado
             is_investment_folder = (current_path and 
                                      ("1 CAJA Y BANCOS" in current_path or 
@@ -172,7 +209,7 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
                 <li class="file-item">
                     <a href="{download_url}" class="file-link">
                         <img src="{icono}" class="icon-img" alt="{alt}"/> {nombre}
-                    </a>
+                    </a>{ref_pill}
                 </li>"""
             else:
                 # Usuario no verificado - muestra el archivo bloqueado
@@ -180,7 +217,7 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
                 <li class="file-item file-locked">
                     <div class="file-link-disabled" style="display: flex; align-items: center; color: #999; cursor: not-allowed; position: relative; padding: 5px 8px; border-radius: 4px; background-color: rgba(0,0,0,0.03);" title="Usuario no verificado. Contacte al administrador para desbloquear el acceso.">
                         <img src="{icono}" class="icon-img" alt="{alt}" style="opacity: 0.5; margin-right: 5px;"/> 
-                        <span style="margin-right: 25px;">{nombre}</span>
+                        <span style="margin-right: 25px;">{nombre}</span>{ref_pill}
                         <i class="fas fa-lock" style="position: absolute; right: 10px; color: #e74c3c; font-size: 14px;"></i>
                     </div>
                 </li>"""

@@ -1,0 +1,325 @@
+/* Estilos del módulo Muestreo NIA 530 (tarjetas blancas con acentos azules,
+   consistente con las demás pantallas del sistema) */
+
+.muestreo-container {
+    max-width: 1100px;
+}
+
+.muestreo-card {
+    background: #ffffff;
+    border: 1px solid #e6e9ef;
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.muestreo-card h2 {
+    font-size: 15px;
+    margin: 0 0 4px 0;
+}
+
+.muestreo-card .hint {
+    font-size: 12px;
+    color: #6b7482;
+    margin-bottom: 14px;
+}
+
+.nia-tag {
+    display: inline-block;
+    background: #eef1f6;
+    color: #6b7482;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-left: 6px;
+}
+
+/* Botones de método */
+.metodos-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+}
+
+.metodo-btn {
+    border: 1.5px solid #e6e9ef;
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1c2430;
+}
+
+.metodo-btn small {
+    display: block;
+    font-weight: 400;
+    color: #6b7482;
+    font-size: 10.5px;
+    margin-top: 3px;
+}
+
+.metodo-btn.active {
+    border-color: #2f6fed;
+    background: #eaf0ff;
+    color: #1e4fbf;
+}
+
+/* Formularios */
+.muestreo-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.muestreo-field label {
+    display: block;
+    font-size: 12px;
+    color: #6b7482;
+    margin-bottom: 4px;
+}
+
+.muestreo-field select,
+.muestreo-field input {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid #e6e9ef;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1c2430;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.muestreo-field .field-help {
+    font-size: 10.5px;
+    color: #6b7482;
+    margin-top: 3px;
+    line-height: 1.4;
+}
+
+.muestreo-field .imported {
+    font-size: 10.5px;
+    color: #2f6fed;
+    margin-top: 3px;
+}
+
+.calc-btn {
+    background: #2f6fed;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 20px;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 18px;
+    margin-right: 10px;
+}
+
+.calc-btn:hover {
+    background: #1e4fbf;
+}
+
+.calc-btn.secundario {
+    background: #6c757d;
+}
+
+/* Resultados */
+.resultado-panel {
+    display: none;
+    margin-top: 18px;
+}
+
+.resultado-panel.show {
+    display: block;
+}
+
+.resultado-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.stat {
+    border-radius: 10px;
+    padding: 14px 16px;
+    background: #eaf0ff;
+}
+
+.stat:nth-child(3n+2) {
+    background: #f1eaff;
+}
+
+.stat:nth-child(3n) {
+    background: #fff6e6;
+}
+
+.stat .label {
+    font-size: 11.5px;
+    color: #6b7482;
+}
+
+.stat .value {
+    font-size: 20px;
+    font-weight: 700;
+    margin-top: 2px;
+    word-break: break-word;
+}
+
+.formula-box {
+    background: #f7f9fc;
+    border-left: 3px solid #2f6fed;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: #6b7482;
+}
+
+.semilla-box {
+    font-size: 11.5px;
+    color: #6b7482;
+    margin-top: 8px;
+}
+
+.error-box {
+    display: none;
+    background: #fde3e1;
+    color: #e0483e;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    margin-top: 12px;
+}
+
+/* Tabla de selección / partidas por criterio */
+.seleccion-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+    font-size: 13px;
+}
+
+.seleccion-table th {
+    text-align: left;
+    color: #6b7482;
+    font-weight: 600;
+    font-size: 11.5px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #e6e9ef;
+}
+
+.seleccion-table td {
+    padding: 7px 8px;
+    border-bottom: 1px solid #e6e9ef;
+}
+
+.seleccion-table input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #e6e9ef;
+    border-radius: 6px;
+    font-size: 12.5px;
+    box-sizing: border-box;
+}
+
+.quitar-partida-btn {
+    background: none;
+    border: none;
+    color: #e0483e;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+/* Descargas */
+.descarga-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.dl-label {
+    font-size: 12.5px;
+    color: #6b7482;
+}
+
+.dl-btn {
+    border: 1px solid #e6e9ef;
+    background: #fff;
+    border-radius: 8px;
+    padding: 9px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #1c2430;
+}
+
+.dl-btn:hover {
+    background: #f2f4f8;
+}
+
+@media (max-width: 900px) {
+    .metodos-grid,
+    .muestreo-form-grid,
+    .resultado-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --------------------------------------------------------------------------
+   Importación del Excel de datos (mayor auxiliar)
+   -------------------------------------------------------------------------- */
+
+.import-datos {
+    margin-top: 22px;
+    padding: 16px 18px;
+    border: 1px dashed #c3d3e0;
+    border-radius: 8px;
+    background-color: #f7fafc;
+}
+
+.import-datos h3 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    color: #17405c;
+}
+
+.import-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.import-row input[type="file"] {
+    flex: 1 1 260px;
+    min-width: 220px;
+    padding: 6px 8px;
+    border: 1px solid #ccd5dd;
+    border-radius: 4px;
+    background-color: #fff;
+}
+
+.import-estado {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #5a6672;
+    min-height: 18px;
+}
+
+.import-estado.ok {
+    color: #1c8a4b;
+    font-weight: 600;
+}
+
+.import-estado.error {
+    color: #c0392b;
+    font-weight: 600;
+}

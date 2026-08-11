@@ -138,7 +138,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = 'soporte@auditapro.com'
+DEFAULT_FROM_EMAIL = 'Sistema de Auditoría <auditaguatemala@gmail.com>'
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True") == "True"

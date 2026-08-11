@@ -5,6 +5,8 @@ from audits.models import Audit
 # -----------------------------------------------------------------------------
 # Modelo para registrar balances de cuentas
 # -----------------------------------------------------------------------------
+
+
 class BalanceCuentas(models.Model):
     TIPO_BALANCE_CHOICES = [
         ('ANUAL', 'Anual'),
@@ -18,18 +20,25 @@ class BalanceCuentas(models.Model):
     ]
 
     id = models.AutoField(primary_key=True)
-    audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='balances', verbose_name='Auditoría')
-    tipo_balance = models.CharField(max_length=10, choices=TIPO_BALANCE_CHOICES, verbose_name='Tipo de Balance')
+    audit = models.ForeignKey(Audit, on_delete=models.CASCADE,
+                              related_name='balances', verbose_name='Auditoría')
+    tipo_balance = models.CharField(
+        max_length=10, choices=TIPO_BALANCE_CHOICES, verbose_name='Tipo de Balance')
     fecha_corte = models.DateField(verbose_name='Fecha de Corte')
-    seccion = models.CharField(max_length=10, choices=SECCION_CHOICES, verbose_name='Sección')
-    nombre_cuenta = models.CharField(max_length=100, verbose_name='Nombre de la Cuenta')
-    tipo_cuenta = models.CharField(max_length=50, blank=True, null=True, verbose_name='Tipo de Cuenta')
-    valor = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Valor')
+    seccion = models.CharField(
+        max_length=10, choices=SECCION_CHOICES, verbose_name='Sección')
+    nombre_cuenta = models.CharField(
+        max_length=100, verbose_name='Nombre de la Cuenta')
+    tipo_cuenta = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name='Tipo de Cuenta')
+    valor = models.DecimalField(max_digits=15, decimal_places=2, validators=[
+                                MinValueValidator(0)], verbose_name='Valor')
 
     class Meta:
         verbose_name = 'Balance de Cuentas'
         verbose_name_plural = 'Balances de Cuentas'
-        ordering = ['audit', 'tipo_balance', 'fecha_corte', 'seccion', 'nombre_cuenta']
+        ordering = ['audit', 'tipo_balance',
+                    'fecha_corte', 'seccion', 'nombre_cuenta']
 
     def __str__(self):
         return f"{self.audit.id} - {self.tipo_balance} - {self.fecha_corte} - {self.seccion} - {self.nombre_cuenta}"
@@ -37,11 +46,15 @@ class BalanceCuentas(models.Model):
 # -----------------------------------------------------------------------------
 # Modelo para registrar registros auxiliares
 # -----------------------------------------------------------------------------
+
+
 class RegistroAuxiliar(models.Model):
     id = models.AutoField(primary_key=True)
-    audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='registros_auxiliares', verbose_name='Auditoría')
+    audit = models.ForeignKey(Audit, on_delete=models.CASCADE,
+                              related_name='registros_auxiliares', verbose_name='Auditoría')
     cuenta = models.CharField(max_length=100, verbose_name='Cuenta')
-    saldo = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Saldo')
+    saldo = models.DecimalField(max_digits=15, decimal_places=2, validators=[
+                                MinValueValidator(0)], verbose_name='Saldo')
 
     class Meta:
         verbose_name = 'Registro Auxiliar'
@@ -54,11 +67,15 @@ class RegistroAuxiliar(models.Model):
 # -----------------------------------------------------------------------------
 # Modelo para registrar saldos iniciales
 # -----------------------------------------------------------------------------
+
+
 class SaldoInicial(models.Model):
     id = models.AutoField(primary_key=True)
-    audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='saldos_iniciales', verbose_name='Auditoría')
+    audit = models.ForeignKey(Audit, on_delete=models.CASCADE,
+                              related_name='saldos_iniciales', verbose_name='Auditoría')
     cuenta = models.CharField(max_length=100, verbose_name='Cuenta')
-    saldo = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Saldo Inicial')
+    saldo = models.DecimalField(max_digits=15, decimal_places=2, validators=[
+                                MinValueValidator(0)], verbose_name='Saldo Inicial')
     fecha_corte = models.DateField(verbose_name='Fecha de Corte')
 
     class Meta:
@@ -72,6 +89,8 @@ class SaldoInicial(models.Model):
 # -----------------------------------------------------------------------------
 # Modelo para registrar ajustes y reclasificaciones (Debe / Haber)
 # -----------------------------------------------------------------------------
+
+
 class AjustesReclasificaciones(models.Model):
     id = models.AutoField(primary_key=True)
     audit = models.ForeignKey(
@@ -485,8 +504,7 @@ class TemplateSymbol(models.Model):
 
     def __str__(self):
         return f"{self.symbol.symbol} en {self.template_config.workbook_name}"
-from django.db import models
-from audits.models import Audit
+
 
 class RevisoriaSubcuentaQuerySet(models.QuerySet):
     def for_cuenta(self, audit, seccion, cuenta_principal):
@@ -504,18 +522,25 @@ class RevisoriaSubcuentaQuerySet(models.QuerySet):
             .order_by("nombre_subcuenta")
         )
 
+
 class RevisoriaSubcuenta(models.Model):
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE)
     seccion = models.CharField(max_length=50)
     cuenta_principal = models.CharField(max_length=255)
     nombre_subcuenta = models.CharField(max_length=255)
 
-    saldo_ini_anterior = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
-    saldo_julio_anterior = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
-    saldo_dic_anterior = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
-    ajuste_debe = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
-    ajuste_haber = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
-    saldo_dic_actual = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    saldo_ini_anterior = models.DecimalField(
+        max_digits=18, decimal_places=2, null=True, blank=True)
+    saldo_julio_anterior = models.DecimalField(
+        max_digits=18, decimal_places=2, null=True, blank=True)
+    saldo_dic_anterior = models.DecimalField(
+        max_digits=18, decimal_places=2, null=True, blank=True)
+    ajuste_debe = models.DecimalField(
+        max_digits=18, decimal_places=2, null=True, blank=True)
+    ajuste_haber = models.DecimalField(
+        max_digits=18, decimal_places=2, null=True, blank=True)
+    saldo_dic_actual = models.DecimalField(
+        max_digits=18, decimal_places=2, null=True, blank=True)
 
     es_otras_cuentas = models.BooleanField(default=False)
 
@@ -524,3 +549,87 @@ class RevisoriaSubcuenta(models.Model):
 
     def __str__(self):
         return f"{self.seccion} - {self.cuenta_principal} - {self.nombre_subcuenta}"
+
+
+class ParametrosAuditoria(models.Model):
+    """
+    Parámetros editables por el auditor que no dependen del Excel importado.
+
+    - `anio_actual` / `anio_anterior`: años de los cuadros comparativos
+      (Análisis Horizontal/Vertical, Importancia Relativa, Materialidad).
+      Al importar el Excel Financiero se actualizan solos con las fechas de
+      corte del archivo; el auditor puede corregirlos a mano en cualquier
+      momento y su valor manda sobre el del Excel hasta la siguiente
+      importación.
+    - `anios_manuales`: marca que el auditor editó los años a mano.
+    - `anio_*_excel`: años que trajo la última importación. Sirven para saber
+      si un nuevo archivo cambió realmente de ejercicio; si trae los mismos,
+      la edición manual del auditor se conserva.
+    """
+
+    audit = models.OneToOneField(
+        Audit, on_delete=models.CASCADE, related_name='parametros'
+    )
+    anio_actual = models.PositiveIntegerField(null=True, blank=True)
+    anio_anterior = models.PositiveIntegerField(null=True, blank=True)
+    anios_manuales = models.BooleanField(default=False)
+    anio_actual_excel = models.PositiveIntegerField(null=True, blank=True)
+    anio_anterior_excel = models.PositiveIntegerField(null=True, blank=True)
+
+    # Fechas de corte tal y como venían en el Excel Financiero (C6/D6/E6/H6).
+    # Sirven para rotular las columnas de las centralizadoras y sumarias con
+    # las fechas REALES del archivo (no con fechas fabricadas) y para saber a
+    # qué columna corresponde cada corte aunque dos traigan la misma fecha.
+    fecha_corte1_excel = models.DateField(null=True, blank=True)   # columna C
+    fecha_corte2_excel = models.DateField(null=True, blank=True)   # columna D
+    fecha_corte3_excel = models.DateField(null=True, blank=True)   # columna E
+    fecha_corte_actual_excel = models.DateField(null=True, blank=True)  # col. H
+
+    # Totales del Estado de Resultados que el archivo trae como filas de
+    # 'Total ...' (no como cuentas): se capturan al importar para que
+    # Materialidad e Importancia Relativa usen cifras trazables al archivo.
+    ingresos_totales_excel = models.FloatField(null=True, blank=True)
+    utilidad_antes_impuestos_excel = models.FloatField(null=True, blank=True)
+
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'auditoria_parametrosauditoria'
+        verbose_name = 'Parámetros de auditoría'
+        verbose_name_plural = 'Parámetros de auditorías'
+
+    def __str__(self):
+        return f"Parámetros de {self.audit_id}: {self.anio_anterior} / {self.anio_actual}"
+
+
+class ReferenciaPapelTrabajo(models.Model):
+    """
+    Referencia (Ref.) que el auditor fija a mano para un papel de trabajo.
+
+    Por defecto el sistema calcula la referencia automáticamente a partir del
+    índice maestro (letras A..J/R en pruebas sustantivas, código jerárquico en
+    el resto). Cuando existe una fila aquí, ESA referencia manda: el sistema no
+    la sobrescribe y es la que se pega en la plantilla al descargarla.
+    """
+
+    audit = models.ForeignKey(
+        Audit, on_delete=models.CASCADE, related_name='referencias_papeles'
+    )
+    carpeta = models.CharField(max_length=500)
+    archivo = models.CharField(max_length=255)
+    referencia = models.CharField(max_length=50)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'auditoria_referenciapapeltrabajo'
+        verbose_name = 'Referencia de papel de trabajo'
+        verbose_name_plural = 'Referencias de papeles de trabajo'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['audit', 'carpeta', 'archivo'],
+                name='unique_referencia_por_papel',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.carpeta}/{self.archivo} -> {self.referencia}"

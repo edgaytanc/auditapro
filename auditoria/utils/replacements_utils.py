@@ -61,6 +61,9 @@ def build_replacements_dict(
         replacements['[ENTIDAD_COMPLETA]'] = f"Entidad: {entidad_valor}"
         # NUEVO: reemplazo literal de encabezado
         replacements['Entidad: '] = f"Entidad: {entidad_valor}"
+        # 2026: encabezado sin dos puntos usado por las plantillas nuevas
+        # ("Entidad XXXXXXXXXXXXXXXX") — ver regla regex "Entidad\s+X{3,}".
+        replacements['[ENTIDAD_ETIQUETA]'] = f"Entidad {entidad_valor}"
 
     # Procesar fechas
     if 'fecha_rango' in config:
@@ -119,6 +122,54 @@ def build_replacements_dict(
         # Aplicar a todos los placeholders
         for placeholder in moneda_config['placeholders']:
             replacements[placeholder] = moneda_texto
+
+    # Procesar monto_moneda (símbolos de moneda)
+    if 'monto_moneda' in config:
+        moneda_codigo = getattr(audit, 'moneda', 'GTQ')
+        monto_config = config['monto_moneda']
+        
+        # Obtener el símbolo de la moneda
+        moneda_simbolo = monto_config['currency_symbols'].get(
+            moneda_codigo, 
+            monto_config['default']
+        )
+        
+        # Crear el texto de reemplazo usando el template
+        monto_texto = monto_config['template'].format(moneda_simbolo)
+        
+        # Aplicar a todos los placeholders
+        for placeholder in monto_config['placeholders']:
+            replacements[placeholder] = monto_texto
+
+    # Procesar code_moneda (código directo de moneda)
+    if 'code_moneda' in config:
+        moneda_codigo = getattr(audit, 'moneda', 'GTQ')  # Obtener código de moneda de la auditoría
+        code_config = config['code_moneda']
+        
+        # El código de moneda se usa directamente
+        codigo_moneda = moneda_codigo or code_config['default']
+        
+        # Crear el texto de reemplazo usando el template (que es solo {})
+        code_texto = code_config['template'].format(codigo_moneda)
+        
+        # Aplicar a todos los placeholders
+        for placeholder in code_config['placeholders']:
+            replacements[placeholder] = code_texto
+
+    # Procesar monto_material_moneda (Monto Material en código de moneda)
+    if 'monto_material_moneda' in config:
+        moneda_codigo = getattr(audit, 'moneda', 'GTQ')  # Obtener código de moneda de la auditoría
+        material_config = config['monto_material_moneda']
+        
+        # El código de moneda se usa directamente
+        codigo_moneda = moneda_codigo or material_config['default']
+        
+        # Crear el texto de reemplazo usando el template
+        material_texto = material_config['template'].format(codigo_moneda)
+        
+        # Aplicar a todos los placeholders
+        for placeholder in material_config['placeholders']:
+            replacements[placeholder] = material_texto
 
     # Nota: El procesamiento de balance ha sido eliminado
     logger.debug(f"Total de reemplazos generados: {len(replacements)}")

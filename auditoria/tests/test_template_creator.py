@@ -440,11 +440,12 @@ class TemplateCreatorAPITestCase(TestCase):
 
     def test_endpoint1_validate_workbook_name(self):
         """Test: POST /api/validate-workbook-name"""
+        # Actualizado árbol 2026: nombre real en '4 PRUEBAS SUSTANTIVAS/1 CAJA Y BANCOS'
         response = self.client.post(
             '/auditoria/api/validate-workbook-name/',
             data=json.dumps({
                 'audit_id': self.audit.id,
-                'workbook_name': 'SUMARIA CAJAS Y BANCOS'
+                'workbook_name': 'CEDULA SUMARIA CAJA BANCOS'
             }),
             content_type='application/json'
         )
@@ -453,6 +454,8 @@ class TemplateCreatorAPITestCase(TestCase):
         data = json.loads(response.content)
         self.assertIn('is_valid', data)
         self.assertIn('message', data)
+        # Actualizado árbol 2026: la plantilla existe, debe validar como True
+        self.assertTrue(data['is_valid'])
 
     def test_endpoint2_validate_template_config(self):
         """Test: POST /api/validate-template-config"""

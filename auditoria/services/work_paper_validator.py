@@ -9,6 +9,7 @@ import re
 import logging
 from difflib import SequenceMatcher
 from auditoria.config.exclusion_rules import is_excluded
+from auditoria.services.nombres_papeles import normalizar_nombre_papel
 from auditoria.services.template_file_registry import TemplateFileRegistry
 
 logger = logging.getLogger(__name__)
@@ -71,29 +72,10 @@ class WorkPaperValidator:
 
     def normalize_text(self, text):
         """
-        Normaliza texto para matching (mismo método que AuditMarkProcessor).
-
-        Args:
-            text (str): Texto a normalizar
-
-        Returns:
-            str: Texto normalizado
+        Identificador comparable del papel de trabajo (única normalización del
+        sistema, la misma que usan el registro y el procesador de marcas).
         """
-        if not text:
-            return ''
-
-        # Paso 1: Eliminar números iniciales (incluyendo decimales) y espacios
-        # Ejemplos: "2 " → "", "4.1 " → "", "10 " → ""
-        text = re.sub(r'^\d+(\.\d+)?\s*', '', text)
-
-        # Paso 2: Eliminar extensiones
-        text = re.sub(r'\.(xlsx|docx|xls|doc|pdf)$', '', text, flags=re.IGNORECASE)
-
-        # Paso 3: Normalización estándar
-        text = text.upper()
-        text = re.sub(r'[^A-Z0-9]', '', text)
-
-        return text
+        return normalizar_nombre_papel(text)
 
     def validate_work_paper_name(self, work_paper_input):
         """

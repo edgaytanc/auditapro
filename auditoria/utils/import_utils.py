@@ -13,11 +13,15 @@ from auditoria.imports.estados_financieros_importer import (
 )
 
 
-def _wipe_import_data_for_revisoria(audit_id: int) -> None:
+def _wipe_import_data(audit_id: int) -> None:
     """
-    ✅ SOLO REVISORÍA:
-    Borra TODO lo importado para esta auditoría antes de cargar un nuevo archivo.
-    Incluye también subcuentas.
+    ✅ Borra TODO lo importado para esta auditoría antes de cargar un nuevo
+    archivo (incluye también subcuentas).
+
+    Se usa para:
+      - Revisoría ('R'): siempre (comportamiento original).
+      - Financiera/Interna ('F'/'I'): SOLO cuando el archivo subido es el
+        nuevo formato "Revisoría 2025 con subcuentas".
     """
     from auditoria.models import (
         BalanceCuentas,
@@ -32,6 +36,27 @@ def _wipe_import_data_for_revisoria(audit_id: int) -> None:
     SaldoInicial.objects.filter(audit_id=audit_id).delete()
     AjustesReclasificaciones.objects.filter(audit_id=audit_id).delete()
     RevisoriaSubcuenta.objects.filter(audit_id=audit_id).delete()
+
+
+def _limpiar_parametros_excel_financiero(audit_id: int) -> None:
+    """
+    Borra de `ParametrosAuditoria` los cortes y totales guardados por el
+    Excel Financiero 2026. Se llama cuando la auditoría importa después un
+    archivo del formato CLÁSICO: sin esta limpieza, las centralizadoras y
+    sumarias seguirían rotulando columnas con las fechas del archivo anterior
+    y Materialidad/IR podrían servir totales de otro ejercicio.
+    (No toca los años ni la edición manual del auditor.)
+    """
+    from auditoria.models import ParametrosAuditoria
+
+    ParametrosAuditoria.objects.filter(audit_id=audit_id).update(
+        fecha_corte1_excel=None,
+        fecha_corte2_excel=None,
+        fecha_corte3_excel=None,
+        fecha_corte_actual_excel=None,
+        ingresos_totales_excel=None,
+        utilidad_antes_impuestos_excel=None,
+    )
 
 
 @login_required
@@ -74,12 +99,26 @@ def importar_cuentas_contables(request, audit_id):
                 status=400
             )
 
-        # ✅ 4) Procesar (con wipe SOLO si es Revisoría)
+        # ✅ 4) Procesar (con wipe si es Revisoría o si es el nuevo formato)
         try:
             if tipo == 'R':
                 # Revisoría: wipe + import dentro de una transacción
                 with transaction.atomic():
-                    _wipe_import_data_for_revisoria(audit_id)
+                    _wipe_import_data(audit_id)
+
+                    # Si validate_file() leyó el archivo, reiniciamos el puntero
+                    try:
+                        uploaded_file.seek(0)
+                    except Exception:
+                        pass
+
+                    success, message = importer.process_file()
+            elif importer.es_formato_subcuentas():
+                # 👇 Financiera/Interna con el NUEVO formato
+                # ("Revisoría 2025 con subcuentas"): wipe + import en una
+                # transacción para que la reimportación no acumule datos.
+                with transaction.atomic():
+                    _wipe_import_data(audit_id)
 
                     # Si validate_file() leyó el archivo, reiniciamos el puntero
                     try:
@@ -89,8 +128,15 @@ def importar_cuentas_contables(request, audit_id):
 
                     success, message = importer.process_file()
             else:
-                # Financiera/Interna: solo import (no se toca nada existente)
+                # Financiera/Interna formato clásico: solo import
+                # (no se toca nada existente)
                 success, message = importer.process_file()
+
+                # Si esta auditoría había importado antes el Excel Financiero
+                # 2026, sus cortes/totales guardados ya no corresponden al
+                # archivo clásico recién cargado: se limpian.
+                if success:
+                    _limpiar_parametros_excel_financiero(audit_id)
 
             return JsonResponse(
                 {"success": success, "message": message},

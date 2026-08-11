@@ -41,11 +41,20 @@ class ExclusionRulesTestCase(TestCase):
     """Test de reglas de exclusión"""
 
     def test_keyword_exclusion_programa(self):
-        """PROGRAMA debe ser excluido"""
-        result = is_excluded("PROGRAMA AUDITORIA")
+        """
+        PROGRAMA se excluye en Word, no en Excel.
+
+        En Word el bloque de marcas se inserta en el cuerpo y descoloca los
+        hipervínculos del programa; en Excel se agrega al final de la hoja y no
+        los toca. El cliente reportó que
+        '1_PROGRAMA_DE_AUDITORIA_ACTIVOS_FIJOS.xlsx' se quedaba sin marcas.
+        """
+        result = is_excluded("PROGRAMA AUDITORIA.docx")
         self.assertTrue(result['is_excluded'])
         self.assertEqual(result['rule_type'], 'keyword')
         self.assertIn('hipervínculos', result['reason'].lower())
+
+        self.assertFalse(is_excluded("PROGRAMA AUDITORIA.xlsx")['is_excluded'])
 
     def test_keyword_exclusion_plantilla(self):
         """plantilla debe ser excluido"""
@@ -55,27 +64,30 @@ class ExclusionRulesTestCase(TestCase):
 
     def test_prefix_exclusion_temp_file(self):
         """Archivos temporales de Excel deben ser excluidos"""
-        result = is_excluded("~$SUMARIA CAJAS.xlsx")
+        # Actualizado árbol 2026
+        result = is_excluded("~$2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx")
         self.assertTrue(result['is_excluded'])
         self.assertEqual(result['rule_type'], 'prefix')
 
     def test_extension_exclusion_backup(self):
         """Archivos .bak deben ser excluidos"""
-        result = is_excluded("SUMARIA CAJAS.bak")
+        # Actualizado árbol 2026
+        result = is_excluded("CEDULA_SUMARIA_CAJA_BANCOS.bak")
         self.assertTrue(result['is_excluded'])
         self.assertEqual(result['rule_type'], 'extension')
 
     def test_no_exclusion_valid_file(self):
         """Archivos válidos no deben ser excluidos"""
-        result = is_excluded("SUMARIA CAJAS Y BANCOS")
+        # Actualizado árbol 2026
+        result = is_excluded("CEDULA SUMARIA CAJA BANCOS")
         self.assertFalse(result['is_excluded'])
         self.assertIsNone(result['rule_type'])
 
     def test_case_insensitive_keyword(self):
         """Keywords deben ser case-insensitive"""
-        result1 = is_excluded("PROGRAMA")
-        result2 = is_excluded("programa")
-        result3 = is_excluded("Programa")
+        result1 = is_excluded("PROGRAMA.docx")
+        result2 = is_excluded("programa.docx")
+        result3 = is_excluded("Programa.docx")
 
         self.assertTrue(result1['is_excluded'])
         self.assertTrue(result2['is_excluded'])
@@ -89,27 +101,31 @@ class NormalizationTestCase(TestCase):
         self.processor = AuditMarkProcessor(audit_id=1, filename="dummy.xlsx")
 
     def test_normalize_sumaria_with_number(self):
-        """Test: '2 SUMARIA CAJAS Y BANCOS.xlsx' → 'SUMARIACAJASYBANCOS'"""
-        result = self.processor.normalize_text("2 SUMARIA CAJAS Y BANCOS.xlsx")
-        self.assertEqual(result, "SUMARIACAJASYBANCOS")
+        """Test: '2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx' → 'CEDULASUMARIACAJABANCOS'"""
+        # Actualizado árbol 2026
+        result = self.processor.normalize_text("2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx")
+        self.assertEqual(result, "CEDULASUMARIACAJABANCOS")
 
     def test_normalize_sumaria_without_number(self):
-        """Test: 'SUMARIA CAJAS Y BANCOS' → 'SUMARIACAJASYBANCOS'"""
-        result = self.processor.normalize_text("SUMARIA CAJAS Y BANCOS")
-        self.assertEqual(result, "SUMARIACAJASYBANCOS")
+        """Test: 'CEDULA SUMARIA CAJA BANCOS' → 'CEDULASUMARIACAJABANCOS'"""
+        # Actualizado árbol 2026
+        result = self.processor.normalize_text("CEDULA SUMARIA CAJA BANCOS")
+        self.assertEqual(result, "CEDULASUMARIACAJABANCOS")
 
     def test_normalize_with_extension_only(self):
-        """Test: 'SUMARIA CAJAS Y BANCOS.xlsx' → 'SUMARIACAJASYBANCOS'"""
-        result = self.processor.normalize_text("SUMARIA CAJAS Y BANCOS.xlsx")
-        self.assertEqual(result, "SUMARIACAJASYBANCOS")
+        """Test: 'CEDULA_SUMARIA_CAJA_BANCOS.xlsx' → 'CEDULASUMARIACAJABANCOS'"""
+        # Actualizado árbol 2026
+        result = self.processor.normalize_text("CEDULA_SUMARIA_CAJA_BANCOS.xlsx")
+        self.assertEqual(result, "CEDULASUMARIACAJABANCOS")
 
     def test_normalize_different_extensions(self):
         """Test normalización con diferentes extensiones"""
+        # Actualizado árbol 2026
         inputs = [
-            "10 INTEGRACION EGRESOS.docx",
-            "10 INTEGRACION EGRESOS.xlsx",
-            "10 INTEGRACION EGRESOS.xls",
-            "10 INTEGRACION EGRESOS"
+            "10_INTEGRACION_EGRESOS.docx",
+            "10_INTEGRACION_EGRESOS.xlsx",
+            "10_INTEGRACION_EGRESOS.xls",
+            "10_INTEGRACION_EGRESOS"
         ]
         expected = "INTEGRACIONEGRESOS"
 
@@ -127,19 +143,21 @@ class NormalizationTestCase(TestCase):
 
     def test_normalize_removes_special_chars(self):
         """Test: Los caracteres especiales deben eliminarse"""
-        result = self.processor.normalize_text("SUMARIA - CAJAS & BANCOS")
-        # El "&" se elimina correctamente, por lo que el resultado no incluye "Y"
-        self.assertEqual(result, "SUMARIACAJASBANCOS")
+        # Actualizado árbol 2026
+        result = self.processor.normalize_text("CEDULA - SUMARIA & CAJA BANCOS")
+        # El "&" y el "-" se eliminan correctamente
+        self.assertEqual(result, "CEDULASUMARIACAJABANCOS")
 
     def test_three_formats_match(self):
         """Test: Los tres formatos del usuario deben coincidir"""
-        format1 = self.processor.normalize_text("2 SUMARIA CAJAS Y BANCOS.xlsx")
-        format2 = self.processor.normalize_text("SUMARIA CAJAS Y BANCOS")
-        format3 = self.processor.normalize_text("SUMARIA CAJAS Y BANCOS.xlsx")
+        # Actualizado árbol 2026
+        format1 = self.processor.normalize_text("2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx")
+        format2 = self.processor.normalize_text("CEDULA SUMARIA CAJA BANCOS")
+        format3 = self.processor.normalize_text("CEDULA_SUMARIA_CAJA_BANCOS.xlsx")
 
         self.assertEqual(format1, format2)
         self.assertEqual(format2, format3)
-        self.assertEqual(format1, "SUMARIACAJASYBANCOS")
+        self.assertEqual(format1, "CEDULASUMARIACAJABANCOS")
 
 
 class AuditMarkProcessorTestCase(TestCase):
@@ -166,9 +184,10 @@ class AuditMarkProcessorTestCase(TestCase):
 
     def test_should_process_file_valid(self):
         """Archivos válidos deben ser procesados"""
+        # Actualizado árbol 2026
         processor = AuditMarkProcessor(
             audit_id=self.audit.id,
-            filename="2 SUMARIA CAJAS Y BANCOS.xlsx"
+            filename="2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx"
         )
         should_process, reason = processor.should_process_file()
         self.assertTrue(should_process)
@@ -176,20 +195,31 @@ class AuditMarkProcessorTestCase(TestCase):
 
     def test_should_process_file_programa_excluded(self):
         """Archivos PROGRAMA deben ser excluidos"""
+        # Actualizado árbol 2026
         processor = AuditMarkProcessor(
             audit_id=self.audit.id,
-            filename="1 PROGRAMA AUDITORIA.docx"
+            filename="1_PROGRAMA_AUDITORIA_CAJA_BANCOS.docx"
         )
         should_process, reason = processor.should_process_file()
         self.assertFalse(should_process)
         self.assertIsNotNone(reason)
         self.assertIn('hipervínculo', reason.lower())
 
-    def test_should_process_file_temp_excluded(self):
-        """Archivos temporales deben ser excluidos"""
+    def test_should_process_file_programa_excel_si_recibe_marcas(self):
+        """El programa de auditoría EN EXCEL sí recibe sus marcas."""
         processor = AuditMarkProcessor(
             audit_id=self.audit.id,
-            filename="~$SUMARIA.xlsx"
+            filename="1_PROGRAMA_DE_AUDITORIA_ACTIVOS_FIJOS.xlsx"
+        )
+        should_process, _ = processor.should_process_file()
+        self.assertTrue(should_process)
+
+    def test_should_process_file_temp_excluded(self):
+        """Archivos temporales deben ser excluidos"""
+        # Actualizado árbol 2026
+        processor = AuditMarkProcessor(
+            audit_id=self.audit.id,
+            filename="~$2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx"
         )
         should_process, reason = processor.should_process_file()
         self.assertFalse(should_process)
@@ -201,7 +231,7 @@ class AuditMarkProcessorTestCase(TestCase):
             audit=self.audit,
             symbol="✓",
             description="Test mark",
-            work_paper_number="PROGRAMA"
+            work_paper_number="config"
         )
 
         processor = AuditMarkProcessor(
@@ -215,11 +245,12 @@ class AuditMarkProcessorTestCase(TestCase):
 
     def test_mark_not_excluded_valid(self):
         """Marcas válidas no deben ser excluidas"""
+        # Actualizado árbol 2026
         mark = AuditMark.objects.create(
             audit=self.audit,
             symbol="✓",
             description="Test mark",
-            work_paper_number="SUMARIA CAJAS Y BANCOS"
+            work_paper_number="CEDULA SUMARIA CAJA BANCOS"
         )
 
         processor = AuditMarkProcessor(
@@ -233,12 +264,13 @@ class AuditMarkProcessorTestCase(TestCase):
 
     def test_get_matching_marks_excludes_programa(self):
         """get_matching_marks debe excluir marcas PROGRAMA"""
+        # Actualizado árbol 2026
         # Crear marca válida
         mark1 = AuditMark.objects.create(
             audit=self.audit,
             symbol="✓",
             description="Valid mark",
-            work_paper_number="SUMARIA CAJAS Y BANCOS"
+            work_paper_number="CEDULA SUMARIA CAJA BANCOS"
         )
 
         # Crear marca PROGRAMA (debe ser excluida)
@@ -251,7 +283,7 @@ class AuditMarkProcessorTestCase(TestCase):
 
         processor = AuditMarkProcessor(
             audit_id=self.audit.id,
-            filename="2 SUMARIA CAJAS Y BANCOS.xlsx"
+            filename="2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx"
         )
 
         matched_marks = processor.get_matching_marks()
@@ -260,44 +292,87 @@ class AuditMarkProcessorTestCase(TestCase):
         self.assertEqual(len(matched_marks), 1)
         self.assertEqual(matched_marks[0].id, mark1.id)
 
-    def test_bidirectional_matching(self):
-        """Test matching bidireccional"""
+    def test_exact_matching(self):
+        """Test matching exacto: work paper y archivo normalizan igual"""
+        # Actualizado árbol 2026
         mark = AuditMark.objects.create(
             audit=self.audit,
             symbol="✓",
             description="Test mark",
-            work_paper_number="SUMARIA"  # Substring más corto
+            work_paper_number="CEDULA SUMARIA CAJA BANCOS"
         )
 
         processor = AuditMarkProcessor(
             audit_id=self.audit.id,
-            filename="2 SUMARIA CAJAS Y BANCOS.xlsx"  # Nombre completo
+            filename="2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx"
         )
 
         matched_marks = processor.get_matching_marks()
 
-        # Debe coincidir porque "SUMARIA" está en "SUMARIACAJASYBANCOS"
+        # "CEDULASUMARIACAJABANCOS" == "CEDULASUMARIACAJABANCOS"
+        self.assertEqual(len(matched_marks), 1)
+        self.assertEqual(matched_marks[0].id, mark.id)
+
+    def test_bidirectional_matching(self):
+        """Test matching bidireccional (contención con ratio >= 0.8)"""
+        # Actualizado árbol 2026: la contención exige ratio de longitud >= 0.8
+        mark = AuditMark.objects.create(
+            audit=self.audit,
+            symbol="✓",
+            description="Test mark",
+            work_paper_number="CONCILIACION"  # Substring más corto (singular)
+        )
+
+        processor = AuditMarkProcessor(
+            audit_id=self.audit.id,
+            filename="3_CONCILIACIONES.xlsx"  # Nombre completo
+        )
+
+        matched_marks = processor.get_matching_marks()
+
+        # Debe coincidir: "CONCILIACION" está en "CONCILIACIONES" (ratio 12/14 >= 0.8)
         self.assertEqual(len(matched_marks), 1)
         self.assertEqual(matched_marks[0].id, mark.id)
 
     def test_bidirectional_matching_reverse(self):
-        """Test matching bidireccional (reverso)"""
+        """Test matching bidireccional (reverso, contención con ratio >= 0.8)"""
+        # Actualizado árbol 2026: la contención exige ratio de longitud >= 0.8
         mark = AuditMark.objects.create(
             audit=self.audit,
             symbol="✓",
             description="Test mark",
-            work_paper_number="2 SUMARIA CAJAS Y BANCOS"  # Nombre completo
+            work_paper_number="ARQUEO DE CAJAS"  # Nombre completo (plural)
         )
 
         processor = AuditMarkProcessor(
             audit_id=self.audit.id,
-            filename="SUMARIA.xlsx"  # Substring más corto
+            filename="5_ARQUEO_DE_CAJA.xlsx"  # Substring más corto
         )
 
         matched_marks = processor.get_matching_marks()
 
-        # Debe coincidir porque "SUMARIA" está en "SUMARIACAJASYBANCOS"
+        # Debe coincidir: "ARQUEODECAJA" está en "ARQUEODECAJAS" (ratio 12/13 >= 0.8)
         self.assertEqual(len(matched_marks), 1)
+
+    def test_short_substring_does_not_match(self):
+        """Test: substrings demasiado cortos NO deben coincidir (ratio < 0.8)"""
+        # Actualizado árbol 2026: evita falsos positivos con nombres genéricos
+        AuditMark.objects.create(
+            audit=self.audit,
+            symbol="✓",
+            description="Test mark",
+            work_paper_number="SUMARIA"  # Substring muy corto
+        )
+
+        processor = AuditMarkProcessor(
+            audit_id=self.audit.id,
+            filename="2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx"
+        )
+
+        matched_marks = processor.get_matching_marks()
+
+        # "SUMARIA" está contenido pero ratio 7/23 < 0.8 → no coincide
+        self.assertEqual(len(matched_marks), 0)
 
 
 class TemplateFileTestCase(TestCase):
@@ -305,22 +380,37 @@ class TemplateFileTestCase(TestCase):
 
     def test_template_file_normalization(self):
         """Test normalización en TemplateFile"""
+        # Actualizado árbol 2026
         template_file = TemplateFile(
-            filename="2 SUMARIA CAJAS Y BANCOS.xlsx",
-            folder="A",
+            filename="4 CONFIRMACIONES.xlsx",
+            folder="4 PRUEBAS SUSTANTIVAS/1 CAJA Y BANCOS",
             full_path="/test/path.xlsx",
             is_internal=False
         )
 
-        self.assertEqual(template_file.normalized_name, "SUMARIACAJASYBANCOS")
-        self.assertEqual(template_file.display_name, "SUMARIA CAJAS Y BANCOS")
+        self.assertEqual(template_file.normalized_name, "CONFIRMACIONES")
+        self.assertEqual(template_file.display_name, "CONFIRMACIONES")
+        self.assertEqual(template_file.file_type, "xlsx")
+
+    def test_template_file_normalization_underscores(self):
+        """Test normalización con nombres con guiones bajos del árbol 2026"""
+        # Actualizado árbol 2026: los archivos nuevos usan guiones bajos
+        template_file = TemplateFile(
+            filename="2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx",
+            folder="4 PRUEBAS SUSTANTIVAS/1 CAJA Y BANCOS",
+            full_path="/test/path2.xlsx",
+            is_internal=False
+        )
+
+        self.assertEqual(template_file.normalized_name, "CEDULASUMARIACAJABANCOS")
         self.assertEqual(template_file.file_type, "xlsx")
 
     def test_template_file_exclusion_detection(self):
         """TemplateFile debe detectar archivos excluidos"""
+        # El programa EN WORD sigue excluido; el de Excel ya recibe marcas.
         template_file = TemplateFile(
-            filename="1 PROGRAMA AUDITORIA.docx",
-            folder="A",
+            filename="1_PROGRAMA_AUDITORIA_CAJA_BANCOS.docx",
+            folder="4 PRUEBAS SUSTANTIVAS/1 CAJA Y BANCOS",
             full_path="/test/programa.docx",
             is_internal=False
         )
@@ -332,7 +422,7 @@ class TemplateFileTestCase(TestCase):
         """Test conversión a diccionario"""
         template_file = TemplateFile(
             filename="test.xlsx",
-            folder="A",
+            folder="4 PRUEBAS SUSTANTIVAS",
             full_path="/test/test.xlsx",
             is_internal=False
         )
@@ -376,20 +466,19 @@ class WorkPaperValidatorIntegrationTestCase(TestCase):
         """Test validación de work paper válido"""
         validator = WorkPaperValidator(use_cache=False)
 
-        # Este debería coincidir con alguna plantilla real
-        result = validator.validate_work_paper_name("SUMARIA CAJAS Y BANCOS")
+        # Actualizado árbol 2026: coincide con
+        # '4 PRUEBAS SUSTANTIVAS/1 CAJA Y BANCOS/2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx'
+        result = validator.validate_work_paper_name("CEDULA SUMARIA CAJA BANCOS")
 
-        # Si no hay plantillas, estará invalid
-        # Si hay plantillas y coincide, estará valid
         self.assertIsNotNone(result)
-        # Usar is_valid en lugar de validation_status
-        self.assertIsInstance(result.is_valid, bool)
+        self.assertTrue(result.is_valid)
+        self.assertGreaterEqual(len(result.matched_files), 1)
 
     def test_validate_excluded_work_paper(self):
         """Test validación de work paper excluido"""
         validator = WorkPaperValidator(use_cache=False)
 
-        result = validator.validate_work_paper_name("PROGRAMA")
+        result = validator.validate_work_paper_name("config")
 
         self.assertTrue(result.is_excluded)
         self.assertIsNotNone(result.exclusion_reason)
@@ -406,17 +495,18 @@ class WorkPaperValidatorIntegrationTestCase(TestCase):
     def test_validate_audit_marks(self):
         """Test validación de todas las marcas de una auditoría"""
         # Crear marcas de prueba
+        # Actualizado árbol 2026
         AuditMark.objects.create(
             audit=self.audit,
             symbol="✓",
             description="Valid mark",
-            work_paper_number="SUMARIA CAJAS Y BANCOS"
+            work_paper_number="CEDULA SUMARIA CAJA BANCOS"
         )
         AuditMark.objects.create(
             audit=self.audit,
             symbol="◊",
             description="Excluded mark",
-            work_paper_number="PROGRAMA"
+            work_paper_number="config"
         )
         AuditMark.objects.create(
             audit=self.audit,
@@ -431,17 +521,19 @@ class WorkPaperValidatorIntegrationTestCase(TestCase):
         self.assertEqual(report['total_marks'], 3)
         self.assertEqual(report['marks_without_work_paper'], 1)
         self.assertEqual(report['excluded_marks'], 1)
-        # valid_marks depende de si existen templates
+        # Actualizado árbol 2026: la cédula sumaria existe en el árbol nuevo
+        self.assertEqual(report['valid_marks'], 1)
 
     def test_normalize_consistency(self):
         """Test consistencia de normalización entre Validator y Processor"""
         validator = WorkPaperValidator(use_cache=False)
         processor = AuditMarkProcessor(audit_id=1, filename="dummy.xlsx")
 
+        # Actualizado árbol 2026
         test_strings = [
-            "2 SUMARIA CAJAS Y BANCOS.xlsx",
-            "SUMARIA CAJAS Y BANCOS",
-            "10 INTEGRACION EGRESOS.docx",
+            "2_CEDULA_SUMARIA_CAJA_BANCOS.xlsx",
+            "CEDULA SUMARIA CAJA BANCOS",
+            "10_INTEGRACION_EGRESOS.xlsx",
             "A-1"
         ]
 
@@ -461,15 +553,16 @@ class ValidationResultTestCase(TestCase):
 
     def test_validation_result_to_dict(self):
         """Test conversión de ValidationResult a diccionario"""
-        result = ValidationResult("SUMARIA CAJAS Y BANCOS")
+        # Actualizado árbol 2026
+        result = ValidationResult("CEDULA SUMARIA CAJA BANCOS")
         result.is_valid = True
-        result.normalized_name = "SUMARIACAJASYBANCOS"
+        result.normalized_name = "CEDULASUMARIACAJABANCOS"
 
         result_dict = result.to_dict()
 
-        self.assertEqual(result_dict['work_paper_input'], "SUMARIA CAJAS Y BANCOS")
+        self.assertEqual(result_dict['work_paper_input'], "CEDULA SUMARIA CAJA BANCOS")
         self.assertTrue(result_dict['is_valid'])
-        self.assertEqual(result_dict['normalized_name'], "SUMARIACAJASYBANCOS")
+        self.assertEqual(result_dict['normalized_name'], "CEDULASUMARIACAJABANCOS")
 
 
 def run_comprehensive_tests():

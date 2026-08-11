@@ -4,6 +4,8 @@ from .utils.import_utils import importar_cuentas_contables
 from .utils.export_utils import export_cuentas_contables
 from .views import audit_mark_views
 from .views import audit_views
+from .views import muestreo_views
+from .views import parametros_views
 from .api import template_creator_views
 
 urlpatterns = [
@@ -34,4 +36,23 @@ urlpatterns = [
     path('detalle/<int:audit_id>/obtener-carpetas/', audit_views.obtener_carpetas_auditoria, name='obtener_carpetas_auditoria'),
     path("detalle/<int:audit_id>/obtener-documentos/<path:carpeta_nombre>/", audit_views.obtener_documentos_auditoria, name="obtener_documentos_auditoria"),
     path("detalle/<int:audit_id>/descargar-documento/", audit_views.descargar_documento_auditoria, name="descargar_documento_auditoria"),
+
+    # Muestreo NIA 530 (sustituye a la antigua carpeta estática '4 MUESTREO')
+    path('muestreo/<int:audit_id>/', muestreo_views.muestreo_page, name='muestreo_page'),
+    path('muestreo/<int:audit_id>/calcular/', muestreo_views.muestreo_calcular, name='muestreo_calcular'),
+    path('muestreo/<int:audit_id>/descargar/', muestreo_views.muestreo_descargar, name='muestreo_descargar'),
+    path('muestreo/<int:audit_id>/importar-datos/', muestreo_views.muestreo_importar_datos,
+         name='muestreo_importar_datos'),
+    path('muestreo/<int:audit_id>/formato-datos/', muestreo_views.muestreo_formato_datos,
+         name='muestreo_formato_datos'),
+    # Página MUM entregada por el cliente, integrada tal cual
+    path('muestreo/<int:audit_id>/mum/', muestreo_views.muestreo_mum, name='muestreo_mum'),
+    # Página anterior con el motor de muestreo del servidor (5 métodos)
+    path('muestreo/<int:audit_id>/motor/', muestreo_views.muestreo_page_motor,
+         name='muestreo_page_motor'),
+
+    # Parámetros editables por el auditor (años y referencias)
+    path('detalle/<int:audit_id>/anios/', parametros_views.anios_auditoria, name='anios_auditoria'),
+    path('detalle/<int:audit_id>/referencia/', parametros_views.referencia_papel,
+         name='referencia_papel'),
 ]

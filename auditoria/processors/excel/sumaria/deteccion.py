@@ -10,8 +10,19 @@ from openpyxl.worksheet.worksheet import Worksheet
 __all__ = [
     "determinar_cuenta_por_nombre_archivo",
     "verificar_cuenta_en_balances",
+    "cuenta_importada_equivalente",
     "buscar_tabla_sumaria",
+    "numero_de_cedula_generica",
+    "cuentas_sin_cedula_propia",
 ]
+
+# Secciones cuyas cuentas ya tienen cédula de bloque propia (Patrimonio y
+# Estado de Resultados vuelcan la sección entera), así que sus cuentas no se
+# reparten entre las cédulas genéricas.
+_SECCIONES_CON_CEDULA_PROPIA = ("Patrimonio", "ESTADO DE RESULTADOS")
+
+# Secciones cuyas cuentas sí pueden quedar sin cédula propia
+_SECCIONES_REPARTIBLES = ("Activo", "Pasivo")
 
 
 # ---------------------------------------------------------------------
@@ -21,6 +32,9 @@ __all__ = [
 _MAPEO_CUENTAS: dict[str, str] = {
     "CAJA": "Caja y Bancos",
     "BANCO": "Caja y Bancos",
+    # Los papeles de Revisoría nombran esta área por la cuenta del Excel
+    "EFECTIVO": "Caja y Bancos",
+    "EQUIVALENTE": "Caja y Bancos",
     "COBRAR": "Cuentas por Cobrar",
     "CLIENTE": "Cuentas por Cobrar",
     "INVENTARIO": "Inventarios",
@@ -77,6 +91,89 @@ def determinar_cuenta_por_nombre_archivo(file_name: str) -> str | None:
 # Verificación de existencia de cuenta en balances
 # ---------------------------------------------------------------------
 
+# Nombres equivalentes usados por el NUEVO formato de importación
+# ("Revisoría 2025 con subcuentas"). Solo se consultan como fallback,
+# cuando la búsqueda normal no encuentra la cuenta.
+_EQUIVALENCIAS_CUENTAS: dict[str, tuple[str, ...]] = {
+    "Caja y Bancos": ("Efectivo y Equivalentes",),
+}
+
+
+def numero_de_cedula_generica(file_name: str) -> Optional[int]:
+    """
+    Número de una cédula genérica ('9 CEDULA_SUMARIA.xlsx' -> 9), o None.
+
+    Son las plantillas en blanco de 'OTRAS CEDULAS SUMARIAS', que no nombran
+    ninguna cuenta en particular.
+    """
+    encontrado = re.match(r"^\s*(\d+)\s*CEDULA[_ ]SUMARIA\s*\.xlsx$",
+                          (file_name or "").strip(), re.IGNORECASE)
+    return int(encontrado.group(1)) if encontrado else None
+
+
+def cuentas_sin_cedula_propia(
+    balances: Dict[str, float],
+    fechas_semestrales: List[str],
+) -> List[str]:
+    """
+    Cuentas importadas del Activo y del Pasivo que NO tienen cédula propia.
+
+    Son las que el cliente agrega a su Excel Financiero (p. ej. 'Contratos'):
+    como no las reclama ninguna cédula de área, se reparten en orden entre las
+    cédulas de 'OTRAS CEDULAS SUMARIAS'. El orden es estable (sección y luego
+    nombre) para que una cuenta no cambie de cédula entre descargas.
+    """
+    from .data_extraction import obtener_todas_cuentas_seccion
+
+    pendientes: List[str] = []
+    for seccion in _SECCIONES_REPARTIBLES:
+        cuentas = obtener_todas_cuentas_seccion(balances, fechas_semestrales, seccion)
+        for nombre in sorted(cuentas):
+            limpio = _sin_sufijo_tipo(nombre)
+            if not limpio or _tiene_cedula_propia(limpio):
+                continue
+            if limpio.lower().startswith(("total", "suma")):
+                continue  # filas de totales, no son cuentas
+            if limpio not in pendientes:
+                pendientes.append(limpio)
+    return pendientes
+
+
+def _sin_sufijo_tipo(nombre_cuenta: str) -> str:
+    """
+    Quita el tipo de cuenta que la clave del balance lleva al final.
+
+    Las claves se arman como '<balance>-<fecha>-<sección>-<cuenta>-<tipo>'
+    (por ejemplo '...-Activo-Contratos-NT'), así que al leer el nombre viene
+    pegado ese '-NT' que no debe salir impreso en la cédula.
+    """
+    limpio = (nombre_cuenta or "").strip()
+    return re.sub(r"-[A-Z]{1,3}$", "", limpio).strip()
+
+
+def _tiene_cedula_propia(nombre_cuenta: str) -> bool:
+    """
+    True si la cuenta ya la recoge una cédula de área.
+
+    Se comprueba sobre el NOMBRE de la cuenta (no sobre los balances) con las
+    mismas palabras clave que nombran los archivos de cédula, más los nombres
+    equivalentes del formato nuevo ('Efectivo y Equivalentes' es la cédula de
+    Caja y Bancos).
+    """
+    texto = (nombre_cuenta or "").upper()
+    if not texto:
+        return False
+
+    if any(palabra in texto for palabra in _MAPEO_CUENTAS):
+        return True
+
+    for equivalentes in _EQUIVALENCIAS_CUENTAS.values():
+        for equivalente in equivalentes:
+            if equivalente.upper() in texto:
+                return True
+    return False
+
+
 def verificar_cuenta_en_balances(
     balances: Dict[str, float],
     cuenta_asociada: str,
@@ -111,12 +208,67 @@ def verificar_cuenta_en_balances(
                             cuenta_existe = True
                             break
 
+    # 👇 Fallback: probar los nombres equivalentes del nuevo formato
+    if not cuenta_existe:
+        for nombre_equivalente in _EQUIVALENCIAS_CUENTAS.get(cuenta_asociada, ()):
+            cuenta_existe, datos_cuenta = verificar_cuenta_en_balances(
+                balances, nombre_equivalente, fechas_semestrales
+            )
+            if cuenta_existe:
+                break
+
     return cuenta_existe, datos_cuenta
+
+
+def cuenta_importada_equivalente(
+    balances: Dict[str, float],
+    cuenta_asociada: str,
+    fechas_semestrales: List[str],
+) -> Optional[str]:
+    """
+    Devuelve el nombre REAL con que la cuenta está en los balances importados
+    ('Caja y Bancos' → 'Efectivo y Equivalentes' si así vino en el Excel),
+    o None si no existe. Sirve para buscar las subcuentas de la cuenta.
+    """
+    candidatos = (cuenta_asociada,) + _EQUIVALENCIAS_CUENTAS.get(cuenta_asociada, ())
+
+    for candidato in candidatos:
+        normalizada = candidato.lower().strip()
+        for seccion in ["Activo", "Pasivo", "Patrimonio", "ESTADO DE RESULTADOS"]:
+            for fecha in fechas_semestrales:
+                clave_exacta = f"SEMESTRAL-{fecha}-{seccion}-{candidato}"
+                if clave_exacta in balances:
+                    return candidato
+
+                prefijo = f"SEMESTRAL-{fecha}-{seccion}-"
+                for clave in balances:
+                    if clave.startswith(prefijo):
+                        nombre_cuenta = "-".join(clave.split("-")[3:]).strip()
+                        nombre_norm = nombre_cuenta.lower()
+                        if normalizada in nombre_norm or nombre_norm in normalizada:
+                            return nombre_cuenta
+    return None
 
 
 # ---------------------------------------------------------------------
 # Localización de tabla SUMARIA en hoja Excel
 # ---------------------------------------------------------------------
+
+def _es_encabezado_saldos(valor) -> bool:
+    """
+    Detecta la leyenda de saldos de la tabla SUMARIA.
+    Acepta la leyenda clásica 'Saldos s/ Balance' y la de las plantillas
+    nuevas 'SALDOS SEGÚN BALANCE GENERAL' (con o sin tilde).
+    """
+    if not isinstance(valor, str):
+        return False
+    texto = valor.upper()
+    return (
+        "SALDOS S/ BALANCE" in texto
+        or "SALDOS SEGÚN BALANCE" in texto
+        or "SALDOS SEGUN BALANCE" in texto
+    )
+
 
 def buscar_tabla_sumaria(sheet: Worksheet) -> Optional[Dict[str, int | List[int]]]:
     """Intenta ubicar la tabla SUMARIA en *sheet*.
@@ -149,7 +301,7 @@ def buscar_tabla_sumaria(sheet: Worksheet) -> Optional[Dict[str, int | List[int]
     for row_idx in range(fila_titulo, fila_titulo + 15):
         for col_idx in range(1, 15):
             val = sheet.cell(row=row_idx, column=col_idx).value
-            if isinstance(val, str) and "SALDOS S/ BALANCE" in val.upper():
+            if _es_encabezado_saldos(val):
                 fila_encabezados = row_idx
                 break
         if fila_encabezados:
@@ -161,8 +313,7 @@ def buscar_tabla_sumaria(sheet: Worksheet) -> Optional[Dict[str, int | List[int]
     columnas_fechas: List[int] = [
         col
         for col in range(1, 15)
-        if isinstance(sheet.cell(row=fila_encabezados, column=col).value, str)
-        and "SALDOS S/ BALANCE" in sheet.cell(row=fila_encabezados, column=col).value.upper()
+        if _es_encabezado_saldos(sheet.cell(row=fila_encabezados, column=col).value)
     ]
 
     columna_cuenta = None
