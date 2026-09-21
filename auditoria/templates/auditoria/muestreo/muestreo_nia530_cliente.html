@@ -1,0 +1,816 @@
+{% comment %}
+Página de Muestreo NIA 530 — es el HTML que entregó el cliente
+(REVISION 31 JULIO 2026 / 4 Muestreo-NIA530-completo.html), integrado TAL CUAL.
+Lo único que cambia es la línea del encabezado, que muestra la auditoría real.
+{% endcomment %}
+{% verbatim %}<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Muestreo NIA 530 | AuditaPro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg:#F5F7FB; --surface:#FFFFFF; --primary:#2557D6; --primary-dark:#1B3FA3;
+    --primary-tint:#EAF1FF; --primary-border:#A9C6FF; --text:#1E293B; --text-soft:#64748B;
+    --border:#E2E8F0; --success:#158A4A; --success-bg:#EAFBF1; --warn:#B4740E; --warn-bg:#FFF7E6;
+    --danger:#C0342C; --danger-bg:#FDECEC; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  .wrap{max-width:1180px;margin:0 auto;padding:28px 24px 64px;}
+  .breadcrumb{font-size:13px;color:var(--text-soft);margin-bottom:14px;}
+  .breadcrumb b{color:var(--text);font-weight:600;}
+  .page-header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px;margin-bottom:22px;}
+  .page-header h1{font-size:24px;margin:0 0 4px;font-weight:700;}
+  .page-header p{margin:0;color:var(--text-soft);font-size:14px;}
+  .std-badge{display:inline-flex;align-items:center;gap:6px;background:var(--primary-tint);color:var(--primary-dark);border:1px solid var(--primary-border);padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:600;}
+
+  .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px;}
+  .tab{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 12px;cursor:pointer;text-align:left;transition:.15s;}
+  .tab:hover{border-color:var(--primary-border);}
+  .tab.active{border-color:var(--primary);background:var(--primary-tint);}
+  .tab .tab-icon{width:20px;height:20px;color:var(--primary);margin-bottom:8px;font-weight:700;}
+  .tab .tab-title{font-size:13.5px;font-weight:600;display:block;}
+  .tab .tab-sub{font-size:11.5px;color:var(--text-soft);display:block;margin-top:2px;}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:20px;align-items:start;}
+  @media(max-width:900px){.grid{grid-template-columns:1fr;} .tabs{grid-template-columns:repeat(2,1fr);}}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;}
+  .card + .card{margin-top:16px;}
+  .card h2{font-size:15px;margin:0 0 4px;font-weight:700;}
+  .card .card-sub{font-size:12.5px;color:var(--text-soft);margin:0 0 16px;}
+  .step-tag{display:inline-block;background:var(--primary);color:#fff;font-size:10.5px;font-weight:700;border-radius:5px;padding:2px 7px;margin-right:8px;vertical-align:middle;}
+
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--text);margin-bottom:5px;}
+  .field .hint{font-size:11.5px;color:var(--text-soft);margin-top:5px;line-height:1.4;}
+  input[type=number], input[type=text], select, textarea{
+    width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;
+    font-size:14px;font-family:'IBM Plex Mono',monospace;color:var(--text);background:#fff;
+  }
+  select{font-family:'Inter',sans-serif;}
+  textarea{font-size:12.5px;resize:vertical;}
+  input:focus, select:focus, textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-tint);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+  @media(max-width:900px){.row3{grid-template-columns:1fr 1fr;}}
+
+  .btn{border:none;border-radius:9px;padding:11px 18px;font-size:13.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-ghost{background:transparent;color:var(--primary);border:1.5px solid var(--primary-border);}
+  .btn-ghost:hover{background:var(--primary-tint);}
+  .btn:disabled{background:#CBD5E1;color:#fff;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+
+  .banner{border-radius:9px;padding:12px 14px;font-size:13px;margin-bottom:16px;display:flex;gap:9px;align-items:flex-start;line-height:1.5;}
+  .banner.warn{background:var(--warn-bg);color:#7A4E09;border:1px solid #F3D48A;}
+  .banner.danger{background:var(--danger-bg);color:#8C231D;border:1px solid #F0B3AE;}
+  .banner.ok{background:var(--success-bg);color:#0E5C33;border:1px solid #A6E6C4;}
+  .banner b{font-weight:700;}
+
+  .kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .kpi{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:12px 14px;}
+  .kpi .kpi-label{font-size:11px;color:var(--text-soft);font-weight:600;text-transform:uppercase;letter-spacing:.03em;}
+  .kpi .kpi-value{font-size:19px;font-weight:700;margin-top:3px;}
+  .kpi.highlight{background:var(--primary-tint);border-color:var(--primary-border);}
+  .kpi.highlight .kpi-value{color:var(--primary-dark);}
+
+  .trail{background:#0F172A;color:#E2E8F0;border-radius:9px;padding:16px 18px;font-size:12.5px;line-height:2.05;}
+  .trail .step-label{color:#93C5FD;}
+  .trail .step-eq{color:#F1F5F9;}
+  .trail .step-result{color:#6EE7A8;font-weight:600;}
+  .trail hr{border:none;border-top:1px solid #334155;margin:10px 0;}
+
+  table.sel{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.sel th{text-align:left;background:var(--bg);color:var(--text-soft);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;}
+  table.sel td{padding:7px 10px;border-bottom:1px solid #F1F5F9;}
+  .sel-scroll{max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:9px;}
+  .sel-foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--text-soft);}
+
+  .footnote{font-size:11.5px;color:var(--text-soft);margin-top:18px;line-height:1.6;}
+
+  .dropzone{border:1.5px dashed var(--primary-border);background:var(--primary-tint);border-radius:9px;padding:16px;text-align:center;cursor:pointer;}
+  .dropzone:hover{background:#DEEBFF;}
+  .dropzone input{display:none;}
+  .dropzone .dz-title{font-size:13px;font-weight:600;color:var(--primary-dark);}
+  .dropzone .dz-sub{font-size:11.5px;color:var(--text-soft);margin-top:3px;}
+  .file-status{font-size:12px;margin-top:8px;padding:8px 10px;border-radius:7px;}
+  .file-status.ok{background:var(--success-bg);color:#0E5C33;}
+  .file-status.err{background:var(--danger-bg);color:#8C231D;}
+  .empty-sample{padding:26px 10px;text-align:center;color:var(--text-soft);font-size:13px;line-height:1.6;}
+  .paste-toggle{font-size:12px;color:var(--primary);cursor:pointer;text-decoration:underline;margin-top:8px;display:inline-block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="breadcrumb">Inicio &nbsp;›&nbsp; AUD-2025-042 &nbsp;›&nbsp; Planificación &nbsp;›&nbsp; <b>Muestreo</b></div>
+
+  <div class="page-header">
+    <div>
+      <h1>Muestreo de auditoría</h1>
+      <p>{% endverbatim %}{{ audit.identidad }}{% verbatim %} · {% endverbatim %}{{ audit.title }}{% verbatim %} · Del {% endverbatim %}{{ audit.fechaInit|date:"d/m/Y" }}{% verbatim %} al {% endverbatim %}{{ audit.fechaEnd|date:"d/m/Y" }}{% verbatim %}</p>
+    </div>
+    <span class="std-badge">⚖ NIA 530 / NIA 330 — Muestreo de auditoría</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="mum"><div class="tab-icon">Q</div><span class="tab-title">Monetario (MUM)</span><span class="tab-sub">Pruebas sustantivas sobre saldos</span></div>
+    <div class="tab" data-tab="at"><div class="tab-icon">✓</div><span class="tab-title">Por Atributos</span><span class="tab-sub">Pruebas de controles — NIA 330</span></div>
+    <div class="tab" data-tab="cr"><div class="tab-icon">★</div><span class="tab-title">Por Criterio</span><span class="tab-sub">Partidas inusuales / significativas</span></div>
+  </div>
+
+  <!-- ============ MONETARIO (MUM) ============ -->
+  <div class="panel active" id="panel-mum">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2><span class="step-tag">1</span>Monetario (MUM) — Instrucciones</h2>
+          <p class="card-sub">Método de muestreo de atributos monetarios (Probability-Proportional-to-Size), para pruebas sustantivas sobre saldos (bancos, inventarios, CxC). El riesgo de selección crece con el monto de cada partida; apropiado cuando se espera un bajo número de errores y no se prevé subvaluación.</p>
+
+          <div class="field">
+            <label><span class="step-tag">2</span>Subir detalle transaccional <span style="font-weight:400;color:var(--text-soft)">(Excel)</span></label>
+            <label class="dropzone" for="mum-file">
+              <div class="dz-title">📂 Clic para subir el Excel</div>
+              <div class="dz-sub">Columnas: N.º Documento · Descripción · Fecha · Monto</div>
+              <input type="file" id="mum-file" accept=".xlsx,.xls,.csv">
+            </label>
+            <div id="mum-file-status"></div>
+            <div class="btn-row" style="margin-top:8px;">
+              <button type="button" class="btn btn-ghost" onclick="downloadTemplate()">⬇ <span class="step-tag" style="margin-right:4px;">3</span>Descargar formato modelo</button>
+            </div>
+            <div class="hint">Al importar, el <b>Valor en libros (BV)</b> y el <b>N.º de partidas</b> se calculan automáticamente.</div>
+          </div>
+
+          <h2 style="margin-top:10px;"><span class="step-tag">4</span>Parámetros de cálculo</h2>
+          <div class="field">
+            <label>Valor en libros de la población — BV (Q)</label>
+            <input type="number" id="mum-bv" value="1245890" min="0" oninput="calcMUM()">
+            <div class="hint">Suma total de los saldos de la cuenta a muestrear.</div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Materialidad de ejecución — TE (Q)</label>
+              <input type="number" id="mum-te" value="54949" min="1" oninput="calcMUM()">
+              <div class="hint">Normalmente entre 50% y 75% de la materialidad de planificación (NIA 320).</div>
+            </div>
+            <div class="field">
+              <label>Error esperado — EE (Q)</label>
+              <input type="number" id="mum-ee" value="8000" min="0" oninput="calcMUM()">
+              <div class="hint">Basado en el error real detectado en la auditoría anterior. Mantener &lt; ~50% de TE.</div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Nivel de confianza</label>
+              <select id="mum-conf" onchange="calcMUM()">
+                <option value="99">99% → FC 4.61</option>
+                <option value="95" selected>95% → FC 3.00</option>
+                <option value="90">90% → FC 2.31</option>
+                <option value="85">85% → FC 1.90</option>
+                <option value="80">80% → FC 1.61</option>
+              </select>
+              <div class="hint">Define el factor de confiabilidad (FC).</div>
+            </div>
+            <div class="field">
+              <label>N.º de partidas en la población <span style="font-weight:400;color:var(--text-soft)">(informativo)</span></label>
+              <input type="number" id="mum-npop" value="500" min="0" oninput="calcMUM()">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="randomStartMUM()">🎲 <span class="step-tag" style="margin-right:4px;">5</span>Generar muestra</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Resumen ejecutivo</h2>
+          <p class="card-sub">Recalculado en vivo según NIA 530 — método clásico de muestreo por unidad monetaria (PPS).</p>
+          <div id="mum-banners"></div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kpi-label">Factor de confiabilidad</div><div class="kpi-value mono" id="mum-k-fc">—</div></div>
+            <div class="kpi"><div class="kpi-label">Relación EE / TE</div><div class="kpi-value mono" id="mum-k-ratio">—</div></div>
+            <div class="kpi"><div class="kpi-label">Intervalo de muestreo</div><div class="kpi-value mono" id="mum-k-si">—</div></div>
+            <div class="kpi highlight"><div class="kpi-label">Tamaño de muestra final</div><div class="kpi-value mono" id="mum-k-n">—</div></div>
+          </div>
+          <h2 style="margin-top:4px;">Memoria de cálculo</h2>
+          <div class="trail" id="mum-trail"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h2><span class="step-tag">6</span>Muestra seleccionada</h2>
+      <p class="card-sub" id="mum-sample-sub">Suba el Excel de detalle transaccional para ver aquí la muestra con los documentos reales.</p>
+      <div class="sel-scroll"><table class="sel">
+        <thead><tr><th>#</th><th>N.º Documento</th><th>Descripción</th><th>Fecha</th><th>Monto</th></tr></thead>
+        <tbody id="mum-sel-body"></tbody>
+      </table></div>
+      <div class="sel-foot"><span id="mum-sel-count"></span><span id="mum-sel-note"></span></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="downloadSample('mum')">⬇ <span class="step-tag" style="margin-right:4px;">7</span>Descargar muestra en Excel</button>
+      </div>
+    </div>
+    <p class="footnote">Metodología: muestreo clásico por unidad monetaria (PPS) conforme a NIA 530. Los factores de confiabilidad corresponden a la distribución de Poisson para cero errores esperados; el factor de expansión ajusta el tamaño de muestra cuando se anticipan errores.</p>
+  </div>
+
+  <!-- ============ POR ATRIBUTOS ============ -->
+  <div class="panel" id="panel-at">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2><span class="step-tag">1</span>Por Atributos — Instrucciones</h2>
+          <p class="card-sub">Pruebas de controles (NIA 330). Sirve para evaluar si un control interno operó de forma efectiva durante el periodo, probando una muestra de las veces que el control se ejecutó.</p>
+
+          <div class="field">
+            <label><span class="step-tag">2</span>Subir detalle de ejecuciones del control <span style="font-weight:400;color:var(--text-soft)">(Excel, opcional)</span></label>
+            <label class="dropzone" for="at-file">
+              <div class="dz-title">📂 Clic para subir el Excel</div>
+              <div class="dz-sub">Columnas: N.º Documento · Descripción · Fecha · Monto</div>
+              <input type="file" id="at-file" accept=".xlsx,.xls,.csv">
+            </label>
+            <div id="at-file-status"></div>
+            <div class="btn-row" style="margin-top:8px;">
+              <button type="button" class="btn btn-ghost" onclick="downloadTemplate()">⬇ <span class="step-tag" style="margin-right:4px;">3</span>Descargar formato modelo</button>
+            </div>
+            <div class="hint">Si sube el archivo, la Población se completa con el número de filas y la muestra final se selecciona entre esos registros reales.</div>
+          </div>
+
+          <h2 style="margin-top:10px;"><span class="step-tag">4</span>Parámetros de cálculo</h2>
+          <div class="field">
+            <label>Efectividad del control evaluado</label>
+            <select id="at-eff" onchange="calcAT()">
+              <option value="10">Efectivo (desv. tolerable 10%)</option>
+              <option value="7">Moderadamente efectivo (desv. tolerable 7%)</option>
+              <option value="5">Débil / crítico (desv. tolerable 5%)</option>
+            </select>
+            <div class="hint">Qué tan bien diseñado y aplicado está el control, según su Evaluación de Control Interno. Define la desviación tolerable.</div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>Nivel de confianza</label>
+              <select id="at-conf" onchange="calcAT()">
+                <option value="99">99% → Z 2.576</option>
+                <option value="95">95% → Z 1.960 — control clave</option>
+                <option value="90" selected>90% → Z 1.645 — estándar</option>
+              </select>
+              <div class="hint">90% es el estándar para pruebas de controles; use 95–99% si el control es clave para prevenir fraude.</div>
+            </div>
+            <div class="field">
+              <label>Tasa esperada de desviación (%)</label>
+              <input type="number" id="at-p" value="2.5" min="0" max="50" step="0.1" oninput="calcAT()">
+              <div class="hint">Qué % de fallas espera encontrar, según pruebas anteriores o el walkthrough. Sin referencia previa, use 1–3%.</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Población (N.º de controles ejecutados)</label>
+            <input type="number" id="at-n" value="520" min="1" oninput="calcAT()">
+            <div class="hint">Cuántas veces se ejecutó el control en el periodo (ej. conciliaciones mensuales = 12). Se completa sola al subir el Excel.</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="regenAT()">🎲 <span class="step-tag" style="margin-right:4px;">5</span>Generar muestra</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Resumen ejecutivo</h2>
+          <p class="card-sub">Recalculado en vivo según NIA 330 — muestreo por atributos para pruebas de controles.</p>
+          <div id="at-banners"></div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kpi-label">Factor Z</div><div class="kpi-value mono" id="at-k-z">—</div></div>
+            <div class="kpi"><div class="kpi-label">Desviación tolerable (d)</div><div class="kpi-value mono" id="at-k-d">—</div></div>
+            <div class="kpi"><div class="kpi-label">Cobertura de la población</div><div class="kpi-value mono" id="at-k-cov">—</div></div>
+            <div class="kpi highlight"><div class="kpi-label">Tamaño de muestra (n)</div><div class="kpi-value mono" id="at-k-n">—</div></div>
+          </div>
+          <h2 style="margin-top:4px;">Memoria de cálculo</h2>
+          <p class="card-sub">Fórmula: n = (Z² × p(1−p)) / d²</p>
+          <div class="trail" id="at-trail"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h2><span class="step-tag">6</span>Muestra seleccionada</h2>
+      <p class="card-sub" id="at-sample-sub">Genere la muestra para ver aquí los controles a probar. Si importó un Excel, se mostrarán los documentos reales.</p>
+      <div class="sel-scroll"><table class="sel">
+        <thead><tr><th>#</th><th>N.º Documento</th><th>Descripción</th><th>Fecha</th><th>Monto</th></tr></thead>
+        <tbody id="at-sel-body"></tbody>
+      </table></div>
+      <div class="sel-foot"><span id="at-sel-count"></span><span id="at-sel-note"></span></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="downloadSample('at')">⬇ <span class="step-tag" style="margin-right:4px;">7</span>Descargar muestra en Excel</button>
+      </div>
+    </div>
+    <p class="footnote">Metodología: muestreo por atributos conforme a NIA 330. Si al ejecutar la prueba se detectan desviaciones, documente la tasa observada y compárela contra la desviación tolerable (d).</p>
+  </div>
+
+  <!-- ============ POR CRITERIO ============ -->
+  <div class="panel" id="panel-cr">
+    <div class="grid">
+      <div>
+        <div class="card">
+          <h2><span class="step-tag">1</span>Por Criterio — Instrucciones</h2>
+          <p class="card-sub">Selección dirigida de partidas inusuales o significativas (NIA 530, párr. 5). No es muestreo estadístico: se seleccionan partidas individuales por monto, así que necesita el detalle línea por línea.</p>
+
+          <div class="field">
+            <label><span class="step-tag">2</span>Subir detalle transaccional <span style="font-weight:400;color:var(--text-soft)">(Excel)</span></label>
+            <label class="dropzone" for="cr-file">
+              <div class="dz-title">📂 Clic para subir el Excel</div>
+              <div class="dz-sub">Columnas: N.º Documento · Descripción · Fecha · Monto</div>
+              <input type="file" id="cr-file" accept=".xlsx,.xls,.csv">
+            </label>
+            <div id="cr-file-status"></div>
+            <div class="btn-row" style="margin-top:8px;">
+              <button type="button" class="btn btn-ghost" onclick="downloadTemplate()">⬇ <span class="step-tag" style="margin-right:4px;">3</span>Descargar formato modelo</button>
+            </div>
+            <span class="paste-toggle" onclick="document.getElementById('cr-paste-wrap').style.display='block';this.style.display='none';">O pegar los datos manualmente en su lugar</span>
+            <div id="cr-paste-wrap" style="display:none;margin-top:8px;">
+              <textarea id="cr-paste" rows="4" placeholder="DOC00012&#9;Transacción 12&#9;01/03/2024&#9;100000"></textarea>
+              <div class="btn-row" style="margin-top:6px;"><button type="button" class="btn btn-ghost" onclick="parsePaste()">Usar texto pegado</button></div>
+              <div class="hint">Formato: N.º Documento [tab] Descripción [tab] Fecha [tab] Monto — una partida por línea.</div>
+            </div>
+          </div>
+
+          <h2 style="margin-top:10px;"><span class="step-tag">4</span>Criterios de selección</h2>
+          <div class="field">
+            <label>Valor Monetario Total (Q)</label>
+            <input type="number" id="cr-total" value="0" min="0" oninput="calcCR()">
+            <div class="hint">Suma total de la población. Se calcula sola desde el Excel importado; edítela a mano solo si el universo real es distinto al detalle cargado.</div>
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label>% del total a examinar</label>
+              <input type="number" id="cr-pct" value="30" min="0" max="100" oninput="calcCR()">
+              <div class="hint">Qué porción del valor total de la cuenta quiere cubrir. Criterio del auditor; 20–30% es común en cuentas de riesgo moderado.</div>
+            </div>
+            <div class="field">
+              <label>Monto mayor a (Q)</label>
+              <input type="number" id="cr-mayor" value="50000" min="0" oninput="calcCR()">
+              <div class="hint">Toda partida igual o superior a este monto se selecciona al 100% (individualmente significativa). Suele fijarse cerca de la materialidad de ejecución.</div>
+            </div>
+          </div>
+          <div class="field">
+            <label>Monto menor a (Q) — excluye partidas triviales</label>
+            <input type="number" id="cr-menor" value="1000" min="0" oninput="calcCR()">
+            <div class="hint">Las partidas por debajo de este monto se consideran triviales y quedan fuera de la muestra complementaria.</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="calcCR()">⚙ <span class="step-tag" style="margin-right:4px;">5</span>Calcular muestra</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Resumen ejecutivo</h2>
+          <p class="card-sub">Selección dirigida: partidas individualmente significativas + complemento hasta cubrir el % objetivo.</p>
+          <div id="cr-banners"></div>
+          <div class="kpi-grid">
+            <div class="kpi"><div class="kpi-label">Partidas significativas</div><div class="kpi-value mono" id="cr-k-sig">—</div></div>
+            <div class="kpi"><div class="kpi-label">Partidas complementarias</div><div class="kpi-value mono" id="cr-k-comp">—</div></div>
+            <div class="kpi"><div class="kpi-label">Cobertura lograda</div><div class="kpi-value mono" id="cr-k-cov">—</div></div>
+            <div class="kpi highlight"><div class="kpi-label">Tamaño de muestra (n)</div><div class="kpi-value mono" id="cr-k-n">—</div></div>
+          </div>
+          <h2 style="margin-top:4px;">Memoria de cálculo</h2>
+          <div class="trail" id="cr-trail"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <h2><span class="step-tag">6</span>Muestra seleccionada</h2>
+      <p class="card-sub" id="cr-sample-sub">Suba o pegue el detalle transaccional y calcule la muestra para verla aquí.</p>
+      <div class="sel-scroll"><table class="sel">
+        <thead><tr><th>#</th><th>N.º Documento</th><th>Descripción</th><th>Fecha</th><th>Monto</th><th>Motivo</th></tr></thead>
+        <tbody id="cr-sel-body"></tbody>
+      </table></div>
+      <div class="sel-foot"><span id="cr-sel-count"></span><span id="cr-sel-note"></span></div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="downloadSample('cr')">⬇ <span class="step-tag" style="margin-right:4px;">7</span>Descargar muestra en Excel</button>
+      </div>
+    </div>
+    <p class="footnote">Metodología: selección dirigida por criterio profesional conforme a NIA 530, párrafo 5. Los resultados no son estadísticos y no se proyectan a la población. El auditor debe documentar la justificación de los umbrales de monto utilizados.</p>
+  </div>
+
+</div>
+
+<script>
+/* ============ SHARED ============ */
+const fmt = n => 'Q' + Math.round(n).toLocaleString('es-GT');
+const fmt2 = n => n.toLocaleString('es-GT', {minimumFractionDigits:2, maximumFractionDigits:2});
+const RF = {99:4.61, 95:3.00, 90:2.31, 85:1.90, 80:1.61};
+const ZT = {99:2.576, 95:1.960, 90:1.645, 85:1.440, 80:1.282};
+
+const store = { mum:{poblacion:null, lastStart:null}, at:{poblacion:null}, cr:{poblacion:null} };
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+function fmtFecha(v){
+  if(v instanceof Date && !isNaN(v)){
+    const d=String(v.getDate()).padStart(2,'0'), m=String(v.getMonth()+1).padStart(2,'0');
+    return d+'/'+m+'/'+v.getFullYear();
+  }
+  return v==null ? '' : String(v);
+}
+function parseWorkbook(wb){
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  // El reporte del mayor auxiliar trae arriba Empresa / Auditoria / Cuenta,
+  // asi que la fila de encabezados no es la primera: se busca la que tenga
+  // 'documento' y 'monto' y se lee desde ahi.
+  const filasCrudas = XLSX.utils.sheet_to_json(sheet, {header:1, defval:''});
+  let filaEnc = 0;
+  for(let i=0; i<Math.min(filasCrudas.length, 15); i++){
+    const t = (filasCrudas[i]||[]).map(c=>String(c).toLowerCase());
+    if(t.some(x=>x.includes('documento')) && t.some(x=>x.includes('monto'))){ filaEnc = i; break; }
+  }
+  const json = XLSX.utils.sheet_to_json(sheet, {defval:'', range: filaEnc});
+  if(!json.length) return {error:'La hoja está vacía o solo tiene el encabezado sin filas de datos debajo.'};
+  const keys = Object.keys(json[0]);
+  const findKey = (patterns) => keys.find(k => patterns.some(p => k.toString().toLowerCase().includes(p)));
+  const kDoc = findKey(['documento','n° doc','n.º doc','no. doc','num']);
+  const kDesc = findKey(['descrip']);
+  const kFecha = findKey(['fecha']);
+  const kMonto = findKey(['monto','valor','importe']);
+  const missing = [];
+  if(!kDoc) missing.push('N.º Documento');
+  if(!kDesc) missing.push('Descripción');
+  if(!kFecha) missing.push('Fecha');
+  if(!kMonto) missing.push('Monto');
+  if(missing.length) return {error:'No se encontraron las columnas: '+missing.join(', ')+'. Encabezados detectados: '+keys.join(', ')};
+  const rows = json.map(row => ({
+    doc: row[kDoc] ?? '', desc: row[kDesc] ?? '', fecha: row[kFecha] ?? '',
+    monto: parseFloat(row[kMonto]) || 0
+  })).filter(r => r.monto > 0);
+  if(!rows.length) return {error:'El archivo tiene encabezados válidos pero ninguna fila de datos con Monto mayor a 0.'};
+  return {rows};
+}
+
+function stdev(values){
+  const n = values.length;
+  if(n<2) return 0;
+  const mean = values.reduce((a,b)=>a+b,0)/n;
+  const variance = values.reduce((a,b)=>a+Math.pow(b-mean,2),0)/(n-1);
+  return Math.sqrt(variance);
+}
+
+function downloadTemplate(){
+  const header = ['N. Documento','Descripción','Fecha','Monto'];
+  const ejemplo = [
+    ['FAC-0001','Ejemplo de descripción de la partida','01/01/2025', 12500],
+    ['FAC-0002','Ejemplo de descripción de la partida','15/01/2025', 8300]
+  ];
+  const ws = XLSX.utils.aoa_to_sheet([header, ...ejemplo]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Detalle transaccional');
+  XLSX.writeFile(wb, 'formato_detalle_transaccional.xlsx');
+}
+
+function setupFileInput(tab, onLoaded){
+  document.getElementById(tab+'-file').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    const statusEl = document.getElementById(tab+'-file-status');
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt){
+      try{
+        const data = new Uint8Array(evt.target.result);
+        const wb = XLSX.read(data, {type:'array', cellDates:true});
+        const result = parseWorkbook(wb);
+        if(result.error){
+          store[tab].poblacion = null;
+          statusEl.className='file-status err'; statusEl.textContent='⚠ '+result.error;
+          return;
+        }
+        store[tab].poblacion = result.rows;
+        statusEl.className='file-status ok';
+        statusEl.textContent='✓ '+result.rows.length+' partidas importadas · Suma '+fmt(result.rows.reduce((a,r)=>a+r.monto,0));
+        onLoaded(result.rows);
+      }catch(err){
+        store[tab].poblacion = null;
+        statusEl.className='file-status err';
+        statusEl.textContent='⚠ No se pudo leer el archivo. Use un .xlsx, .xls o .csv válido.';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function downloadSample(tab){
+  const rows = window['_sample_'+tab];
+  if(!rows || !rows.length){ alert('Genere/calcule la muestra primero.'); return; }
+  const hasDocs = rows.some(r=>r.doc);
+  const header = tab==='cr'
+    ? ['#','N.º Documento','Descripción','Fecha','Monto','Motivo']
+    : (hasDocs ? ['#','N.º Documento','Descripción','Fecha','Monto'] : ['#','Punto de selección (Q)']);
+  const out = rows.map(r => tab==='cr'
+    ? [r.idx, r.doc, r.desc, fmtFecha(r.fecha), Math.round(r.monto), r.motivo]
+    : (hasDocs ? [r.idx, r.doc, r.desc, fmtFecha(r.fecha), Math.round(r.monto)] : [r.idx, Math.round(r.monto)])
+  );
+  const ws = XLSX.utils.aoa_to_sheet([header, ...out]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Muestra');
+  XLSX.writeFile(wb, 'muestra_'+tab+'.xlsx');
+}
+
+function buildRandomSample(tab, n){
+  const poblacion = store[tab].poblacion;
+  const sub = document.getElementById(tab+'-sample-sub');
+  const body = document.getElementById(tab+'-sel-body');
+  if(!poblacion || !poblacion.length){
+    sub.textContent = 'Suba el Excel de detalle transaccional para ver aquí la muestra con los documentos reales.';
+    body.innerHTML = `<tr><td colspan="5"><div class="empty-sample">Aún no se ha importado el detalle transaccional. Tamaño calculado: n = ${n}.</div></td></tr>`;
+    document.getElementById(tab+'-sel-count').textContent = n+' partidas por seleccionar (sin documentos)';
+    document.getElementById(tab+'-sel-note').textContent = '';
+    window['_sample_'+tab] = null;
+    return;
+  }
+  const idxs = poblacion.map((_,i)=>i);
+  for(let i=idxs.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [idxs[i],idxs[j]]=[idxs[j],idxs[i]]; }
+  const chosen = idxs.slice(0, Math.min(n, idxs.length)).sort((a,b)=>a-b);
+  const sample = chosen.map((i,k)=>({idx:k+1, ...poblacion[i]}));
+  sub.textContent = 'Documentos reales seleccionados aleatoriamente del detalle transaccional importado ('+poblacion.length+' partidas).';
+  body.innerHTML = sample.map(r=>`<tr><td>${r.idx}</td><td class="mono">${r.doc}</td><td>${r.desc}</td><td>${fmtFecha(r.fecha)}</td><td class="mono">${fmt(r.monto)}</td></tr>`).join('');
+  document.getElementById(tab+'-sel-count').textContent = sample.length+' de '+n+' documentos seleccionados';
+  document.getElementById(tab+'-sel-note').textContent = '';
+  window['_sample_'+tab] = sample;
+}
+
+/* ============ MONETARIO (MUM) ============ */
+setupFileInput('mum', rows=>{
+  document.getElementById('mum-bv').value = Math.round(rows.reduce((a,r)=>a+r.monto,0));
+  document.getElementById('mum-npop').value = rows.length;
+  calcMUM();
+});
+
+function calcMUM(){
+  const bv = parseFloat(document.getElementById('mum-bv').value)||0;
+  const te = parseFloat(document.getElementById('mum-te').value)||0;
+  const ee = parseFloat(document.getElementById('mum-ee').value)||0;
+  const conf = parseInt(document.getElementById('mum-conf').value);
+  const fc = RF[conf];
+  const banners = document.getElementById('mum-banners'); banners.innerHTML='';
+
+  if(bv<=0 || te<=0){
+    banners.innerHTML = '<div class="banner danger"><span>⚠</span><div><b>Datos incompletos.</b> Ingrese un valor en libros (BV) y una materialidad de ejecución (TE) mayores a cero.</div></div>';
+    clearMUM(); return;
+  }
+  if(te>bv){
+    banners.innerHTML = '<div class="banner warn"><span>⚠</span><div><b>Revisar parámetros.</b> TE es mayor al valor en libros de la población.</div></div>';
+  }
+  const ratio = ee/te;
+  const si0 = te/fc;
+  const n0 = bv/si0;
+  if(ratio>=1){
+    banners.innerHTML += '<div class="banner danger"><span>⛔</span><div><b>MUM no recomendado.</b> El error esperado (EE) es igual o mayor a la materialidad de ejecución (TE). Considere reducir EE, aumentar la materialidad, examinar al 100% o usar estratificación.</div></div>';
+    clearMUM(true, {fc, ratio, si0}); return;
+  }
+  const fe = 1/(1-ratio);
+  const nRaw = n0*fe;
+  const n = Math.max(1, Math.ceil(nRaw));
+  const siAdj = bv/n;
+  if(ratio>=0.6){
+    banners.innerHTML += '<div class="banner warn"><span>⚠</span><div><b>Error esperado elevado.</b> La relación EE/TE ('+(ratio*100).toFixed(0)+'%) expande significativamente la muestra.</div></div>';
+  }
+
+  document.getElementById('mum-k-fc').textContent = fc.toFixed(2);
+  document.getElementById('mum-k-ratio').textContent = (ratio*100).toFixed(1)+'%';
+  document.getElementById('mum-k-si').textContent = fmt(siAdj);
+  document.getElementById('mum-k-n').textContent = 'n = '+n;
+
+  document.getElementById('mum-trail').innerHTML = `
+    <div><span class="step-label">1. Factor de confiabilidad (FC)</span> — ${conf}% confianza<br><span class="step-eq">FC =</span> <span class="step-result">${fc.toFixed(2)}</span></div><hr>
+    <div><span class="step-label">2. Intervalo de muestreo base (SI₀)</span><br><span class="step-eq">SI₀ = TE ÷ FC = ${fmt(te)} ÷ ${fc.toFixed(2)} =</span> <span class="step-result">${fmt(si0)}</span></div><hr>
+    <div><span class="step-label">3. Tamaño de muestra básico (n₀)</span><br><span class="step-eq">n₀ = BV ÷ SI₀ = ${fmt(bv)} ÷ ${fmt(si0)} =</span> <span class="step-result">${nRaw.toFixed(1)}</span></div><hr>
+    <div><span class="step-label">4. Factor de expansión (FE)</span><br><span class="step-eq">FE = 1 ÷ (1 − EE÷TE) =</span> <span class="step-result">${fe.toFixed(3)}</span></div><hr>
+    <div><span class="step-label">5. Tamaño de muestra ajustado (n)</span><br><span class="step-eq">n = n₀ × FE → redondeado =</span> <span class="step-result">n = ${n}</span></div><hr>
+    <div><span class="step-label">6. Intervalo de muestreo final (SI)</span><br><span class="step-eq">SI = BV ÷ n =</span> <span class="step-result">${fmt(siAdj)}</span></div>
+  `;
+  buildMUMSelection(bv, n, siAdj);
+}
+
+function clearMUM(danger, partial){
+  document.getElementById('mum-k-ratio').textContent = partial ? (partial.ratio*100).toFixed(1)+'%' : '—';
+  document.getElementById('mum-k-fc').textContent = partial ? partial.fc.toFixed(2) : '—';
+  document.getElementById('mum-k-si').textContent = '—';
+  document.getElementById('mum-k-n').textContent = '—';
+  document.getElementById('mum-trail').innerHTML = danger
+    ? '<span style="color:#FCA5A5;">El cálculo se detiene aquí — corrija EE o TE para continuar.</span>'
+    : '<span style="color:#94A3B8;">Complete los parámetros para generar la memoria de cálculo.</span>';
+  document.getElementById('mum-sel-body').innerHTML='';
+  document.getElementById('mum-sel-count').textContent='';
+  document.getElementById('mum-sample-sub').textContent = 'Suba el Excel de detalle transaccional para ver aquí la muestra con los documentos reales.';
+  window._sample_mum = null;
+}
+
+function buildMUMSelection(bv, n, si){
+  let start = store.mum.lastStart;
+  if(!start || start<=0 || start>si) start = Math.round(Math.random()*si*100)/100;
+  store.mum.lastStart = start;
+  const points = [];
+  for(let k=0;k<n;k++){ const p = start+k*si; if(p>bv) break; points.push(p); }
+
+  const poblacion = store.mum.poblacion;
+  const body = document.getElementById('mum-sel-body');
+  const sub = document.getElementById('mum-sample-sub');
+  const showMax = 60;
+
+  if(!poblacion || !poblacion.length){
+    sub.textContent = 'Suba el Excel de detalle transaccional para ver aquí la muestra con los documentos reales.';
+    body.innerHTML = `<tr><td colspan="5"><div class="empty-sample">Aún no se ha importado el detalle transaccional.<br>Se generaron ${points.length} puntos de selección internamente.</div></td></tr>`;
+    document.getElementById('mum-sel-count').textContent = points.length+' puntos de selección (sin documentos)';
+    document.getElementById('mum-sel-note').textContent = 'Punto de inicio: '+fmt(start);
+    window._sample_mum = points.map((p,i)=>({idx:i+1, doc:'', desc:'', fecha:'', monto:p}));
+    return;
+  }
+  // Seleccion MUM sin repetir documentos (NIA 530): las partidas con monto
+  // mayor o igual al intervalo son individualmente significativas y se examinan
+  // al 100 % una sola vez; el resto se recorre de forma sistematica, donde cada
+  // punto cae en una partida distinta. Sin esto, una partida grande absorbia
+  // varios puntos y salia repetida en la muestra.
+  const signif = poblacion.filter(r=>r.monto >= si);
+  const resto  = poblacion.filter(r=>r.monto <  si);
+  const sample = signif.map(r=>({doc:r.doc, desc:r.desc, fecha:r.fecha, monto:r.monto}));
+  let cum=0;
+  const cumRows = resto.map(r=>{cum+=r.monto; return {...r, cumAfter:cum};});
+  let idx=0, punto=start;
+  while(punto <= cum && idx < cumRows.length){
+    while(idx < cumRows.length && cumRows[idx].cumAfter < punto) idx++;
+    if(idx >= cumRows.length) break;
+    const r = cumRows[idx];
+    sample.push({doc:r.doc, desc:r.desc, fecha:r.fecha, monto:r.monto});
+    idx++; punto += si;
+  }
+  sample.forEach((r,i)=>{ r.idx = i+1; });
+  sub.textContent = 'Documentos reales seleccionados a partir del detalle transaccional importado ('+poblacion.length+' partidas).';
+  body.innerHTML = sample.slice(0,showMax).map(r=>`<tr><td>${r.idx}</td><td class="mono">${r.doc}</td><td>${r.desc}</td><td>${fmtFecha(r.fecha)}</td><td class="mono">${fmt(r.monto)}</td></tr>`).join('');
+  document.getElementById('mum-sel-count').textContent = sample.length+' documentos distintos seleccionados (n calculado = '+n+')';
+  document.getElementById('mum-sel-note').textContent = sample.length>showMax ? 'Mostrando primeros '+showMax : ('Punto de inicio: '+fmt(start));
+  window._sample_mum = sample;
+}
+
+function randomStartMUM(){ store.mum.lastStart=null; calcMUM(); }
+
+/* ============ POR ATRIBUTOS ============ */
+setupFileInput('at', rows=>{
+  document.getElementById('at-n').value = rows.length;
+  calcAT();
+});
+
+function calcAT(){
+  const d = parseFloat(document.getElementById('at-eff').value)/100;
+  const z = ZT[document.getElementById('at-conf').value];
+  const p = parseFloat(document.getElementById('at-p').value)/100 || 0;
+  const N = parseInt(document.getElementById('at-n').value)||0;
+  const banners = document.getElementById('at-banners'); banners.innerHTML='';
+
+  if(N<=0){
+    banners.innerHTML = '<div class="banner danger"><span>⚠</span><div><b>Datos incompletos.</b> Ingrese la población (N.º de controles ejecutados).</div></div>';
+    ['at-k-z','at-k-d','at-k-cov','at-k-n'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('at-trail').innerHTML = '<span style="color:#94A3B8;">Complete los parámetros para generar la memoria de cálculo.</span>';
+    return;
+  }
+  if(p>=d){
+    banners.innerHTML = '<div class="banner danger"><span>⛔</span><div><b>Tasa esperada demasiado alta.</b> La tasa esperada de desviación es igual o mayor a la desviación tolerable. El control probablemente no es confiable — considere pruebas sustantivas adicionales en lugar de confiar en el control.</div></div>';
+  }
+  const n0 = (Math.pow(z,2)*p*(1-p))/Math.pow(d,2);
+  const n = Math.max(1, Math.ceil(n0));
+  const cov = (n/N)*100;
+
+  document.getElementById('at-k-z').textContent = z.toFixed(3);
+  document.getElementById('at-k-d').textContent = (d*100).toFixed(0)+'%';
+  document.getElementById('at-k-cov').textContent = cov.toFixed(1)+'%';
+  document.getElementById('at-k-n').textContent = 'n = '+n;
+
+  document.getElementById('at-trail').innerHTML = `
+    <div><span class="step-label">1. Parámetros</span><br><span class="step-eq">Z = ${z.toFixed(3)} · p = ${(p*100).toFixed(1)}% · d = ${(d*100).toFixed(0)}%</span></div><hr>
+    <div><span class="step-label">2. Tamaño de muestra básico (n₀)</span><br><span class="step-eq">n₀ = (Z² × p(1−p)) / d² =</span> <span class="step-result">${n0.toFixed(2)}</span></div><hr>
+    <div><span class="step-label">3. Tamaño de muestra final (n)</span> — redondeado hacia arriba<br><span class="step-eq">n =</span> <span class="step-result">${n}</span></div><hr>
+    <div><span class="step-label">4. Cobertura de la población</span><br><span class="step-eq">n ÷ N = ${n} ÷ ${N} =</span> <span class="step-result">${cov.toFixed(1)}%</span></div>
+    <div class="footnote" style="margin-top:8px;">Si al ejecutar la prueba la tasa observada de desviación supera ${(d*100).toFixed(0)}%, el control no debe considerarse efectivo (NIA 330).</div>
+  `;
+  buildRandomSample('at', n);
+}
+
+function regenAT(){ calcAT(); }
+
+/* ============ POR CRITERIO ============ */
+setupFileInput('cr', rows=>{
+  document.getElementById('cr-total').value = Math.round(rows.reduce((a,r)=>a+r.monto,0));
+  calcCR();
+});
+
+function parsePaste(){
+  const txt = document.getElementById('cr-paste').value.trim();
+  const statusId = 'cr-file-status';
+  if(!txt){ return; }
+  const lines = txt.split('\n').map(l=>l.trim()).filter(Boolean);
+  const rows = lines.map(l=>{
+    const parts = l.split('\t');
+    return { doc:(parts[0]||'').trim(), desc:(parts[1]||'').trim(), fecha:(parts[2]||'').trim(), monto: parseFloat(parts[3])||0 };
+  }).filter(r=>r.monto>0);
+  if(!rows.length){
+    document.getElementById(statusId).className='file-status err';
+    document.getElementById(statusId).textContent='⚠ No se detectaron partidas válidas. Verifique que cada línea use tabulaciones entre columnas.';
+    return;
+  }
+  store.cr.poblacion = rows;
+  document.getElementById('cr-total').value = Math.round(rows.reduce((a,r)=>a+r.monto,0));
+  document.getElementById(statusId).className='file-status ok';
+  document.getElementById(statusId).textContent='✓ '+rows.length+' partidas cargadas desde el texto pegado.';
+  calcCR();
+}
+
+function calcCR(){
+  const total = parseFloat(document.getElementById('cr-total').value)||0;
+  const pct = parseFloat(document.getElementById('cr-pct').value)||0;
+  const mayor = parseFloat(document.getElementById('cr-mayor').value)||0;
+  const menor = parseFloat(document.getElementById('cr-menor').value)||0;
+  const banners = document.getElementById('cr-banners'); banners.innerHTML='';
+  const poblacion = store.cr.poblacion;
+
+  if(!poblacion || !poblacion.length){
+    banners.innerHTML = '<div class="banner danger"><span>⚠</span><div><b>Falta el detalle transaccional.</b> Suba el Excel o pegue las partidas para calcular la muestra.</div></div>';
+    ['cr-k-sig','cr-k-comp','cr-k-cov','cr-k-n'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('cr-trail').innerHTML = '<span style="color:#94A3B8;">Cargue el detalle transaccional para generar la memoria de cálculo.</span>';
+    return;
+  }
+  if(total<=0){
+    banners.innerHTML = '<div class="banner danger"><span>⚠</span><div><b>Valor Monetario Total inválido.</b> Debe ser mayor a cero.</div></div>';
+    return;
+  }
+  if(mayor>0 && menor>0 && menor>=mayor){
+    banners.innerHTML += '<div class="banner warn"><span>⚠</span><div><b>Revisar umbrales.</b> El "Monto menor a" debería ser inferior al "Monto mayor a".</div></div>';
+  }
+
+  const significativas = poblacion.filter(r => mayor>0 && r.monto>=mayor);
+  const resto = poblacion.filter(r => !(mayor>0 && r.monto>=mayor) && r.monto>=menor).sort((a,b)=>b.monto-a.monto);
+
+  const sumSig = significativas.reduce((a,r)=>a+r.monto,0);
+  const target = total*(pct/100);
+  let sumAcum = sumSig;
+  const complementarias = [];
+  for(const r of resto){
+    if(sumAcum>=target) break;
+    complementarias.push(r);
+    sumAcum += r.monto;
+  }
+
+  const sigRows = significativas.map((r,i)=>({idx:i+1, ...r, motivo:'Individualmente significativa'}));
+  const compRows = complementarias.map((r,i)=>({idx:sigRows.length+i+1, ...r, motivo:'Complementaria (cobertura %)'}));
+  const sample = [...sigRows, ...compRows];
+  const cov = total>0 ? (sumAcum/total)*100 : 0;
+
+  document.getElementById('cr-k-sig').textContent = significativas.length;
+  document.getElementById('cr-k-comp').textContent = complementarias.length;
+  document.getElementById('cr-k-cov').textContent = cov.toFixed(1)+'%';
+  document.getElementById('cr-k-n').textContent = 'n = '+sample.length;
+
+  document.getElementById('cr-trail').innerHTML = `
+    <div><span class="step-label">1. Partidas individualmente significativas</span><br><span class="step-eq">Monto ≥ ${fmt(mayor)} → </span><span class="step-result">${significativas.length} partidas, suma ${fmt(sumSig)}</span></div><hr>
+    <div><span class="step-label">2. Cobertura objetivo</span><br><span class="step-eq">Objetivo = Valor Total × % a examinar = ${fmt(total)} × ${pct}% =</span> <span class="step-result">${fmt(target)}</span></div><hr>
+    <div><span class="step-label">3. Complemento hasta cubrir el objetivo</span> — partidas restantes (excluye triviales &lt; ${fmt(menor)}), en orden descendente de monto<br><span class="step-eq">Partidas agregadas =</span> <span class="step-result">${complementarias.length}</span></div><hr>
+    <div><span class="step-label">4. Cobertura lograda</span><br><span class="step-eq">Suma seleccionada ÷ Valor Total = ${fmt(sumAcum)} ÷ ${fmt(total)} =</span> <span class="step-result">${cov.toFixed(1)}%</span></div><hr>
+    <div><span class="step-label">5. Tamaño de muestra total (n)</span><br><span class="step-eq">n = significativas + complementarias =</span> <span class="step-result">n = ${sample.length}</span></div>
+  `;
+
+  const sub = document.getElementById('cr-sample-sub');
+  const body = document.getElementById('cr-sel-body');
+  if(!sample.length){
+    sub.textContent = 'Ninguna partida cumple los criterios definidos — ajuste los umbrales de monto.';
+    body.innerHTML = `<tr><td colspan="6"><div class="empty-sample">No hay partidas que seleccionar con los parámetros actuales.</div></td></tr>`;
+    document.getElementById('cr-sel-count').textContent='';
+  } else {
+    sub.textContent = 'Partidas seleccionadas por criterio profesional a partir del detalle transaccional importado ('+poblacion.length+' partidas totales).';
+    body.innerHTML = sample.map(r=>`<tr><td>${r.idx}</td><td class="mono">${r.doc}</td><td>${r.desc}</td><td>${fmtFecha(r.fecha)}</td><td class="mono">${fmt(r.monto)}</td><td>${r.motivo}</td></tr>`).join('');
+    document.getElementById('cr-sel-count').textContent = sample.length+' documentos seleccionados';
+  }
+  document.getElementById('cr-sel-note').textContent = '';
+  window._sample_cr = sample;
+}
+
+/* init */
+calcMUM(); calcAT();
+</script>
+</body>
+</html>
+{% endverbatim %}

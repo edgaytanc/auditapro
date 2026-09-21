@@ -185,25 +185,92 @@
         <!-- POR CRITERIO -->
         <div class="mform" id="form-criterio" style="display:none">
             <div class="hint" style="margin-top:14px;">
-                Este método no es estadístico (NIA 530, párr. 5 — selección dirigida): registra manualmente las
-                partidas seleccionadas con su descripción, monto y el criterio profesional aplicado. Los resultados
-                no se proyectan a la población.
+                Este método no es estadístico (NIA 530, párr. 5 — selección dirigida): selecciona partidas
+                individuales <strong>por monto</strong>, así que necesita el detalle línea por línea
+                (N.º Documento · Descripción · Fecha · Monto). Suba el Excel del mayor auxiliar más abajo
+                o pegue las partidas aquí. Los resultados no se proyectan a la población.
             </div>
-            <table class="seleccion-table" id="tablaPartidas">
-                <thead>
-                    <tr>
-                        <th style="width:40%">Descripción de la partida</th>
-                        <th style="width:20%">Monto (Q)</th>
-                        <th style="width:35%">Criterio de selección</th>
-                        <th style="width:5%"></th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <button type="button" class="calc-btn secundario" id="agregarPartidaBtn" style="margin-top:10px;">+ Agregar partida</button>
+
+            <div class="muestreo-field" style="margin-top:12px;">
+                <label for="c_pegado">O pegue los datos (N.º Documento [tab] Descripción [tab] Fecha [tab] Monto)</label>
+                <textarea id="c_pegado" rows="6" style="width:100%;font-family:inherit;"
+                          placeholder="DOC00012&#9;Transacción 12&#9;01/03/2024&#9;100000&#10;DOC00013&#9;Transacción 13&#9;05/03/2024&#9;500000"></textarea>
+                <div class="field-help">
+                    Si sube un Excel abajo, se usa ese archivo y este texto pegado se ignora.
+                </div>
+            </div>
+
+            <div class="muestreo-form-grid" style="margin-top:4px;">
+                <div class="muestreo-field">
+                    <label for="c_total">Valor Monetario Total (Q)</label>
+                    <input type="number" id="c_total" step="0.01" min="0" placeholder="Se calcula solo">
+                    <button type="button" class="calc-btn secundario" id="c_totalBtn"
+                            style="margin-top:6px;"
+                            title="Recalcular sumando el detalle pegado">↻ Generar</button>
+                    <div class="field-help">
+                        Suma total de la población. Se calcula sola desde el Excel importado o el texto
+                        pegado; edítela a mano solo si el universo real es distinto al detalle cargado.
+                    </div>
+                </div>
+                <div class="muestreo-field">
+                    <label for="c_pct">% del total a examinar</label>
+                    <input type="number" id="c_pct" value="30" step="1" min="1" max="100">
+                    <div class="field-help">
+                        Qué porción del valor total de la cuenta quiere cubrir. Es criterio del auditor;
+                        20–30 % es común en cuentas de riesgo moderado.
+                    </div>
+                </div>
+                <div class="muestreo-field">
+                    <label for="c_mayor">Monto mayor a (Q)</label>
+                    <input type="number" id="c_mayor" value="50000" step="0.01" min="0">
+                    <div class="field-help">
+                        Toda partida igual o superior a este monto se selecciona al 100 % (partida
+                        individualmente significativa). Suele fijarse cerca de la materialidad de ejecución.
+                    </div>
+                </div>
+                <div class="muestreo-field">
+                    <label for="c_menor">Monto menor a (Q) — excluye partidas triviales</label>
+                    <input type="number" id="c_menor" value="1000" step="0.01" min="0">
+                    <div class="field-help">
+                        Las partidas por debajo de este monto se consideran triviales y quedan fuera de la
+                        muestra complementaria.
+                    </div>
+                </div>
+            </div>
         </div>
 
         <button type="button" class="calc-btn" id="calcularBtn">Calcular muestra</button>
+
+        <!-- Importación del Excel de datos (mayor auxiliar) -->
+        <div class="import-datos">
+            <h3>O genere la muestra desde el Excel de datos</h3>
+            <div class="hint">
+                Suba el mayor auxiliar de la cuenta a muestrear con las columnas
+                <strong>N.º Documento · Descripción · Fecha · Monto</strong>. El sistema deduce
+                la población (N), la desviación estándar (σ) y el valor en libros, calcula la
+                muestra y devuelve las partidas reales seleccionadas.
+                <br>
+                El archivo <strong>no se guarda en el sistema</strong>: se lee, se genera la
+                muestra y se descarta. Para volver a generarla, súbalo de nuevo.
+            </div>
+            <div class="import-row">
+                <input type="file" id="archivoDatos" accept=".xlsx" class="form-control">
+                <button type="button" class="calc-btn secundario" id="importarDatosBtn">
+                    Subir y generar muestra
+                </button>
+                <button type="button" class="calc-btn secundario" id="formatoDatosBtn">
+                    ⬇ Descargar formato de ejemplo
+                </button>
+            </div>
+            <div class="import-estado" id="importEstado"></div>
+        </div>
+
+        <div class="hint" style="margin-top:14px;">
+            Para el método Monetario (MUM) con la memoria de cálculo paso a paso y la descarga
+            directa de la muestra, abra la
+            <a href="{% url 'muestreo_mum' audit.id %}">página de Muestreo MUM — NIA 530</a>.
+        </div>
+
         <div class="error-box" id="errorBox"></div>
 
         <!-- Resultados -->
@@ -223,8 +290,6 @@
         <div class="descarga-row">
             <span class="dl-label">Descargar resultado</span>
             <button type="button" class="dl-btn" data-formato="excel">⬇ Excel</button>
-            <button type="button" class="dl-btn" data-formato="word">⬇ Word</button>
-            <button type="button" class="dl-btn" data-formato="pdf">⬇ PDF</button>
         </div>
     </div>
 </div>
@@ -234,7 +299,9 @@
 window.MUESTREO_CTX = {
     audit_id: "{{ audit.id }}",
     calcular_url: "{% url 'muestreo_calcular' audit_id=audit.id %}",
-    descargar_url: "{% url 'muestreo_descargar' audit_id=audit.id %}"
+    descargar_url: "{% url 'muestreo_descargar' audit_id=audit.id %}",
+    importar_url: "{% url 'muestreo_importar_datos' audit_id=audit.id %}",
+    formato_url: "{% url 'muestreo_formato_datos' audit_id=audit.id %}"
 };
 </script>
 <script src="{% static 'js/muestreo_nia530.js' %}"></script>

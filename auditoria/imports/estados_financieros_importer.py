@@ -307,6 +307,21 @@ def _num(value):
         return None
 
 
+def _norm_nombre_cuenta(value):
+    """
+    Normaliza un nombre de cuenta para compararlo entre hojas: sin tildes,
+    minúsculas y con espacios colapsados. Así 'Inversiones' (hoja SUBCUENTAS)
+    casa con 'inversiones' (hoja ESTADOS FINANCIEROS) aunque cambien
+    mayúsculas o espacios de más.
+    """
+    import unicodedata
+    if value is None:
+        return ""
+    texto = unicodedata.normalize("NFD", str(value))
+    texto = "".join(c for c in texto if unicodedata.category(c) != "Mn")
+    return " ".join(texto.lower().split())
+
+
 def importar_subcuentas_estados_financieros(audit_id, workbook):
     """
     Lee las hojas de SUBCUENTAS (ACTIVO / PASIVO / PATRIMONIO / RESULTADOS) y
@@ -323,7 +338,12 @@ def importar_subcuentas_estados_financieros(audit_id, workbook):
         return
 
     main_sheet = workbook["ESTADOS FINANCIEROS"]
-    cuentas_principales = set()
+    # {nombre normalizado -> nombre canónico de la hoja principal}: la
+    # comparación es tolerante a mayúsculas/tildes ('Inversiones' de la hoja
+    # de subcuentas casa con 'inversiones' de la hoja principal) y lo que se
+    # guarda como cuenta_principal es SIEMPRE el nombre de la hoja principal,
+    # que es el que usan las cédulas al buscar subcuentas.
+    cuentas_principales = {}
 
     for row in main_sheet.iter_rows(min_row=3, values_only=True):
         codigo = row[0]
@@ -331,7 +351,8 @@ def importar_subcuentas_estados_financieros(audit_id, workbook):
         if not cuenta:
             continue
         # No quemamos códigos: solo tomamos cualquier fila que tenga cuenta
-        cuentas_principales.add(str(cuenta).strip())
+        nombre = str(cuenta).strip()
+        cuentas_principales.setdefault(_norm_nombre_cuenta(nombre), nombre)
 
     # 2) Mapear nombres de hojas ignorando mayúsculas/espacios
     sheetnames_lower = {name.lower(): name for name in workbook.sheetnames}
@@ -421,9 +442,12 @@ def _procesar_subhoja_subcuentas(audit, sheet, seccion_fija, cuentas_principales
             current_cuenta_principal = None
             continue
 
-        # ¿Es una cuenta principal? (coincide con la hoja ESTADOS FINANCIEROS)
-        if nombre_str in cuentas_principales:
-            current_cuenta_principal = nombre_str
+        # ¿Es una cuenta principal? (coincide con la hoja ESTADOS FINANCIEROS,
+        # comparando sin tildes/mayúsculas). Se usa el nombre canónico de la
+        # hoja principal para que las cédulas encuentren las subcuentas.
+        nombre_normalizado = _norm_nombre_cuenta(nombre_str)
+        if nombre_normalizado in cuentas_principales:
+            current_cuenta_principal = cuentas_principales[nombre_normalizado]
             continue
 
         # Si no tenemos sección o cuenta principal, no podemos ubicar esta fila

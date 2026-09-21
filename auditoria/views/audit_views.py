@@ -158,6 +158,34 @@ def generate_audit_document(req, audit_id):
 
 
 
+def nombres_auditor_y_jefe(audit, usuario=None):
+    """
+    Nombres que se escriben en 'Elaboró' (auditor) y 'Revisó' (jefe/supervisor).
+
+    Los datos salen del acceso al sistema, como pidió el cliente:
+      · En grupo: el auditor son los usuarios asignados y el jefe es quien creó
+        la auditoría.
+      · Individual: no hay usuarios asignados, así que el auditor es el propio
+        usuario que entró al sistema (antes se escribía 'Sin asignar').
+    """
+    def _nombre(usuario_modelo):
+        if not usuario_modelo:
+            return ""
+        return (usuario_modelo.get_full_name() or usuario_modelo.username or "").strip()
+
+    auditores_qs = getattr(audit, "assigned_users", None)
+    auditores = list(auditores_qs.all()) if auditores_qs else []
+    auditor_nombre = ", ".join(n for n in (_nombre(u) for u in auditores) if n)
+
+    jefe_nombre = _nombre(audit.audit_manager)
+
+    if not auditor_nombre:
+        # Auditor individual: sus datos vienen de su propio acceso
+        auditor_nombre = _nombre(usuario) or jefe_nombre
+
+    return auditor_nombre or "Sin asignar", jefe_nombre or "Sin asignar"
+
+
 @login_required
 def generar_documento_modal(request, audit_id):
     try:
@@ -165,13 +193,9 @@ def generar_documento_modal(request, audit_id):
     except Audit.DoesNotExist:
         return JsonResponse({"error": "Auditoría no encontrada."}, status=404)
 
-    # Auditor(es) desde assigned_users (exactamente como te funcionaba)
-    auditores_qs = getattr(audit, "assigned_users", None)
-    auditores = auditores_qs.all() if auditores_qs else []
-    auditor_nombre = ", ".join([(u.get_full_name() or u.username) for u in auditores]) or "Sin asignar"
-
-    # Supervisor desde audit_manager (exactamente como te funcionaba)
-    supervisor_nombre = audit.audit_manager.get_full_name() if audit.audit_manager else "Sin asignar"
+    # Datos tomados del acceso del usuario (auditor individual o en grupo)
+    auditor_nombre, supervisor_nombre = nombres_auditor_y_jefe(
+        audit, getattr(request, "user", None))
 
     html = render_to_string(
         "auditoria/modals/generar_documento_modal.html",
@@ -304,6 +328,11 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
     celdas "Elaboro"/"Reviso" (y "Fecha" debajo). Esta función localiza esas
     celdas ancla y escribe el dato en la celda contigua derecha, solo si está
     vacía (no pisa datos existentes).
+
+    Cada plantilla rotula ese bloque a su manera —"Elaboro"/"Reviso" en unas y
+    "Hecho por"/"Revisado por" en las nuevas cédulas sumarias—, así que se
+    reconocen todas las variantes para que los datos peguen en TODAS las
+    plantillas, como pidió el cliente.
     """
     import unicodedata
 
@@ -312,30 +341,188 @@ def _inyectar_datos_auditor_jefe(wb, auditor_nombre, supervisor_nombre,
         s = "".join(c for c in s if unicodedata.category(c) != "Mn")
         return s.strip().rstrip(":").strip().lower()
 
+    # etiqueta del papel -> (nombre a escribir, fecha del bloque)
+    datos_auditor = (auditor_nombre, fecha_elaboracion)
+    datos_jefe = (supervisor_nombre, fecha_aprobacion)
     objetivos = {
-        "elaboro": (auditor_nombre, fecha_elaboracion),
-        "reviso": (supervisor_nombre, fecha_aprobacion),
+        # variantes del bloque del auditor
+        "elaboro": datos_auditor,
+        "elaborado por": datos_auditor,
+        "hecho por": datos_auditor,
+        "preparado por": datos_auditor,
+        # variantes del bloque del jefe / supervisor
+        "reviso": datos_jefe,
+        "revisado por": datos_jefe,
+        "aprobado por": datos_jefe,
     }
+    # Etiquetas sueltas: las hojas de Revisoría (K-1, K-2...) rotulan el recuadro
+    # como "Auditor" y "Supervisor". Se aceptan SOLO cuando forman parte de un
+    # recuadro de identificación (hay una etiqueta 'Fecha ...' a un par de filas),
+    # porque esas mismas palabras aparecen dentro del texto de los cuestionarios.
+    sueltas = {"auditor": datos_auditor, "supervisor": datos_jefe}
+    # Fechas con nombre propio dentro del recuadro
+    fechas_sueltas = {
+        "fecha elaboracion": fecha_elaboracion,
+        "fecha de elaboracion": fecha_elaboracion,
+        "fecha aprobacion": fecha_aprobacion,
+        "fecha de aprobacion": fecha_aprobacion,
+        "fecha revision": fecha_aprobacion,
+        "fecha de revision": fecha_aprobacion,
+    }
+
+    def _celda_escribible(sh, fila, columna, origen=None):
+        """
+        Celda donde SÍ se puede escribir en (fila, columna).
+
+        Si la celda pertenece a un rango combinado se devuelve su ancla, que es
+        la que Excel muestra; escribir en cualquier otra reventaba con
+        «'MergedCell' object attribute 'value' is read-only» y la descarga
+        devolvía error 500. Devuelve None si el ancla es la propia etiqueta
+        (`origen`) o no hay dónde escribir.
+        """
+        from openpyxl.cell.cell import MergedCell
+
+        celda = sh.cell(row=fila, column=columna)
+        if not isinstance(celda, MergedCell):
+            return celda
+
+        for rango in sh.merged_cells.ranges:
+            if (rango.min_row <= fila <= rango.max_row
+                    and rango.min_col <= columna <= rango.max_col):
+                ancla = sh.cell(row=rango.min_row, column=rango.min_col)
+                if origen is not None and ancla.coordinate == origen.coordinate:
+                    return None
+                return ancla
+        return None
+
+    def _es_recuadro(sh, cell):
+        """True si alrededor de la celda hay una etiqueta de fecha del recuadro."""
+        for delta in (-3, -2, -1, 1, 2, 3):
+            fila = cell.row + delta
+            if fila < 1:
+                continue
+            vecino = sh.cell(row=fila, column=cell.column).value
+            if isinstance(vecino, str) and _norm(vecino).startswith("fecha"):
+                return True
+        return False
+    # Cada hoja del libro es un papel de trabajo por sí misma (ÍNDICE, K-1,
+    # K-2...), así que se recorren TODAS y la que no tenga recuadro recibe uno.
     for sh in wb.worksheets:
-        max_row = min(sh.max_row or 1, 30)
-        max_col = min(sh.max_column or 1, 20)
+        if _hoja_sin_contenido(sh):
+            continue
+        escrito = False
+        max_row = min(sh.max_row or 1, 40)
+        max_col = min(sh.max_column or 1, 24)
         for row in sh.iter_rows(min_row=1, max_row=max_row, max_col=max_col):
             for cell in row:
                 if not isinstance(cell.value, str):
                     continue
                 clave = _norm(cell.value)
-                if clave not in objetivos:
+
+                # Etiqueta de fecha con nombre propio ('Fecha Elaboración')
+                if clave in fechas_sueltas:
+                    destino = _celda_escribible(sh, cell.row, cell.column + 1, cell)
+                    valor = fechas_sueltas[clave]
+                    if valor and destino is not None and destino.value in (None, ""):
+                        destino.value = valor
+                        escrito = True
                     continue
-                nombre, fecha = objetivos[clave]
-                destino = sh.cell(row=cell.row, column=cell.column + 1)
-                if destino.value in (None, ""):
+
+                if clave in sueltas:
+                    if not _es_recuadro(sh, cell):
+                        continue
+                    nombre, fecha = sueltas[clave]
+                elif clave in objetivos:
+                    nombre, fecha = objetivos[clave]
+                else:
+                    continue
+
+                destino = _celda_escribible(sh, cell.row, cell.column + 1, cell)
+                if destino is not None and destino.value in (None, ""):
                     destino.value = nombre
+                    escrito = True
                 # "Fecha" en la fila siguiente del mismo bloque
                 abajo = sh.cell(row=cell.row + 1, column=cell.column)
                 if isinstance(abajo.value, str) and _norm(abajo.value) == "fecha":
-                    destino_fecha = sh.cell(row=cell.row + 1, column=cell.column + 1)
-                    if fecha and destino_fecha.value in (None, ""):
+                    destino_fecha = _celda_escribible(
+                        sh, cell.row + 1, cell.column + 1, abajo)
+                    if fecha and destino_fecha is not None and destino_fecha.value in (None, ""):
                         destino_fecha.value = fecha
+
+        if not escrito:
+            _crear_bloque_auditor_jefe(sh, auditor_nombre, supervisor_nombre,
+                                       fecha_elaboracion, fecha_aprobacion)
+
+
+def _hoja_sin_contenido(sh):
+    """True si la hoja está vacía (no se le agrega el recuadro)."""
+    if (sh.max_row or 0) <= 1 and (sh.max_column or 0) <= 1:
+        return sh.cell(row=1, column=1).value in (None, "")
+    return False
+
+
+def _crear_bloque_auditor_jefe(hoja, auditor_nombre, supervisor_nombre,
+                               fecha_elaboracion, fecha_aprobacion):
+    """
+    Crea el bloque Elaboró / Revisó en una hoja que no lo trae.
+
+    Varias plantillas (sobre todo las de Revisoría Fiscal) no tienen todavía el
+    recuadro de identificación, así que sin esto los datos del auditor no
+    llegaban a esas cédulas. Se escribe en columnas libres a la derecha del
+    contenido, sin pisar nada de la plantilla.
+    """
+    from openpyxl.styles import Font
+
+    filas = [
+        ("Elaboro:", auditor_nombre),
+        ("Fecha:", fecha_elaboracion),
+        ("Reviso:", supervisor_nombre),
+        ("Fecha:", fecha_aprobacion),
+    ]
+    columna = _columna_libre_para_bloque(hoja, primera_fila=2,
+                                         alto=len(filas), ancho=2)
+    if not columna:
+        return
+
+    for desplazamiento, (etiqueta, valor) in enumerate(filas):
+        fila = 2 + desplazamiento
+        celda_etiqueta = hoja.cell(row=fila, column=columna)
+        celda_valor = hoja.cell(row=fila, column=columna + 1)
+        celda_etiqueta.value = etiqueta
+        celda_etiqueta.font = Font(bold=True)
+        celda_valor.value = valor or ""
+    hoja.column_dimensions[hoja.cell(row=2, column=columna).column_letter].width = 14
+    hoja.column_dimensions[hoja.cell(row=2, column=columna + 1).column_letter].width = 26
+
+
+def _columna_libre_para_bloque(hoja, primera_fila, alto, ancho):
+    """
+    Primera columna a la derecha del contenido donde caben `alto` x `ancho`
+    celdas libres, o None si no la hay.
+
+    Antes se usaba `min(max_column + 2, 24)` a ciegas: ese tope caía dentro de
+    un rango combinado en varias plantillas y la descarga reventaba con
+    «'MergedCell' object attribute 'value' is read-only», así que el botón
+    «Datos Auditor y Jefe» devolvía error 500 y no bajaba nada.
+    """
+    from openpyxl.cell.cell import MergedCell
+
+    inicio = (hoja.max_column or 1) + 2
+    for columna in range(inicio, inicio + 12):
+        if columna + ancho - 1 > 16384:          # límite de columnas de Excel
+            return None
+        libre = True
+        for fila in range(primera_fila, primera_fila + alto):
+            for desplazamiento in range(ancho):
+                celda = hoja.cell(row=fila, column=columna + desplazamiento)
+                if isinstance(celda, MergedCell) or celda.value not in (None, ""):
+                    libre = False
+                    break
+            if not libre:
+                break
+        if libre:
+            return columna
+    return None
 
 
 def _apply_word_replacements(file_path, replacements):
@@ -457,10 +644,8 @@ def descargar_documento_auditoria(request, audit_id):
     replacements = build_replacements_dict(replacements_config, audit, fecha_inicio, fecha_fin)
 
     # --- Reemplazos personalizados tuyos ---
-    auditores_qs = getattr(audit, "assigned_users", None)
-    auditores = auditores_qs.all() if auditores_qs else []
-    auditor_nombre = ", ".join([(u.get_full_name() or u.username) for u in auditores]) or "Sin asignar"
-    supervisor_nombre = audit.audit_manager.get_full_name() if audit.audit_manager else "Sin asignar"
+    auditor_nombre, supervisor_nombre = nombres_auditor_y_jefe(
+        audit, getattr(request, "user", None))
 
     replacements["[NOMBRE_AUDITOR]"]    = auditor_nombre
     replacements["[NOMBRE_SUPERVISOR]"] = supervisor_nombre
@@ -529,6 +714,25 @@ def descargar_documento_auditoria(request, audit_id):
                 "[NOMBRE_SUPERVISOR]": replacements.get("[NOMBRE_SUPERVISOR]", ""),
             })
 
+            # 🧩 Paso 3b: referencia propia del papel en el recuadro 'Ref.'
+            try:
+                from auditoria.services.referencias import obtener_ref, inyectar_ref_propia_word
+                ref_propia = obtener_ref(audit.tipoAuditoria, carpeta, documento, audit_id=audit.id)
+                if ref_propia:
+                    doc = inyectar_ref_propia_word(doc, ref_propia)
+            except Exception as e:
+                print(f"Aviso: no se pudo inyectar la referencia en {documento}: {e}")
+
+            # 🧩 Paso 3c: MARCAS DE AUDITORÍA.
+            # Sin esto, al generar el documento con los datos del auditor se
+            # perdían las marcas que ya se habían cargado y verificadas en la
+            # cédula: los datos llegaban pero la marca desaparecía.
+            try:
+                from auditoria.services.audit_mark_processor import AuditMarkProcessor
+                doc = AuditMarkProcessor(audit.id, documento).process_word_document(doc)
+            except Exception as e:
+                print(f"Aviso: no se pudieron aplicar las marcas en {documento}: {e}")
+
             # 🧩 Paso 4: guardar en buffer
             buffer = BytesIO()
             doc.save(buffer)
@@ -586,11 +790,21 @@ def descargar_documento_auditoria(request, audit_id):
             # Referencia propia del papel de trabajo en el encabezado ('Ref.')
             try:
                 from auditoria.services.referencias import obtener_ref, inyectar_ref_propia
-                ref_propia = obtener_ref(audit.tipoAuditoria, carpeta, documento)
+                # audit_id es necesario para respetar la referencia que el
+                # auditor fijó a mano; sin él siempre ganaba la automática.
+                ref_propia = obtener_ref(audit.tipoAuditoria, carpeta, documento, audit_id=audit.id)
                 if ref_propia:
                     wb = inyectar_ref_propia(wb, ref_propia)
             except Exception:
                 pass
+
+            # MARCAS DE AUDITORÍA: se aplican también aquí para que el papel
+            # descargado traiga JUNTOS los datos del auditor y sus marcas.
+            try:
+                from auditoria.services.audit_mark_processor import AuditMarkProcessor
+                wb = AuditMarkProcessor(audit.id, documento).process_excel_document(wb)
+            except Exception as e:
+                print(f"Aviso: no se pudieron aplicar las marcas en {documento}: {e}")
 
             bio = BytesIO()
             wb.save(bio)

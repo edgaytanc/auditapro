@@ -1,9 +1,30 @@
-﻿.env
-.venv/
-__pycache__/
-*.pyc
-staticfiles/
+﻿# === Django & Bases de datos ===
+.env
 db.sqlite3
 *.sqlite3
+staticfiles/
+media/
+
+# === Python & Compilación ===
+__pycache__/
+*.pyc
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+
+# === Entornos Virtuales locales ===
+.venv/
+venv/
+env/
+ENV/
+
+# === Sistema ===
+.DS_Store
+Thumbs.db
+
+# === Archivos temporales de Office / Editores (Tus reglas actuales) ===
 ~$*
 ~WRL*.tmp
+.vscode/
+.idea/

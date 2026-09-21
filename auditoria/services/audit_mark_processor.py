@@ -9,10 +9,38 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from django.db.models import Q
 from auditoria.models import AuditMark
 from auditoria.config.exclusion_rules import is_excluded
+from auditoria.services.nombres_papeles import normalizar_nombre_papel
 import re
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+MIN_RATIO_COINCIDENCIA = 0.8
+
+
+def nombres_coinciden(normalizado_marca, normalizado_archivo,
+                      min_ratio=MIN_RATIO_COINCIDENCIA):
+    """
+    True si una marca con `normalizado_marca` se pega en `normalizado_archivo`.
+
+    Regla única del sistema: igualdad, o que uno contenga al otro cubriendo al
+    menos `min_ratio` del más largo. Vive aquí para que el aviso de la carga de
+    marcas use exactamente el mismo criterio con el que luego se pegan.
+    """
+    if not normalizado_marca or not normalizado_archivo:
+        return False
+
+    if normalizado_marca == normalizado_archivo:
+        return True
+
+    if normalizado_marca in normalizado_archivo:
+        return len(normalizado_marca) / len(normalizado_archivo) >= min_ratio
+
+    if normalizado_archivo in normalizado_marca:
+        return len(normalizado_archivo) / len(normalizado_marca) >= min_ratio
+
+    return False
 
 
 class AuditMarkProcessor:
@@ -27,25 +55,14 @@ class AuditMarkProcessor:
     @staticmethod
     def normalize_text(text):
         """
-        Normaliza texto para emparejamiento.
+        Identificador comparable del papel de trabajo.
 
-        Elimina números iniciales, extensiones de archivo, y caracteres especiales.
-        Convierte a mayúsculas para comparación case-insensitive.
+        Delega en `normalizar_nombre_papel`, que es la ÚNICA normalización del
+        sistema: la usan igual el registro de plantillas, el validador y este
+        procesador, para que un papel no pueda tener dos identificadores
+        distintos según quién lo mire.
         """
-        if not text:
-            return ''
-
-        # Eliminar números iniciales (incluyendo decimales) y espacios
-        text = re.sub(r'^\d+(\.\d+)?\s*', '', text)
-
-        # Eliminar extensiones de archivo
-        text = re.sub(r'\.(xlsx|docx|xls|doc|pdf)$', '', text, flags=re.IGNORECASE)
-
-        # Normalización: mayúsculas y solo alfanuméricos
-        text = text.upper()
-        text = re.sub(r'[^A-Z0-9]', '', text)
-
-        return text
+        return normalizar_nombre_papel(text)
 
     def should_process_file(self):
         """Verifica si este archivo debe ser procesado para inyección de marcas."""
@@ -75,7 +92,6 @@ class AuditMarkProcessor:
         )
 
         matched_marks = []
-        min_ratio = 0.8
 
         for mark in marks:
             if not mark.work_paper_number:
@@ -86,22 +102,7 @@ class AuditMarkProcessor:
                 continue
 
             normalized_wp = self.normalize_text(mark.work_paper_number)
-
-            # Emparejamiento con ratio mínimo de similitud
-            is_match = False
-
-            if normalized_wp == self.normalized_filename:
-                is_match = True
-            elif normalized_wp in self.normalized_filename:
-                ratio = len(normalized_wp) / len(self.normalized_filename)
-                if ratio >= min_ratio:
-                    is_match = True
-            elif self.normalized_filename in normalized_wp:
-                ratio = len(self.normalized_filename) / len(normalized_wp)
-                if ratio >= min_ratio:
-                    is_match = True
-
-            if is_match:
+            if nombres_coinciden(normalized_wp, self.normalized_filename):
                 matched_marks.append(mark)
 
         return matched_marks
@@ -166,8 +167,51 @@ class AuditMarkProcessor:
             return wb
 
     def _add_marks_to_excel(self, wb, marks):
-        """Agrega sección de marcas al final de la hoja Excel."""
-        ws = wb.active
+        """
+        Agrega la sección de marcas al final de CADA hoja del libro.
+
+        Los papeles de Revisoría traen varias hojas (ÍNDICE, K-1, K-2...) y cada
+        una es un papel de trabajo por sí misma, así que todas deben llevar sus
+        marcas. Antes solo se escribía en la hoja activa y las demás quedaban
+        sin marcas.
+        """
+        for hoja in wb.worksheets:
+            if self._hoja_vacia(hoja):
+                continue
+            self._add_marks_to_sheet(hoja, marks)
+
+    @staticmethod
+    def _hoja_vacia(ws):
+        """True si la hoja no tiene ningún contenido (no se le agregan marcas)."""
+        if (ws.max_row or 0) <= 1 and (ws.max_column or 0) <= 1:
+            return ws.cell(row=1, column=1).value in (None, '')
+        return False
+
+    @staticmethod
+    def _columna_escribible(ws, primera_fila, columna_preferida, alto):
+        """
+        Columna donde caben `alto` celdas escribibles desde `primera_fila`.
+
+        Se prueba la columna preferida y, si alguna de sus celdas pertenece a un
+        rango combinado, se busca a la derecha y luego a la izquierda. None si
+        no hay ninguna.
+        """
+        from openpyxl.cell.cell import MergedCell
+
+        candidatas = [columna_preferida]
+        candidatas += list(range(columna_preferida + 1, columna_preferida + 12))
+        candidatas += list(range(columna_preferida - 1, 0, -1))
+
+        for columna in candidatas:
+            if columna < 1:
+                continue
+            if all(not isinstance(ws.cell(row=fila, column=columna), MergedCell)
+                   for fila in range(primera_fila, primera_fila + alto)):
+                return columna
+        return None
+
+    def _add_marks_to_sheet(self, ws, marks):
+        """Agrega la sección de marcas al final de una hoja concreta."""
 
         # Encontrar última fila con datos reales
         last_row = 0
@@ -182,6 +226,14 @@ class AuditMarkProcessor:
 
         if not last_row:
             last_row = ws.max_row
+
+        # El pie de varias plantillas es un rango combinado ancho ('A34:P37'):
+        # la última fila CON TEXTO es la de arriba, así que el bloque de marcas
+        # caía dentro de la combinación y no se podía escribir. Se baja hasta
+        # después del rango.
+        for rango in ws.merged_cells.ranges:
+            if rango.min_row <= last_row <= rango.max_row:
+                last_row = max(last_row, rango.max_row)
 
         # Determinar columna de inicio basada en datos existentes
         start_column = 2
@@ -199,6 +251,17 @@ class AuditMarkProcessor:
                 start_column = 2
 
         start_row = last_row + 3
+
+        # La columna elegida puede caer dentro de un rango combinado (varias
+        # plantillas combinan el ancho completo para sus notas al pie). Escribir
+        # ahí lanzaba «'MergedCell' object attribute 'value' is read-only», el
+        # error se tragaba con un warning y la hoja se descargaba SIN marcas:
+        # ésa es la causa de que las marcas fallaran en unas plantillas sí y en
+        # otras no. Se busca una columna donde sí se pueda escribir.
+        start_column = self._columna_escribible(ws, start_row, start_column,
+                                                len(marks) + 1)
+        if not start_column:
+            return
 
         # Título
         title_cell = ws.cell(row=start_row, column=start_column)

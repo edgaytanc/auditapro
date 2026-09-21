@@ -62,28 +62,43 @@ def procesar_seccion_centralizadora(
         ref = ref_para_cuenta(cuenta, seccion=seccion_por_cuenta.get(cuenta))
         sheet[f'C{fila_actual}'] = ref if ref else ''
 
-        # Insertar saldos por fecha
+        # Insertar saldos por fecha. Si el archivo no trajo importe para un
+        # corte, la celda queda EN BLANCO (no 0): así el papel refleja lo que
+        # realmente vino en el Excel importado.
         for col, fecha in fechas_columnas.items():
-            valor = 0
-            if fecha in cuentas_por_fecha:
+            valor = None
+            data = cuentas_por_fecha.get(fecha)
+            if data:
                 for seccion in secciones:
                     # Adaptarse a la estructura de cuentas_por_fecha
-                    if seccion in cuentas_por_fecha[fecha]:
-                        valor = cuentas_por_fecha[fecha][seccion].get(cuenta, 0)
-                        if valor != 0: break
-                    elif not isinstance(list(cuentas_por_fecha[fecha].values())[0], dict):
-                        valor = cuentas_por_fecha[fecha].get(cuenta, 0)
-                        if valor != 0: break
+                    if isinstance(data.get(seccion), dict):
+                        if cuenta in data[seccion]:
+                            valor = data[seccion][cuenta]
+                            break
+                    elif data and not isinstance(next(iter(data.values()), None), dict):
+                        if cuenta in data:
+                            valor = data[cuenta]
+                            break
             sheet[f'{col}{fila_actual}'] = valor
 
         # Insertar ajustes
         sheet[f'G{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('debe', 0)
         sheet[f'H{fila_actual}'] = ajustes_reclasificaciones.get(cuenta, {}).get('haber', 0)
 
-    # 4. Actualizar la fila de suma
+    # 4. Vaciar las filas de muestra que trae la plantilla y no se usaron.
+    #    Las centralizadoras oficiales vienen precargadas con cuentas de ejemplo
+    #    ('Bancos', 'Inventarios'…) y sus propias Ref P/T (A-2, A-3…). Si no se
+    #    limpian, el papel descargado mezcla las cuentas reales del Excel con
+    #    esas de muestra y sus referencias equivocadas.
+    primera_libre = fila_inicio + len(cuentas_ordenadas)
+    for fila in range(primera_libre, suma_row):
+        for col in ('B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'):
+            sheet[f'{col}{fila}'] = None
+
+    # 5. Actualizar la fila de suma
     if cuentas_ordenadas:
         last_row = fila_inicio + len(cuentas_ordenadas) - 1
         for col in columnas_suma:
             sheet[f"{col}{suma_row}"] = f"=SUM({col}{fila_inicio}:{col}{last_row})"
-            
+
     return filas_a_insertar

@@ -16,7 +16,6 @@ import string
 from django.utils.http import urlsafe_base64_decode
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import login as auth_login
-from users.utils import send_admin_notification_email
 from users.emails import send_admin_notification_email
 
 from .const import USER_ERROR_INSTANCES, USER_CLIENT_FIELDS
@@ -38,24 +37,6 @@ from users.emails.autoregistro_email import (
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
-
-#  NUEVO: Función auxiliar para validar permisos
-
-def socio_o_superadmin(user):
-    """
-    Permite acceso solo a:
-    - Superadmin (user.is_superuser == True)
-    - Jefe de auditoría con 'socio' = True
-    """
-    if not user.is_authenticated:
-        return False
-    if user.is_superuser:
-        return True
-    if getattr(user, "role", None) and user.role.name == "audit_manager" and getattr(user, "socio", False):
-        return True
-    return False
-
-
 
 #  NUEVO: Función auxiliar para validar permisos
 

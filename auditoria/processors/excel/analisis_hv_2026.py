@@ -1,8 +1,8 @@
 """
 Escritor de las plantillas 2026 de Análisis Financiero Preliminar:
 
-- 1_Analisis_Horizontal_1.xlsx  (hojas 'Balance General' y 'Estado de Resultados')
-- 2_Analisis_Vertical_1_1.xlsx  (hojas 'Balance Comparativo' y 'Estado Resultados')
+- 1_Analisis_Horizontal.xlsx  (hojas 'Balance General' y 'Estado de Resultados')
+- 2_Analisis_Vertical_.xlsx   (hojas 'Balance Comparativo' y 'Estado Resultados')
 
 Las mismas plantillas existen en templates_base_financiera (2 PLANEACION/
 4 Revision Informacion y Registros/2 Análisis Financiero Preliminar agregar)
@@ -225,15 +225,24 @@ def _escribir_suma(sheet, fila, desde, hasta, es_vertical, dos_años, fila_denom
                 sheet.cell(row=fila, column=col).value = None
 
 
-def _escribir_encabezado_años(sheet, fila, es_vertical, año_actual, año_anterior):
-    """Rotula las columnas de año con los años reales disponibles."""
+def _escribir_encabezado_años(sheet, fila, es_vertical, año_actual, año_anterior,
+                              rotulo_anterior=None):
+    """
+    Rotula las columnas de año.
+
+    *rotulo_anterior* permite nombrar la columna comparativa con el año que el
+    auditor tiene configurado aunque el Excel importado todavía no traiga los
+    importes de ese ejercicio (observación 1 del cliente).
+    """
     col_actual = 5 if es_vertical else 4
     sheet.cell(row=fila, column=col_actual).value = f'Año {año_actual}'
-    if año_anterior:
-        sheet.cell(row=fila, column=3).value = f'Año {año_anterior}'
+    etiqueta_anterior = año_anterior or rotulo_anterior
+    if etiqueta_anterior:
+        sheet.cell(row=fila, column=3).value = f'Año {etiqueta_anterior}'
 
 
-def _procesar_hoja_balance(sheet, datos, año_actual, año_anterior, es_vertical):
+def _procesar_hoja_balance(sheet, datos, año_actual, año_anterior, es_vertical,
+                           rotulo_anterior=None):
     años = [a for a in (año_actual, año_anterior) if a]
     fila_encabezado = _buscar_fila(sheet, lambda t: t == 'descripcion')
     if not fila_encabezado:
@@ -253,7 +262,8 @@ def _procesar_hoja_balance(sheet, datos, año_actual, año_anterior, es_vertical
     if not cuentas_activo and not cuentas_pp:
         return
 
-    _escribir_encabezado_años(sheet, fila_encabezado, es_vertical, año_actual, año_anterior)
+    _escribir_encabezado_años(sheet, fila_encabezado, es_vertical, año_actual,
+                              año_anterior, rotulo_anterior)
 
     insertadas, _ = _escribir_region(
         sheet, fila_encabezado + 1, fila_suma_activo, cuentas_activo,
@@ -266,7 +276,8 @@ def _procesar_hoja_balance(sheet, datos, año_actual, año_anterior, es_vertical
         datos, año_actual, año_anterior, es_vertical)
 
 
-def _procesar_hoja_estado_resultados(sheet, datos, año_actual, año_anterior, es_vertical):
+def _procesar_hoja_estado_resultados(sheet, datos, año_actual, año_anterior, es_vertical,
+                                     rotulo_anterior=None):
     años = [a for a in (año_actual, año_anterior) if a]
     fila_encabezado = _buscar_fila(sheet, lambda t: t == 'descripcion')
     if not fila_encabezado:
@@ -290,7 +301,8 @@ def _procesar_hoja_estado_resultados(sheet, datos, año_actual, año_anterior, e
     ingresos = [c for c in cuentas_er if not _es_gasto(c[1])]
     gastos = [c for c in cuentas_er if _es_gasto(c[1])]
 
-    _escribir_encabezado_años(sheet, fila_encabezado, es_vertical, año_actual, año_anterior)
+    _escribir_encabezado_años(sheet, fila_encabezado, es_vertical, año_actual,
+                              año_anterior, rotulo_anterior)
 
     # Región de INGRESOS (los % verticales usan el total de ingresos)
     insertadas, fila_total_ingresos = _escribir_region(
@@ -341,7 +353,30 @@ def _escribir_resultado(sheet, fila, fila_ingresos, fila_gastos, es_vertical,
                 sheet.cell(row=fila, column=col).value = None
 
 
-def process_analisis_hv_2026(workbook, balances, file_name):
+def _rotulo_año_anterior(audit_id, año_actual, año_anterior):
+    """
+    Año con que rotular la columna comparativa cuando el Excel importado trae
+    un solo ejercicio.
+
+    SOLO se usa el año anterior que el auditor haya fijado a mano en «Años de
+    la auditoría». Si no hay ninguno, se devuelve None y la columna conserva
+    el rótulo genérico de la plantilla ('Año Anterior'): una auditoría de un
+    solo ejercicio no debe mostrar un año inventado («si es 2025 pues 2025»).
+    """
+    if año_anterior or not año_actual:
+        return None
+    if audit_id:
+        try:
+            from auditoria.services.parametros_anios import anios_de_auditoria
+            _, anterior_configurado = anios_de_auditoria(audit_id)
+            if anterior_configurado:
+                return str(anterior_configurado)
+        except Exception:
+            pass
+    return None
+
+
+def process_analisis_hv_2026(workbook, balances, file_name, audit_id=None):
     """
     Punto de entrada del escritor de Análisis Horizontal/Vertical 2026.
 
@@ -349,6 +384,9 @@ def process_analisis_hv_2026(workbook, balances, file_name):
         workbook: libro openpyxl de la plantilla
         balances: balances normalizados (sin sufijos de tipo_cuenta)
         file_name: nombre base del archivo (decide horizontal o vertical)
+        audit_id: id de la auditoría, para rotular la columna comparativa con
+            el año configurado por el auditor cuando el Excel trae un solo
+            ejercicio
 
     Returns:
         El libro procesado (sin cambios si no hay datos ANUALES).
@@ -361,12 +399,15 @@ def process_analisis_hv_2026(workbook, balances, file_name):
     año_actual = años[0]
     año_anterior = años[1] if len(años) > 1 else None
     es_vertical = 'VERTICAL' in file_name.upper()
+    rotulo_anterior = _rotulo_año_anterior(audit_id, año_actual, año_anterior)
 
     for sheet in workbook.worksheets:
         titulo = sheet.title.upper()
         if 'BALANCE' in titulo:
-            _procesar_hoja_balance(sheet, datos, año_actual, año_anterior, es_vertical)
+            _procesar_hoja_balance(sheet, datos, año_actual, año_anterior,
+                                   es_vertical, rotulo_anterior)
         elif 'RESULTADO' in titulo:
-            _procesar_hoja_estado_resultados(sheet, datos, año_actual, año_anterior, es_vertical)
+            _procesar_hoja_estado_resultados(sheet, datos, año_actual, año_anterior,
+                                             es_vertical, rotulo_anterior)
 
     return workbook

@@ -1,52 +1,28 @@
 services:
   auditapro:
     build: .
-    container_name: auditapro_app
-    restart: always
+    container_name: auditapro_local
+    restart: unless-stopped
+
+    # Variables de entorno para desarrollo
     env_file:
-      - ./.env
+      - ./.env.local
+
+    # Monta tus volúmenes de datos
     volumes:
       - ./:/app
-      - sqlite_data:/app/db
-      - sqlite_data:/app/backups
-    networks:
-      - proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.auditapro.rule=Host(`sistema.auditapro.com`)"
-      - "traefik.http.routers.auditapro.entrypoints=websecure"
-      - "traefik.http.routers.auditapro.tls=true"
-      - "traefik.http.routers.auditapro.tls.certresolver=myresolver"
-      - "traefik.http.services.auditapro.loadbalancer.server.port=8000"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.auditapro-http.rule=Host(`sistema.auditapro.com`)"
-      - "traefik.http.routers.auditapro-http.entrypoints=web"
-      - "traefik.http.routers.auditapro-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - ./db:/app/db
+      - ./logs:/app/logs
+
+    # Comando directo en lugar de usar start.sh
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --no-input --clear &&
-             gunicorn saas_project.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
-  backup:
-    image: alpine:latest
-    container_name: auditapro_backup
-    volumes:
-      - ./:/app
-      - sqlite_data:/app/db
-    command: >
-      sh -c "mkdir -p /app/backups &&
-             echo '0 0 1,15 * * find /app/backups -type f -mtime +30 -delete && tar -czf /app/backups/auditapro_$$(date +\"%Y%m%d\").tar.gz /app' > /etc/crontabs/root &&
-             crond -f -d 8"
-    restart: always
-    depends_on:
-      - auditapro
-volumes:
-  sqlite_data:
-    driver: local
-    driver_opts:
-      type: none
-      device: /var/lib/docker/volumes/auditapro_data/_data
-      o: bind
-networks:
-  proxy:
-    external: true
+      bash -c "
+        python manage.py migrate &&
+        python manage.py collectstatic --no-input --clear &&
+        python manage.py shell -c \"from django.contrib.auth import get_user_model; User = get_user_model(); print('Superusuario ya existe') if User.objects.filter(is_superuser=True).exists() else User.objects.create_superuser('admin', 'admin@example.com', 'Admin123!')\" &&
+        python manage.py runserver --insecure 0.0.0.0:8000
+      "
+
+    # Exponer puerto directamente para desarrollo local
+    ports:
+      - "8000:8000"

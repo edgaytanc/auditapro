@@ -7,6 +7,7 @@ from django.conf import settings
 from django.utils import timezone
 
 
+
 class Roles(models.Model):
     name = models.CharField(max_length=255)
     verbose_name = models.CharField(max_length=255)
@@ -16,8 +17,7 @@ class Roles(models.Model):
 
 
 def get_default_role():
-    role, _ = Roles.objects.get_or_create(
-        name="auditor", verbose_name="Auditor")
+    role, _ = Roles.objects.get_or_create(name="auditor", verbose_name="Auditor")
     return role
 
 
@@ -132,7 +132,6 @@ class User(AbstractUser):
     @property
     def can_create_users(self):
         return self.is_superuser or (self.is_admin() and self.socio)
-
 
 class RegistroInvitacion(models.Model):
     """

@@ -549,3 +549,87 @@ class RevisoriaSubcuenta(models.Model):
 
     def __str__(self):
         return f"{self.seccion} - {self.cuenta_principal} - {self.nombre_subcuenta}"
+
+
+class ParametrosAuditoria(models.Model):
+    """
+    Parámetros editables por el auditor que no dependen del Excel importado.
+
+    - `anio_actual` / `anio_anterior`: años de los cuadros comparativos
+      (Análisis Horizontal/Vertical, Importancia Relativa, Materialidad).
+      Al importar el Excel Financiero se actualizan solos con las fechas de
+      corte del archivo; el auditor puede corregirlos a mano en cualquier
+      momento y su valor manda sobre el del Excel hasta la siguiente
+      importación.
+    - `anios_manuales`: marca que el auditor editó los años a mano.
+    - `anio_*_excel`: años que trajo la última importación. Sirven para saber
+      si un nuevo archivo cambió realmente de ejercicio; si trae los mismos,
+      la edición manual del auditor se conserva.
+    """
+
+    audit = models.OneToOneField(
+        Audit, on_delete=models.CASCADE, related_name='parametros'
+    )
+    anio_actual = models.PositiveIntegerField(null=True, blank=True)
+    anio_anterior = models.PositiveIntegerField(null=True, blank=True)
+    anios_manuales = models.BooleanField(default=False)
+    anio_actual_excel = models.PositiveIntegerField(null=True, blank=True)
+    anio_anterior_excel = models.PositiveIntegerField(null=True, blank=True)
+
+    # Fechas de corte tal y como venían en el Excel Financiero (C6/D6/E6/H6).
+    # Sirven para rotular las columnas de las centralizadoras y sumarias con
+    # las fechas REALES del archivo (no con fechas fabricadas) y para saber a
+    # qué columna corresponde cada corte aunque dos traigan la misma fecha.
+    fecha_corte1_excel = models.DateField(null=True, blank=True)   # columna C
+    fecha_corte2_excel = models.DateField(null=True, blank=True)   # columna D
+    fecha_corte3_excel = models.DateField(null=True, blank=True)   # columna E
+    fecha_corte_actual_excel = models.DateField(null=True, blank=True)  # col. H
+
+    # Totales del Estado de Resultados que el archivo trae como filas de
+    # 'Total ...' (no como cuentas): se capturan al importar para que
+    # Materialidad e Importancia Relativa usen cifras trazables al archivo.
+    ingresos_totales_excel = models.FloatField(null=True, blank=True)
+    utilidad_antes_impuestos_excel = models.FloatField(null=True, blank=True)
+
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'auditoria_parametrosauditoria'
+        verbose_name = 'Parámetros de auditoría'
+        verbose_name_plural = 'Parámetros de auditorías'
+
+    def __str__(self):
+        return f"Parámetros de {self.audit_id}: {self.anio_anterior} / {self.anio_actual}"
+
+
+class ReferenciaPapelTrabajo(models.Model):
+    """
+    Referencia (Ref.) que el auditor fija a mano para un papel de trabajo.
+
+    Por defecto el sistema calcula la referencia automáticamente a partir del
+    índice maestro (letras A..J/R en pruebas sustantivas, código jerárquico en
+    el resto). Cuando existe una fila aquí, ESA referencia manda: el sistema no
+    la sobrescribe y es la que se pega en la plantilla al descargarla.
+    """
+
+    audit = models.ForeignKey(
+        Audit, on_delete=models.CASCADE, related_name='referencias_papeles'
+    )
+    carpeta = models.CharField(max_length=500)
+    archivo = models.CharField(max_length=255)
+    referencia = models.CharField(max_length=50)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'auditoria_referenciapapeltrabajo'
+        verbose_name = 'Referencia de papel de trabajo'
+        verbose_name_plural = 'Referencias de papeles de trabajo'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['audit', 'carpeta', 'archivo'],
+                name='unique_referencia_por_papel',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.carpeta}/{self.archivo} -> {self.referencia}"
