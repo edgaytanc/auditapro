@@ -101,7 +101,7 @@
     },
     "3 INVERSIONES": {
       "1_Cuestionario_Evaluacion_Inversiones.xlsx": [],
-      "1784847750082_2_Evaluacion_Procesos_Inversiones.xlsx": []
+      "2_Evaluacion_Procesos_Inversiones.xlsx": []
     },
     "4 INVENTARIOS": {
       "1_CUESTIONARIO_CI_INVENTARIOS_1.xlsx": [],
@@ -109,7 +109,7 @@
     },
     "5 CONSTRUCCIONES EN PROCESO": {
       "1_CUESTIONARIO_CXP.xlsx": [],
-      "1784847770609_2_Evaluacion_Procesos_CxP_2.xlsx": []
+      "2_Evaluacion_Procesos_CxP_2.xlsx": []
     },
     "6 PROPIEDAD, PLANTA Y EQUIPO": {
       "1_CUESTIONARIO_PPE_1.xlsx": [],
@@ -150,7 +150,7 @@
       "4.2 CHEQUES_NO_COBRADOS.xlsx": [],
       "4.3 FIRMAS_Y_ENDOSOS.xlsx": [],
       "4.4 REVERSIONES_DE_OPERACIONES_POST-CIERRE.xlsx": [],
-      "4.5 RRESTRICCIONES_NO_BANCARIAS.xlsx": [],
+      "4.5 RESTRICCIONES_NO_BANCARIAS.xlsx": [],
       "5_ARQUEO_DE_CAJA.xlsx": [],
       "6_ARQUEO_DE_CAJA_CHICA.xlsx": [],
       "7_ARQUEOS_CORTE_CHEQUES.xlsx": [],
@@ -290,7 +290,6 @@
       "8_ESTADISTICA_DE_PROVEEDORES.xlsx": [],
       "9_CIRCULARIZACION_DE_PASIVOS.xlsx": [],
       "10_CONFIRMACION_DE_ABOGADOS.xlsx": [],
-      "11_HALLAZGOS_EVIDENCIAS_E_INDICE_PT.xlsx": [],
       "11_RESPUESTA_CONFIRMACION_DE_ABOGADOS.xlsx": [],
       "12_REVISION_DE_FACTURAS_Y_DOCUMENTOS_DE_RESPALDO.xlsx": [],
       "13_INSPECCION_FISICA_PROVEEDORES.xlsx": [],

@@ -1,9 +1,124 @@
-﻿.env
-.venv/
+# ==========================================
+# Archivos de Entorno y Credenciales
+# ==========================================
+.env
+.env.*
+*.env
+!.env.example
+!.env.template
+
+# ==========================================
+# Bytecode y Compilados de Python
+# ==========================================
 __pycache__/
-*.pyc
-staticfiles/
+*.py[cod]
+*$py.class
+*.pyd
+*.pyo
+
+# Caches de distribución / empaquetado
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ==========================================
+# Base de Datos Local y Archivos SQLite
+# ==========================================
 db.sqlite3
+db.sqlite3-journal
 *.sqlite3
+*.sqlite3-journal
+*.db
+*.db-journal
+
+# ==========================================
+# Django: Media y Archivos Estáticos Recolectados
+# ==========================================
+media/
+staticfiles/
+
+# ==========================================
+# Docker y Volúmenes Locales
+# ==========================================
+db/
+logs/
+*.log
+
+# ==========================================
+# Entornos Virtuales
+# ==========================================
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Herramientas de Calidad, Tests y Cobertura
+# ==========================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.ruff_cache/
+.mypy_cache/
+
+# ==========================================
+# Temporales del Sistema Operativo
+# ==========================================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+desktop.ini
+$RECYCLE.BIN/
+
+# ==========================================
+# Editores de Código e IDEs
+# ==========================================
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# JetBrains (PyCharm, etc.)
+.idea/
+
+# Editores y temporales generales
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.tmp.*
 ~$*
 ~WRL*.tmp
+
