@@ -1,30 +1,51 @@
-﻿# === Django & Bases de datos ===
+# Configuración privada - nunca publicar
 .env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+
+# Bases de datos y respaldos (no publicar datos de clientes)
 db.sqlite3
+*.sqlite
 *.sqlite3
-staticfiles/
+*.db
+*.sql
+*.sql.gz
+*.dump
+*.bak
+*.backup
+backups/
+_respaldos*/
+
+# Archivos generados / usuarios
 media/
-
-# === Python & Compilación ===
+staticfiles/
 __pycache__/
-*.pyc
 *.py[cod]
-*$py.class
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
-
-# === Entornos Virtuales locales ===
+htmlcov/
 .venv/
 venv/
 env/
 ENV/
+node_modules/
 
-# === Sistema ===
-.DS_Store
-Thumbs.db
-
-# === Archivos temporales de Office / Editores (Tus reglas actuales) ===
-~$*
-~WRL*.tmp
+# Editores / OS
 .vscode/
 .idea/
+.DS_Store
+Thumbs.db
+~$*
+~WRL*.tmp
+*.tmp
+*.log
+
+# Archivos temporales por despliegue
+*.swp
+*.swo
