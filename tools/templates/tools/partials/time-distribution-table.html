@@ -1,0 +1,307 @@
+<section class="ap-time-data-panel">
+
+  <header class="ap-time-data-header">
+
+    <div>
+      <span>CONTROL DE TIEMPO</span>
+
+      <h2>
+        {{ section_title }}
+      </h2>
+
+      <p>
+        {{ section_description }}
+      </p>
+    </div>
+
+    <span class="ap-time-record-count">
+      {{ records|length }}
+      registros
+    </span>
+
+  </header>
+
+  <div class="ap-time-table-wrapper">
+
+    <table class="ap-time-table ap-time-distribution-table">
+
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Responsable</th>
+          <th>Planificadas</th>
+          <th>Reales</th>
+          <th>Variación</th>
+          <th>Avance</th>
+          <th>Materialidad</th>
+          <th>Riesgo</th>
+          <th>Estado</th>
+          <th>Observaciones</th>
+          {% if can_edit_distribution or can_delete_distribution %}
+            <th>Acciones</th>
+          {% endif %}
+        </tr>
+      </thead>
+
+      <tbody>
+
+        {% for record in records %}
+
+          <tr>
+            <td>
+              <strong>{{ record.name }}</strong>
+            </td>
+
+            <td>
+              {% if record.assigned_auditor %}
+                {% firstof record.assigned_auditor.get_full_name record.assigned_auditor.username %}
+              {% else %}
+                Sin asignar
+              {% endif %}
+            </td>
+
+            <td>
+              {{ record.planned_hours|floatformat:"-2" }}
+            </td>
+
+            <td>
+              {{ record.actual_hours|floatformat:"-2" }}
+            </td>
+
+            <td>
+              <span
+                class="
+                  ap-time-variance
+                  {% if record.difference > 0 %}
+                    ap-time-variance-over
+                  {% elif record.difference < 0 %}
+                    ap-time-variance-under
+                  {% else %}
+                    ap-time-variance-equal
+                  {% endif %}
+                "
+              >
+                {% if record.difference > 0 %}+{% endif %}
+                {{ record.difference|floatformat:"-2" }}
+              </span>
+            </td>
+
+            <td>
+              <span class="ap-time-percent">
+                {{ record.completion_percentage }}%
+              </span>
+            </td>
+
+            <td>
+              {{ record.get_materiality_display }}
+            </td>
+
+            <td>
+              {{ record.get_risk_level_display }}
+            </td>
+
+            <td>
+              {{ record.get_status_display }}
+            </td>
+
+            <td class="ap-time-observation">
+              {% firstof record.observations "Sin observaciones" %}
+            </td>
+
+            {% if can_edit_distribution or can_delete_distribution %}
+              <td>
+                <details class="ap-time-row-actions">
+                  <summary>
+                    Gestionar
+                  </summary>
+
+                  {% if can_edit_distribution %}
+                    <form
+                      method="post"
+                      class="ap-time-inline-form"
+                    >
+                      {% csrf_token %}
+
+                      <input
+                        type="hidden"
+                        name="distribution_action"
+                        value="update"
+                      >
+
+                      <input
+                        type="hidden"
+                        name="record_id"
+                        value="{{ record.id }}"
+                      >
+
+                      <label>
+                        Nombre
+                        <input
+                          type="text"
+                          name="name"
+                          value="{{ record.name }}"
+                          maxlength="255"
+                          required
+                        >
+                      </label>
+
+                      <label>
+                        Planificadas
+                        <input
+                          type="number"
+                          name="planned_hours"
+                          value="{{ record.planned_hours }}"
+                          min="0"
+                          step="0.01"
+                          required
+                        >
+                      </label>
+
+                      <label>
+                        Reales
+                        <input
+                          type="number"
+                          name="actual_hours"
+                          value="{{ record.actual_hours }}"
+                          min="0"
+                          step="0.01"
+                          required
+                        >
+                      </label>
+
+                      <label>
+                        Responsable
+                        <select name="assigned_auditor">
+                          <option value="">
+                            Sin asignar
+                          </option>
+
+                          {% for auditor in auditor_options %}
+                            <option
+                              value="{{ auditor.id }}"
+                              {% if auditor.id == record.assigned_auditor_id %}
+                                selected
+                              {% endif %}
+                            >
+                              {% firstof auditor.get_full_name auditor.username %}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </label>
+
+                      <label>
+                        Materialidad
+                        <select name="materiality">
+                          {% for value, label in materiality_choices %}
+                            <option
+                              value="{{ value }}"
+                              {% if value == record.materiality %}
+                                selected
+                              {% endif %}
+                            >
+                              {{ label }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </label>
+
+                      <label>
+                        Riesgo
+                        <select name="risk_level">
+                          {% for value, label in risk_choices %}
+                            <option
+                              value="{{ value }}"
+                              {% if value == record.risk_level %}
+                                selected
+                              {% endif %}
+                            >
+                              {{ label }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </label>
+
+                      <label>
+                        Estado
+                        <select name="status">
+                          {% for value, label in status_choices %}
+                            <option
+                              value="{{ value }}"
+                              {% if value == record.status %}
+                                selected
+                              {% endif %}
+                            >
+                              {{ label }}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </label>
+
+                      <label class="ap-time-inline-full">
+                        Observaciones
+                        <textarea
+                          name="observations"
+                          rows="2"
+                        >{{ record.observations }}</textarea>
+                      </label>
+
+                      <button
+                        type="submit"
+                        class="ap-time-save-button"
+                      >
+                        Guardar
+                      </button>
+                    </form>
+                  {% endif %}
+
+                  {% if can_delete_distribution %}
+                    <form
+                      method="post"
+                      class="ap-time-delete-form"
+                      onsubmit="return confirm('¿Eliminar este registro?');"
+                    >
+                      {% csrf_token %}
+
+                      <input
+                        type="hidden"
+                        name="distribution_action"
+                        value="delete"
+                      >
+
+                      <input
+                        type="hidden"
+                        name="record_id"
+                        value="{{ record.id }}"
+                      >
+
+                      <button type="submit">
+                        Eliminar
+                      </button>
+                    </form>
+                  {% endif %}
+
+                </details>
+              </td>
+            {% endif %}
+          </tr>
+
+        {% empty %}
+
+          <tr>
+            <td
+              colspan="11"
+              class="ap-time-empty-cell"
+            >
+              {{ empty_message }}
+            </td>
+          </tr>
+
+        {% endfor %}
+
+      </tbody>
+
+    </table>
+
+  </div>
+
+</section>

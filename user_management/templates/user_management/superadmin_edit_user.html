@@ -134,6 +134,17 @@ Editar Usuario
                         </p>
                     </div>
 
+                    <div class="form-check m-0">
+                        <input type="checkbox" class="form-check-input" id="id_auditoria_interna"
+                               name="auditoria_interna" {% if user_to_edit.auditoria_interna %}checked{% endif %}>
+                        <label class="form-check-label fw-semibold" for="id_auditoria_interna">
+                            Habilitar Auditoría Interna
+                        </label>
+                        <p class="text-muted mb-0 ms-1" style="font-size: 0.9rem;">
+                            Permite trabajar en proyectos con Auditoría Interna habilitada
+                        </p>
+                    </div>
+
                     {# 🔹 NUEVO: marca Revisor Fiscal #}
                     <div class="form-check m-0">
                         <input 

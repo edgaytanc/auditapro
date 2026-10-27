@@ -18,13 +18,6 @@ from .audit_views import (
     auditoria_revisoria_view
 )
 
-# Importar vistas del módulo de Muestreo NIA 530
-from .muestreo_views import (
-    muestreo_page,
-    muestreo_calcular,
-    muestreo_descargar
-)
-
 # Importar utilidades (disponibles para uso interno)
 from .utils import (
     normalize_text,
@@ -45,12 +38,7 @@ __all__ = [
     'auditoria_interna_view',
     'auditoria_detalle_view',
     'auditoria_revisoria_view',
-
-    # Vistas de muestreo NIA 530
-    'muestreo_page',
-    'muestreo_calcular',
-    'muestreo_descargar',
-
+    
     # Utilidades
     'normalize_text',
     'get_template_path',

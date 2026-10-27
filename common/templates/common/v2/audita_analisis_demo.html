@@ -1,0 +1,44 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+{% block title %}Audita Análisis — Consultas{% endblock title %}
+{% block v2_styles %}<link rel="stylesheet" href="{% static 'css/audita-analisis-demo.css' %}">{% endblock v2_styles %}
+{% block page_title %}Audita Análisis{% endblock page_title %}
+{% block page_subtitle %}Consultas y orientación para el trabajo de auditoría, asociadas a tu cuenta.{% endblock page_subtitle %}
+{% block page_actions %}<span class="aa-status-pill"><i class="bi bi-shield-lock"></i> 5 consultas por recarga</span>{% endblock page_actions %}
+{% block v2_content %}
+<div class="aa-demo" id="auditaAnalisisDemo" data-url="{% url 'audita_analisis_consultar' %}" data-restantes="{{ cupo_restante }}">
+  <div class="aa-crumbs"><a href="{% url 'dashboard' %}">Dashboard</a><i class="bi bi-chevron-right"></i><span>Audita Análisis</span></div>
+  <section class="aa-info aa-info-warning" aria-label="Condiciones">
+    <div class="aa-info-title"><i class="bi bi-info-circle"></i> Consulta responsable</div>
+    <ol>
+      <li>Cada cuenta tiene <strong>5 consultas</strong> iniciales. <strong>No se renuevan automáticamente</strong>: el administrador recarga el cupo.</li>
+
+      <li>Escribe consultas de texto claras y concretas. No adjuntes documentos ni datos confidenciales.</li>
+      <li>Las respuestas requieren revisión profesional. Evita cargar datos confidenciales sin autorización.</li>
+    </ol>
+  </section>
+  <div class="aa-metrics">
+    <div class="aa-metric"><span>Correo en sesión</span><strong style="font-size:15px;overflow-wrap:anywhere">{{ email_actual }}</strong><small>El cupo pertenece a esta cuenta</small></div>
+    <div class="aa-metric"><span>Consultas disponibles</span><strong id="aaRemaining">{{ cupo_restante }}</strong><small>Se recargan manualmente a 5</small></div>
+    <div class="aa-metric"><span>Consultas realizadas</span><strong id="aaUsed">{{ cupo_realizadas }}</strong><small>Solo se conserva el contador</small></div>
+  </div>
+  <section class="aa-card aa-query-card">
+    <div class="aa-card-heading"><span class="aa-icon aa-icon-primary"><i class="bi bi-chat-square-text"></i></span><div><h2>Nueva consulta</h2><p>Consulta dudas sobre procedimientos, NIAs y normativa de auditoría.</p></div></div>
+    <p class="aa-intro">Cada respuesta completada utiliza una consulta. Si el servicio falla, se reintegra.</p>
+    <form class="aa-query-form" id="aaDemoForm" enctype="multipart/form-data" method="post">
+      {% csrf_token %}
+      <label class="aa-visually-hidden" for="aaDemoQuestion">Tu pregunta</label>
+      <textarea name="pregunta" id="aaDemoQuestion" maxlength="1800" placeholder="Escribe tu consulta…" required {% if not cupo_restante %}disabled{% endif %}></textarea>
+      <button type="submit" id="aaDemoSend" title="Enviar consulta" aria-label="Enviar consulta" {% if not cupo_restante %}disabled{% endif %}><i class="bi bi-send-fill"></i></button>
+    </form>
+    <p class="aa-privacy"><strong>Privacidad:</strong> no guardamos el contenido de las consultas en el historial del sistema; las respuestas mostradas desaparecen al recargar la página.</p>
+    <p id="aaDemoFeedback" class="aa-feedback" aria-live="polite" role="status"></p>
+  </section>
+  <section class="aa-card aa-history">
+    <div class="aa-history-head"><div><h2>Respuestas de esta sesión de pantalla</h2><p>Solo visibles mientras mantengas esta página abierta.</p></div><span class="aa-demo-tag">Sin historial permanente</span></div>
+    <div id="aaDemoHistory" aria-live="polite"><p class="aa-history-empty" id="aaDemoEmpty">Aún no has enviado consultas en esta página.</p></div>
+  </section>
+  <section class="aa-upsell" aria-label="Audita Análisis"><div class="aa-upsell-icon"><i class="bi bi-stars"></i></div><div class="aa-upsell-copy"><h2>Audita Análisis para consultas de auditoría.</h2><p>Orientación rápida para el trabajo de auditoría y revisión de documentos temporales. Más herramientas se habilitarán próximamente.</p></div></section>
+</div>
+{% endblock v2_content %}
+{% block v2_scripts %}<script src="{% static 'js/audita-analisis-demo.js' %}" defer></script>{% endblock v2_scripts %}

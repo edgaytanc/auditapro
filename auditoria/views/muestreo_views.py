@@ -46,38 +46,16 @@ def _clave_parametros(parametros):
             if clave != 'partidas'}
 
 
-def _verificar_acceso(request, audit):
-    """
-    Verifica que el usuario tenga acceso a la auditoría (mismo patrón que
-    download_document_by_pattern): el jefe accede a las auditorías que creó y
-    los auditores a las que les fueron asignadas.
-    """
-    user_role = request.user.role.name
-    if user_role == "audit_manager" and audit.audit_manager == request.user:
-        return True
-    if user_role != "audit_manager" and audit.assigned_users.filter(id=request.user.id).exists():
-        return True
-    return False
-
-
-def _obtener_auditoria(request, audit_id):
-    """Devuelve (audit, None) o (None, respuesta de error) según acceso."""
+def _obtener_auditoria(request, audit_id, action="view"):
+    """Usa la seguridad vigente de Sistema_audita (equipo + permisos)."""
+    from audits.access import get_audit_for_user_or_404
+    from django.http import Http404
     try:
-        audit = Audit.objects.get(id=audit_id)
-    except Audit.DoesNotExist:
-        mensaje_error = crear_mensaje_error(
-            "Auditoría no encontrada",
-            f"La auditoría con ID {audit_id} no existe en el sistema."
-        )
-        return None, HttpResponse(mark_safe(mensaje_error), status=404)
-
-    if not _verificar_acceso(request, audit):
-        mensaje_error = crear_mensaje_error(
-            "Acceso restringido",
-            "No tiene permisos para acceder a esta auditoría. Solo puede acceder a las auditorías que le han sido asignadas."
-        )
-        return None, HttpResponse(mark_safe(mensaje_error), status=403)
-    return audit, None
+        return get_audit_for_user_or_404(
+            request.user, audit_id, action=action, module="workpapers"
+        ), None
+    except Http404:
+        return None, HttpResponse("Auditoría no encontrada o acceso restringido.", status=404)
 
 
 def _info_auditoria(audit):
@@ -151,7 +129,7 @@ def muestreo_calcular(request, audit_id):
     Espera un POST con cuerpo JSON: {'metodo': str, 'parametros': {...}}.
     Devuelve el diccionario del servicio más una bandera de éxito.
     """
-    audit, error = _obtener_auditoria(request, audit_id)
+    audit, error = _obtener_auditoria(request, audit_id, action="edit")
     if error:
         return JsonResponse({'success': False, 'error': 'Acceso no autorizado a la auditoría.'}, status=error.status_code)
 
@@ -214,7 +192,7 @@ def muestreo_importar_datos(request, audit_id):
       - parametros: JSON con los parámetros del método (los derivables del
         archivo pueden venir vacíos: se completan con los del archivo)
     """
-    audit, error = _obtener_auditoria(request, audit_id)
+    audit, error = _obtener_auditoria(request, audit_id, action="edit")
     if error:
         return JsonResponse(
             {'success': False, 'error': 'Acceso no autorizado a la auditoría.'},

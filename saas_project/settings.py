@@ -9,8 +9,21 @@ load_dotenv()
 locale.setlocale(locale.LC_TIME, "")
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+ANTHROPIC_API_KEY = os.getenv(
+    "ANTHROPIC_API_KEY", ""
+).strip()
+
+ANTHROPIC_MODEL = os.getenv(
+    "ANTHROPIC_MODEL",
+    os.getenv("CLAUDE_MODEL", "claude-sonnet-4-6")
+).strip()
+
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-)dje61c_awppvrn8w_jf%way9ugx@dnmq7pmh8x+e#hg44%xp@")
 DEBUG = os.environ.get("DEBUG", "True") == "True"
+DISABLE_2FA = os.environ.get(
+    "DISABLE_2FA",
+    "False"
+).strip().lower() in ("1", "true", "yes", "on")
 allowed_hosts = os.environ.get("ALLOWED_HOSTS", "*")
 ALLOWED_HOSTS = [host.strip() for host in allowed_hosts.split(",")] if "," in allowed_hosts else [allowed_hosts]
 csrf_trusted_origins_env = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
@@ -27,13 +40,18 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "common",
+    "analisis_ia",
+    "planes",
+    "videos_guias",
     "users",
     "mfa",
     "notifications",
     "audits",
     "management_auditors",
     "tools",
+    "archivo",
     "auditoria",
+    "internal_audit",
     "user_management",
     "django_tables2",
 ]
@@ -43,6 +61,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
+    "analisis_ia.middleware.SoloMemoriaAnalisisMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -138,7 +157,7 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
-DEFAULT_FROM_EMAIL = 'Sistema de Auditoría <auditaguatemala@gmail.com>'
+DEFAULT_FROM_EMAIL = f"AuditaPro <{EMAIL_HOST_USER}>"
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "True") == "True"

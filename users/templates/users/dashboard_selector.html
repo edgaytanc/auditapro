@@ -1,0 +1,31 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+{% block title %}Seleccionar panel{% endblock title %}
+{% block v2_styles %}<link rel="stylesheet" href="{% static 'css/dashboard-picker-v2.css' %}">{% endblock v2_styles %}
+{% block page_title %}Panel de auditoría{% endblock page_title %}
+{% block page_subtitle %}Selecciona el flujo de trabajo que deseas abrir.{% endblock page_subtitle %}
+{% block v2_content %}
+  <section class="ap-picker-intro"><i class="bi bi-grid-1x2"></i><div>
+    <strong>¿Qué panel quieres abrir?</strong>
+    <p>Accede a tus módulos desde el mismo entorno AuditaPro. Puedes volver aquí con «Dashboard».</p>
+  </div></section>
+  <div class="ap-picker-grid">
+    <a class="ap-picker-card" href="{% url 'dashboard_financiera' %}">
+      <span class="ap-picker-icon"><i class="bi bi-graph-up-arrow"></i></span>
+      <span class="ap-picker-label">AUDITORÍA FINANCIERA</span>
+      <h2>Auditoría Financiera</h2>
+      <p>Gestiona riesgos, hallazgos, proyectos, clientes y papeles de trabajo.</p>
+      <span class="ap-picker-go">Entrar al panel <i class="bi bi-arrow-right"></i></span>
+    </a>
+    {% if user.auditoria_interna or user.is_staff or user.is_superuser %}
+    <a class="ap-picker-card" href="{% url 'dashboard_interna' %}">
+      <span class="ap-picker-icon ap-picker-icon-green"><i class="bi bi-shield-check"></i></span>
+      <span class="ap-picker-label">EVALUACIÓN POR PROCESOS</span>
+      <h2>Auditoría Interna</h2>
+      <p>Consulta riesgos por procesos, controles, cronogramas, hallazgos e informes.</p>
+      <span class="ap-picker-go">Entrar al panel <i class="bi bi-arrow-right"></i></span>
+    </a>
+    {% endif %}
+  </div>
+  <p class="ap-picker-notice"><i class="bi bi-info-circle"></i> El acceso a cada auditoría se valida según los permisos de tu cuenta.</p>
+{% endblock v2_content %}

@@ -1,0 +1,165 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+
+{% block title %}
+  Matriz de Riesgos — Auditoría Financiera
+{% endblock title %}
+
+{% block v2_styles %}
+<link rel="stylesheet" href="{% static 'css/financial-company.css' %}?v=1">
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/financial-module-nav.css' %}"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/financial-risk-matrix.css' %}"
+  >
+
+{% endblock v2_styles %}
+
+{% block page_title %}
+  Matriz de Riesgos por Cuenta / Aserción
+{% endblock page_title %}
+
+{% block page_subtitle %}
+  {% include "users/financial_dashboard/_company_editor.html" %}
+{% endblock page_subtitle %}
+
+{% block page_actions %}
+
+  <button
+    type="button"
+    class="financial-risk-button financial-risk-button--secondary"
+    id="addRiskAccountButton"
+  >
+    <i class="bi bi-plus-lg"></i>
+    Agregar cuenta
+  </button>
+
+  <button
+    type="button"
+    class="financial-risk-button financial-risk-button--primary"
+    id="exportRiskExcelButton"
+  >
+    <i class="bi bi-file-earmark-spreadsheet"></i>
+    Exportar a Excel
+  </button>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  {% include "users/financial_dashboard/_module_nav.html" %}
+
+  <div class="financial-risk-page">
+
+    <div
+      id="financialRiskStatus"
+      class="financial-risk-status"
+      role="status"
+    ></div>
+
+    <div class="financial-risk-note financial-risk-note--success">
+      <i class="bi bi-check-circle"></i>
+
+      <span>
+        El riesgo inherente y el riesgo residual se calculan automáticamente
+        usando Probabilidad × Impacto y se actualizan al modificar los valores.
+      </span>
+    </div>
+
+    <div class="financial-risk-note financial-risk-note--info">
+      <i class="bi bi-info-circle"></i>
+
+      <span>
+        El saldo, el riesgo o aserción afectada y la respuesta de auditoría
+        pueden ser modificados libremente por el auditor.
+      </span>
+    </div>
+
+    <div
+      class="financial-risk-kpis"
+      id="financialRiskKpis"
+    ></div>
+
+    <div class="financial-risk-summary-grid">
+
+      <section class="financial-risk-panel">
+        <h2>Mapa de calor</h2>
+
+        <p>
+          Distribución de riesgos por probabilidad e impacto.
+        </p>
+
+        <div
+          class="financial-risk-heatmap"
+          id="financialRiskHeatmap"
+        ></div>
+
+        <div class="financial-risk-axis-label">
+          Impacto →
+        </div>
+      </section>
+
+      <section class="financial-risk-panel">
+        <h2>Riesgo residual por cuenta</h2>
+
+        <p>
+          Comparación entre riesgo inherente y riesgo mitigado por los controles.
+        </p>
+
+        <div id="financialRiskResidualBars"></div>
+      </section>
+
+    </div>
+
+    <section class="financial-risk-panel financial-risk-detail-panel">
+
+      <header class="financial-risk-detail-header">
+        <h2>Detalle por cuenta / aserción</h2>
+
+        <p>
+          Modifica los valores y redacta libremente los campos de riesgo y
+          respuesta de auditoría.
+        </p>
+      </header>
+
+      <div class="financial-risk-table-wrapper">
+
+        <table
+          data-export-url="{% url 'exportar_matriz_riesgos' %}"
+          class="financial-risk-table"
+          id="financialRiskTable"
+        >
+          <thead>
+            <tr>
+              <th>Cuenta</th>
+              <th>Riesgo / Aserción afectada</th>
+              <th>Prob.</th>
+              <th>Impacto</th>
+              <th>Riesgo inherente</th>
+              <th>Control existente</th>
+              <th>Riesgo residual</th>
+              <th>Respuesta de auditoría</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody id="financialRiskBody"></tbody>
+        </table>
+
+      </div>
+
+    </section>
+
+  </div>
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+<script src="{% static 'js/financial-company.js' %}?v=1"></script>
+  <script src="{% static 'js/financial-risk-matrix.js' %}"></script>
+{% endblock v2_scripts %}

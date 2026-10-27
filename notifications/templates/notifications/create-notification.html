@@ -1,118 +1,236 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
-    Crear Notificación
+  Enviar Notificación
 {% endblock title %}
 
+{% block v2_styles %}
+  {{ block.super }}
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/notifications-v2.css' %}?v=1"
+  >
+  {% include "notifications/_compose_estilos.html" %}
+{% endblock v2_styles %}
+
 {% block page_title %}
-    Crear Notificación
+  Enviar Notificación
 {% endblock page_title %}
 
-{% block main_content %}
-<div class="container mt-5 p-md-4 p-2 bg-light-subtle shadow-lg rounded">
-    <h2 class="mb-4">Notificación</h2>
+{% block page_subtitle %}
+  Envía una comunicación a los usuarios asignados a una auditoría.
+{% endblock page_subtitle %}
 
-    <form action="{% url 'create_notification' %}" method="post">
-        {% csrf_token %}
+{% block page_actions %}
 
-        <!-- 🔹 AUDITORÍA -->
-        <div class="mb-3">
-            <label for="audit" class="form-label">Auditoría</label>
-            <select class="form-select"
-                    aria-label="audit"
-                    id="audit_id"
-                    name="audit_id"
-                    required>
-                <option selected>Seleccione la auditoría relacionada</option>
-                {% for audit in audits %}
-                    <option value="{{ audit.id }}">{{ audit.title }}</option>
-                {% endfor %}
+  <a
+    href="{% url 'notifications' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Volver a notificaciones
+  </a>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <div class="ap-notif-compose">
+
+    <section class="ap-notif-info">
+      <span class="ap-notif-info-icon">
+        <i class="bi bi-send"></i>
+      </span>
+
+      <div>
+        <strong>Comunicación vinculada a auditoría</strong>
+        <p>
+          Primero selecciona el encargo. Después el sistema mostrará únicamente los usuarios
+          que pueden recibir comunicaciones de ese encargo según tu rol.
+        </p>
+      </div>
+    </section>
+
+    <form
+      action="{% url 'create_notification' %}"
+      method="post"
+      id="notificationCreateForm"
+    >
+      {% csrf_token %}
+
+      <div class="ap-notif-compose-grid mt-3">
+
+        <section class="ap-notif-compose-card">
+
+          <header class="ap-notif-section-head">
+            <div>
+              <span class="ap-notif-compose-label">NUEVA COMUNICACIÓN</span>
+              <h2>Redactar notificación</h2>
+              <p>
+                Completa la auditoría, los destinatarios y el mensaje que llegará a su bandeja.
+              </p>
+            </div>
+          </header>
+
+          <div class="ap-notif-form-group">
+            <label for="audit_id">
+              Auditoría relacionada
+            </label>
+
+            <select
+              id="audit_id"
+              name="audit_id"
+              required
+            >
+              <option value="" selected>
+                Selecciona una auditoría
+              </option>
+
+              {% for audit in audits %}
+                <option value="{{ audit.id }}">
+                  {{ audit.title }}{% if audit.identidad %} · {{ audit.identidad }}{% endif %}
+                </option>
+              {% endfor %}
             </select>
-        </div>
 
-        <!-- 🔹 DESTINATARIO -->
-        <div class="mb-3">
-            <label for="notifieds_users" class="form-label">Destinatario</label>
-            <select id="notifieds_users"
-                    name="notifieds_ids"
-                    multiple="true"
-                    class="form-control"
-                    required></select>
-        </div>
+            {% if not audits %}
+              <p class="ap-notif-compose-empty mt-2 mb-0">
+                No tienes auditorías disponibles para crear una comunicación con tu rol actual.
+              </p>
+            {% endif %}
+          </div>
 
-        <!-- 🔹 NOTA -->
-        <div class="mb-3">
-            <label for="note" class="form-label">Nota</label>
-            <textarea class="form-control"
-                      id="note"
-                      rows="5"
-                      name="notification_note"
-                      placeholder="Realizar cierta tarea..."
-                      style="resize: none"
-                      required></textarea>
-        </div>
+          <div class="ap-notif-form-group">
+            <label for="notifieds_users">
+              Destinatarios
+            </label>
 
-        <!-- 🔹 BLOQUE DE CORREO -->
-        {% include "notifications/email_send_block.html" %}
+            <select
+              id="notifieds_users"
+              name="notifieds_ids"
+              multiple
+              size="4"
+              aria-describedby="destinatariosAviso"
+            ></select>
 
-        <!-- 🔹 BOTÓN DE ENVÍO -->
-        <button type="submit" class="btn btn-primary mt-3">Guardar notificación</button>
+            <p class="ap-notif-select-help">
+              Puedes seleccionar uno o varios usuarios de la auditoría elegida.
+            </p>
+
+            <p id="destinatariosAviso" class="ap-recipient-aviso" role="status" aria-live="polite" hidden></p>
+
+            <div class="ap-notif-recipient-preview" id="recipientPreview">
+              <span>Destinatarios seleccionados</span>
+              <strong id="recipientPreviewValue">
+                Selecciona una auditoría y uno o más destinatarios.
+              </strong>
+            </div>
+          </div>
+
+          <div class="ap-notif-form-group mb-0">
+            <label for="note">
+              Nota
+            </label>
+
+            <textarea
+              id="note"
+              name="notification_note"
+              rows="6"
+              placeholder="Escribe aquí la comunicación, instrucción u observación..."
+              required
+            ></textarea>
+          </div>
+
+          {% include "notifications/email_send_block.html" %}
+
+          <div class="ap-notif-submit-row">
+            <a
+              href="{% url 'notifications' %}"
+              class="ap-notif-button"
+            >
+              Cancelar
+            </a>
+
+            <button
+              type="submit"
+              class="ap-notif-compose-submit"
+              {% if not audits %}disabled{% endif %}
+            >
+              <i class="bi bi-send"></i>
+              Guardar notificación
+            </button>
+          </div>
+
+        </section>
+
+        <aside>
+
+          <section class="ap-notif-side-card">
+            <span class="ap-notif-side-eyebrow">FLUJO</span>
+            <h2>Cómo funciona</h2>
+            <p>
+              La comunicación queda registrada en AuditaPro y aparece en la bandeja del usuario destinatario.
+            </p>
+
+            <div class="ap-notif-side-list">
+
+              <div class="ap-notif-side-item">
+                <i class="bi bi-1-circle"></i>
+                <div>
+                  <strong>Selecciona el encargo</strong>
+                  <p>Se cargan automáticamente los usuarios disponibles.</p>
+                </div>
+              </div>
+
+              <div class="ap-notif-side-item">
+                <i class="bi bi-2-circle"></i>
+                <div>
+                  <strong>Selecciona destinatarios</strong>
+                  <p>Solo se ofrecen miembros relacionados con la auditoría.</p>
+                </div>
+              </div>
+
+              <div class="ap-notif-side-item">
+                <i class="bi bi-3-circle"></i>
+                <div>
+                  <strong>Guarda la comunicación</strong>
+                  <p>El mensaje queda asociado al encargo y a sus destinatarios.</p>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          <section class="ap-notif-side-card">
+            <span class="ap-notif-side-eyebrow">CORREO</span>
+            <h2>Envío externo</h2>
+            <p>
+              El correo electrónico es un apoyo para entregar documentos fuera del sistema.
+              La notificación de AuditaPro se mantiene como registro independiente.
+            </p>
+          </section>
+
+        </aside>
+
+      </div>
+
     </form>
-</div>
-{% endblock main_content %}
 
-{% block extra_scripts %}
-<script>
-$(document).ready(function() {
-    const audits = JSON.parse("{{ audits_json|escapejs }}");
-    const notifieds = JSON.parse("{{ notifieds_json|escapejs }}");
-    const auditSelect = document.getElementById("audit_id");
-    const notifiedsSelect = $('#notifieds_users');
-    let actualAudit = null;
+  </div>
 
-    // 🔹 Función para actualizar los usuarios notificados
-    const updateNotifiedsOptions = (assignedUsers) => {
-        notifiedsSelect.empty();
-        notifieds.forEach(notified => {
-            if (assignedUsers.includes(notified.id)) {
-                const option = new Option(
-                    `${notified.first_name} ${notified.last_name} - ${notified.role.verbose_name}`,
-                    notified.id,
-                    false,
-                    false
-                );
-                notifiedsSelect.append(option);
-            }
-        });
+{% endblock v2_content %}
 
-        notifiedsSelect.select2({
-            placeholder: "Usuarios que serán notificados",
-            allowClear: true
-        });
+{% block v2_scripts %}
+  {{ block.super }}
+  <script>
+    window.AUDITA_NOTIFICATION_DATA = {
+      audits: JSON.parse("{{ audits_json|escapejs }}"),
+      notifieds: JSON.parse("{{ notifieds_json|escapejs }}"),
+      currentUser: "{{ request.user.get_full_name|default:request.user.username|escapejs }}",
+      currentEmail: "{{ request.user.email|default:''|escapejs }}"
     };
-
-    // 🔹 Si ya hay una auditoría seleccionada
-    if (actualAudit){
-        const usuariosAsignados = [...actualAudit.assigned_users, actualAudit.audit_manager];
-        updateNotifiedsOptions(usuariosAsignados);
-    }
-
-    // 🔹 Al cambiar de auditoría, se actualizan los usuarios disponibles
-    auditSelect.addEventListener("change", (e) => {
-        const selectedAuditId = e.target.value;
-        actualAudit = audits.find(audit => audit.id == selectedAuditId);
-        const assignedUsersIds = actualAudit.assigned_users.map((value) => value.id);
-        if (actualAudit) {
-            const usuariosAsignados = [...assignedUsersIds, actualAudit.audit_manager.id];
-            updateNotifiedsOptions(usuariosAsignados);
-        }
-    });
-
-    // 🔹 Inicialización de Select2
-    notifiedsSelect.select2({
-        placeholder: "Usuarios que serán notificados",
-        allowClear: true
-    });
-});
-</script>
-{% endblock extra_scripts %}
+  </script>
+  {% include "notifications/_compose_interacciones.html" %}
+{% endblock v2_scripts %}

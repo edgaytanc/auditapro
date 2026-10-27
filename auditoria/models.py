@@ -5,8 +5,6 @@ from audits.models import Audit
 # -----------------------------------------------------------------------------
 # Modelo para registrar balances de cuentas
 # -----------------------------------------------------------------------------
-
-
 class BalanceCuentas(models.Model):
     TIPO_BALANCE_CHOICES = [
         ('ANUAL', 'Anual'),
@@ -20,25 +18,18 @@ class BalanceCuentas(models.Model):
     ]
 
     id = models.AutoField(primary_key=True)
-    audit = models.ForeignKey(Audit, on_delete=models.CASCADE,
-                              related_name='balances', verbose_name='Auditoría')
-    tipo_balance = models.CharField(
-        max_length=10, choices=TIPO_BALANCE_CHOICES, verbose_name='Tipo de Balance')
+    audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='balances', verbose_name='Auditoría')
+    tipo_balance = models.CharField(max_length=10, choices=TIPO_BALANCE_CHOICES, verbose_name='Tipo de Balance')
     fecha_corte = models.DateField(verbose_name='Fecha de Corte')
-    seccion = models.CharField(
-        max_length=10, choices=SECCION_CHOICES, verbose_name='Sección')
-    nombre_cuenta = models.CharField(
-        max_length=100, verbose_name='Nombre de la Cuenta')
-    tipo_cuenta = models.CharField(
-        max_length=50, blank=True, null=True, verbose_name='Tipo de Cuenta')
-    valor = models.DecimalField(max_digits=15, decimal_places=2, validators=[
-                                MinValueValidator(0)], verbose_name='Valor')
+    seccion = models.CharField(max_length=10, choices=SECCION_CHOICES, verbose_name='Sección')
+    nombre_cuenta = models.CharField(max_length=100, verbose_name='Nombre de la Cuenta')
+    tipo_cuenta = models.CharField(max_length=50, blank=True, null=True, verbose_name='Tipo de Cuenta')
+    valor = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Valor')
 
     class Meta:
         verbose_name = 'Balance de Cuentas'
         verbose_name_plural = 'Balances de Cuentas'
-        ordering = ['audit', 'tipo_balance',
-                    'fecha_corte', 'seccion', 'nombre_cuenta']
+        ordering = ['audit', 'tipo_balance', 'fecha_corte', 'seccion', 'nombre_cuenta']
 
     def __str__(self):
         return f"{self.audit.id} - {self.tipo_balance} - {self.fecha_corte} - {self.seccion} - {self.nombre_cuenta}"
@@ -46,15 +37,11 @@ class BalanceCuentas(models.Model):
 # -----------------------------------------------------------------------------
 # Modelo para registrar registros auxiliares
 # -----------------------------------------------------------------------------
-
-
 class RegistroAuxiliar(models.Model):
     id = models.AutoField(primary_key=True)
-    audit = models.ForeignKey(Audit, on_delete=models.CASCADE,
-                              related_name='registros_auxiliares', verbose_name='Auditoría')
+    audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='registros_auxiliares', verbose_name='Auditoría')
     cuenta = models.CharField(max_length=100, verbose_name='Cuenta')
-    saldo = models.DecimalField(max_digits=15, decimal_places=2, validators=[
-                                MinValueValidator(0)], verbose_name='Saldo')
+    saldo = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Saldo')
 
     class Meta:
         verbose_name = 'Registro Auxiliar'
@@ -67,15 +54,11 @@ class RegistroAuxiliar(models.Model):
 # -----------------------------------------------------------------------------
 # Modelo para registrar saldos iniciales
 # -----------------------------------------------------------------------------
-
-
 class SaldoInicial(models.Model):
     id = models.AutoField(primary_key=True)
-    audit = models.ForeignKey(Audit, on_delete=models.CASCADE,
-                              related_name='saldos_iniciales', verbose_name='Auditoría')
+    audit = models.ForeignKey(Audit, on_delete=models.CASCADE, related_name='saldos_iniciales', verbose_name='Auditoría')
     cuenta = models.CharField(max_length=100, verbose_name='Cuenta')
-    saldo = models.DecimalField(max_digits=15, decimal_places=2, validators=[
-                                MinValueValidator(0)], verbose_name='Saldo Inicial')
+    saldo = models.DecimalField(max_digits=15, decimal_places=2, validators=[MinValueValidator(0)], verbose_name='Saldo Inicial')
     fecha_corte = models.DateField(verbose_name='Fecha de Corte')
 
     class Meta:
@@ -89,8 +72,6 @@ class SaldoInicial(models.Model):
 # -----------------------------------------------------------------------------
 # Modelo para registrar ajustes y reclasificaciones (Debe / Haber)
 # -----------------------------------------------------------------------------
-
-
 class AjustesReclasificaciones(models.Model):
     id = models.AutoField(primary_key=True)
     audit = models.ForeignKey(
@@ -504,7 +485,8 @@ class TemplateSymbol(models.Model):
 
     def __str__(self):
         return f"{self.symbol.symbol} en {self.template_config.workbook_name}"
-
+from django.db import models
+from audits.models import Audit
 
 class RevisoriaSubcuentaQuerySet(models.QuerySet):
     def for_cuenta(self, audit, seccion, cuenta_principal):
@@ -522,25 +504,18 @@ class RevisoriaSubcuentaQuerySet(models.QuerySet):
             .order_by("nombre_subcuenta")
         )
 
-
 class RevisoriaSubcuenta(models.Model):
     audit = models.ForeignKey(Audit, on_delete=models.CASCADE)
     seccion = models.CharField(max_length=50)
     cuenta_principal = models.CharField(max_length=255)
     nombre_subcuenta = models.CharField(max_length=255)
 
-    saldo_ini_anterior = models.DecimalField(
-        max_digits=18, decimal_places=2, null=True, blank=True)
-    saldo_julio_anterior = models.DecimalField(
-        max_digits=18, decimal_places=2, null=True, blank=True)
-    saldo_dic_anterior = models.DecimalField(
-        max_digits=18, decimal_places=2, null=True, blank=True)
-    ajuste_debe = models.DecimalField(
-        max_digits=18, decimal_places=2, null=True, blank=True)
-    ajuste_haber = models.DecimalField(
-        max_digits=18, decimal_places=2, null=True, blank=True)
-    saldo_dic_actual = models.DecimalField(
-        max_digits=18, decimal_places=2, null=True, blank=True)
+    saldo_ini_anterior = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    saldo_julio_anterior = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    saldo_dic_anterior = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    ajuste_debe = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    ajuste_haber = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
+    saldo_dic_actual = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
 
     es_otras_cuentas = models.BooleanField(default=False)
 
@@ -550,6 +525,148 @@ class RevisoriaSubcuenta(models.Model):
     def __str__(self):
         return f"{self.seccion} - {self.cuenta_principal} - {self.nombre_subcuenta}"
 
+
+# -----------------------------------------------------------------------------
+# Hallazgos y recomendaciones de auditoría
+# -----------------------------------------------------------------------------
+
+class AuditFinding(models.Model):
+    """
+    Hallazgo vinculado a una auditoría específica.
+
+    Este modelo sirve para Auditoría Financiera,
+    Auditoría Interna y Revisoría Fiscal.
+    """
+
+    STATUS_CHOICES = [
+        (
+            "pending",
+            "Pendiente",
+        ),
+        (
+            "in_progress",
+            "En proceso",
+        ),
+        (
+            "implemented",
+            "Implementado",
+        ),
+    ]
+
+    audit = models.ForeignKey(
+        Audit,
+        on_delete=models.CASCADE,
+        related_name="findings",
+        verbose_name="Auditoría",
+    )
+
+    code = models.CharField(
+        max_length=20,
+        verbose_name="Código",
+    )
+
+    finding = models.TextField(
+        verbose_name="Hallazgo",
+    )
+
+    recommendation = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="Recomendación",
+    )
+
+    account = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+        verbose_name="Cuenta o proceso",
+    )
+
+    effect = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=0,
+        validators=[
+            MinValueValidator(0),
+        ],
+        verbose_name="Efecto monetario",
+    )
+
+    responsible = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+        verbose_name="Responsable",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+        verbose_name="Estado",
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Activo",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Fecha de creación",
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Última actualización",
+    )
+
+    class Meta:
+        verbose_name = "Hallazgo de auditoría"
+        verbose_name_plural = (
+            "Hallazgos de auditoría"
+        )
+
+        ordering = [
+            "audit_id",
+            "created_at",
+            "id",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "audit",
+                    "code",
+                ],
+                name=(
+                    "unique_finding_code_per_audit"
+                ),
+            ),
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "audit",
+                    "is_active",
+                ],
+                name="finding_audit_active_idx",
+            ),
+            models.Index(
+                fields=[
+                    "audit",
+                    "status",
+                ],
+                name="finding_audit_status_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.code} - "
+            f"{self.audit.title}"
+        )
 
 class ParametrosAuditoria(models.Model):
     """

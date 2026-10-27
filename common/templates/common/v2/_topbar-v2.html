@@ -1,0 +1,39 @@
+<header class="ap-topbar">
+
+  <div class="ap-topbar-left">
+    <button
+      type="button"
+      class="ap-mobile-menu-button"
+      id="apMobileMenuButton"
+      aria-label="Abrir menú"
+    >
+      <i class="bi bi-list"></i>
+    </button>
+
+    <div class="ap-topbar-context">
+      <span class="ap-topbar-product">Sistema Audita</span>
+      <span class="ap-topbar-separator"></span>
+      <span class="ap-topbar-location">
+        {% block topbar_location %}
+          Panel de auditoría
+        {% endblock topbar_location %}
+      </span>
+    </div>
+  </div>
+
+  <div class="ap-topbar-actions">
+
+    {# El acceso a Audita-IA es contextual en las auditorías; no se muestra en la barra global. #}
+
+    <a
+      href="{% url 'user' %}"
+      class="ap-profile-button"
+      title="Ver perfil"
+      aria-label="Ver perfil"
+    >
+      <i class="bi bi-person-circle"></i>
+    </a>
+
+  </div>
+
+</header>

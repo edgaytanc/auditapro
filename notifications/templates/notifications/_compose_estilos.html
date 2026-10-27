@@ -1,0 +1,101 @@
+{# Solo afecta a la página de creación; el instructivo y el módulo de lectura no se modifican. #}
+<style>
+  .ap-notif-compose {
+    --notif-blue: #2563eb;
+    --notif-blue-dark: #1d4ed8;
+    --notif-blue-soft: #eff6ff;
+    --notif-green: #059669;
+    --notif-green-soft: #ecfdf5;
+    --notif-red: #dc2626;
+    --notif-red-soft: #fef2f2;
+    --notif-orange: #d97706;
+    --notif-orange-soft: #fff7ed;
+    --notif-border: #e2e8f0;
+    --notif-text: #172033;
+    --notif-muted: #64748b;
+    --notif-light: #94a3b8;
+  }
+  /* El CSS previo declaraba estas variables solo en .ap-notifications-page:
+     los botones de esta página quedaban blancos/invisibles. */
+  .ap-notif-compose .ap-notif-form-group label,
+  .ap-notif-compose .ap-notif-file-label {font-size: 12px;}
+  .ap-notif-compose .ap-notif-form-group select,
+  .ap-notif-compose .ap-notif-form-group textarea,
+  .ap-notif-compose .ap-notif-form-group .select2-container--default .select2-selection--multiple {
+    font-size: 13px;
+  }
+  .ap-notif-compose .ap-notif-section-head h2 {font-size: 16px;}
+  .ap-notif-compose .ap-notif-section-head p,
+  .ap-notif-compose .ap-notif-side-card p,
+  .ap-notif-compose .ap-notif-info p,
+  .ap-notif-compose .ap-notif-file-help,
+  .ap-notif-compose .ap-notif-select-help {font-size: 12px;}
+  .ap-notif-compose .ap-notif-side-card h2 {font-size: 15px;}
+  .ap-notif-compose .ap-notif-side-item strong,
+  .ap-notif-compose .ap-notif-recipient-preview strong {font-size: 12px;}
+  .ap-notif-compose .ap-notif-recipient-preview span,
+  .ap-notif-compose .ap-notif-compose-label,
+  .ap-notif-compose .ap-notif-side-eyebrow {font-size: 10px;}
+  .ap-notif-compose .ap-notif-compose-submit {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    min-width: 190px; border-radius: 9px; padding: 10px 15px;
+    font-size: 13px; font-weight: 700;
+    background: #2563eb; border-color: #2563eb; color: #fff;
+    opacity: 1; visibility: visible;
+  }
+  .ap-notif-compose .ap-notif-compose-submit:disabled {opacity: .55; cursor: not-allowed;}
+  .ap-notif-compose .ap-notif-button {font-size: 12px;}
+  .ap-notif-compose .ap-notif-mail-actions {display: flex; flex-wrap: wrap; gap: 9px; align-items: center;}
+  .ap-notif-compose .ap-notif-mail-actions button {
+    display: inline-flex; align-items: center; gap: 7px; justify-content: center;
+    min-height: 41px; border: 1px solid; padding: 10px 13px;
+    border-radius: 9px; font-size: 12px; font-weight: 700;
+    opacity: 1; visibility: visible; cursor: pointer;
+    transition: background .15s, box-shadow .15s, transform .15s;
+  }
+  .ap-notif-compose .ap-notif-mail-actions button:focus-visible {
+    outline: 3px solid #f59e0b; outline-offset: 3px;
+  }
+  .ap-notif-compose .ap-notif-mail-actions button[data-mail-type="gmail"] {
+    color: #9d241d; background: #fff4f3; border-color: #f3c2bd;
+  }
+  .ap-notif-compose .ap-notif-mail-actions button[data-mail-type="outlook"] {
+    color: #005a9e; background: #eef7ff; border-color: #aad4f7;
+  }
+  .ap-notif-compose .ap-notif-mail-actions button[data-mail-type="mailto"] {
+    color: #334155; background: #f1f5f9; border-color: #cbd5e1;
+  }
+  .ap-notif-compose .ap-notif-mail-actions button[data-mail-type="gmail"]:hover,
+  .ap-notif-compose .ap-notif-mail-actions button[data-mail-type="gmail"].ap-correo-activo {
+    color: #fff; background: #c52b22; border-color: #c52b22;
+  }
+  .ap-notif-compose .ap-notif-mail-actions button[data-mail-type="outlook"]:hover,
+  .ap-notif-compose .ap-notif-mail-actions button[data-mail-type="outlook"].ap-correo-activo {
+    color: #fff; background: #0078d4; border-color: #0078d4;
+  }
+  .ap-notif-compose .ap-notif-mail-actions button[data-mail-type="mailto"]:hover,
+  .ap-notif-compose .ap-notif-mail-actions button[data-mail-type="mailto"].ap-correo-activo {
+    color: #fff; background: #475569; border-color: #475569;
+  }
+  .ap-notif-compose .ap-notif-mail-actions button.ap-correo-activo {box-shadow: 0 0 0 3px rgba(59,130,246,.12);}
+  .ap-notif-compose .ap-correo-aviso,
+  .ap-notif-compose .ap-recipient-aviso {
+    margin-top: 10px; padding: 10px 12px; border: 1px solid #fbd38d;
+    background: #fffbeb; color: #92400e; border-radius: 8px;
+    font-size: 12px; line-height: 1.45;
+  }
+  .ap-notif-compose .ap-correo-aviso.ap-correo-aviso-ok {
+    border-color: #a7f3d0; background: #ecfdf5; color: #065f46;
+  }
+  .ap-notif-compose [hidden] {display: none !important;}
+  @media (max-width: 600px) {
+    .ap-notif-compose .ap-notif-mail-actions button {flex: 1 1 100%;}
+    .ap-notif-compose .ap-notif-submit-row {flex-wrap: wrap;}
+  }
+</style>
+
+<style>
+#btnPrincipalCorreo[hidden]{display:none!important;}
+#btnGmail{background:#dc2626!important;border-color:#dc2626!important;color:#fff!important;}
+#btnGmail i{color:#fff!important;}
+</style>

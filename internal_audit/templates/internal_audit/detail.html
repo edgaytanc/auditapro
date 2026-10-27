@@ -1,0 +1,1027 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+
+{% block title %}
+  Auditoría Interna
+{% endblock title %}
+
+{% block v2_styles %}
+  <link
+    rel="stylesheet"
+    href="{% static 'css/internal-audit-v2.css' %}?v=1"
+  >
+{% endblock v2_styles %}
+
+{% block page_title %}
+  Auditoría Interna
+{% endblock page_title %}
+
+{% block page_subtitle %}
+  Gestión de planificación, riesgos, controles,
+  hallazgos y planes de acción.
+{% endblock page_subtitle %}
+
+{% block page_actions %}
+
+  <a
+    href="{% url 'dashboard_interna' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Auditorías internas
+  </a>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <section class="ia-header-card">
+
+    <div class="ia-header-main">
+
+      <div>
+        <span class="ia-eyebrow">
+          AUDITORÍA INTERNA SELECCIONADA
+        </span>
+
+        <h2>
+          {{ audit.title }}
+        </h2>
+
+        <p>
+          {{ plan.client_name|default:audit.identidad }}
+          · {{ audit.periodo_auditado|default:"Período sin definir" }}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="ia-primary-button"
+        data-open-tab="informe"
+      >
+        <i class="bi bi-file-earmark-text"></i>
+        Ver Informe Final
+      </button>
+
+    </div>
+
+    <div class="ia-header-metrics">
+
+      <article>
+        <span>Estado</span>
+        <strong>
+          {{ audit.get_workflow_status_display|default:"Planificación" }}
+        </strong>
+      </article>
+
+      <article>
+        <span>Riesgo</span>
+        <strong class="ia-risk-{{ audit.risk_level }}">
+          {{ audit.get_risk_level_display }}
+        </strong>
+      </article>
+
+      <article>
+        <span>Auditor asignado</span>
+        <strong>
+          {% firstof audit.audit_manager.get_full_name audit.audit_manager.username %}
+        </strong>
+      </article>
+
+      <article>
+        <span>Avance</span>
+
+        <div class="ia-progress-inline">
+          <div>
+            <span style="width: {{ global_progress }}%;"></span>
+          </div>
+
+          <strong>
+            {{ global_progress }}%
+          </strong>
+        </div>
+      </article>
+
+      <article>
+        <span>Cierre estimado</span>
+        <strong>
+          {{ plan.estimated_end_date|date:"d/m/Y"|default:"Sin definir" }}
+        </strong>
+
+        {% if days_to_close != None %}
+          <small
+            class="
+              {% if days_to_close < 0 %}
+                is-urgent
+              {% elif days_to_close <= 7 %}
+                is-urgent
+              {% elif days_to_close <= 15 %}
+                is-soon
+              {% endif %}
+            "
+          >
+            {% if days_to_close < 0 %}
+              Vencida
+            {% else %}
+              {{ days_to_close }} días
+            {% endif %}
+          </small>
+        {% endif %}
+      </article>
+
+    </div>
+
+  </section>
+
+  <nav class="ia-tabs" aria-label="Pestañas de Auditoría Interna">
+
+    <button
+      type="button"
+      class="ia-tab is-active"
+      data-tab-button="planificacion"
+    >
+      Planificación
+    </button>
+
+    <button
+      type="button"
+      class="ia-tab"
+      data-tab-button="riesgos"
+    >
+      Matriz de Riesgos
+    </button>
+
+    <button
+      type="button"
+      class="ia-tab"
+      data-tab-button="controles"
+    >
+      Evaluación de Controles
+    </button>
+
+    <button
+      type="button"
+      class="ia-tab"
+      data-tab-button="hallazgos"
+    >
+      Hallazgos y Recomendaciones
+    </button>
+
+    <button
+      type="button"
+      class="ia-tab"
+      data-tab-button="seguimiento"
+    >
+      Seguimiento
+    </button>
+
+    <button
+      type="button"
+      class="ia-tab"
+      data-tab-button="cronograma"
+    >
+      Cronograma
+    </button>
+
+    <button
+      type="button"
+      class="ia-tab"
+      data-tab-button="informe"
+    >
+      Informe Final
+    </button>
+
+  </nav>
+
+  <section
+    class="ia-tab-panel is-active"
+    data-tab-panel="planificacion"
+  >
+
+    <div class="ia-manual-note">
+      <i class="bi bi-pencil-square"></i>
+
+      Objetivo, alcance, metodología, horas, fechas y
+      equipo asignado son datos manuales.
+    </div>
+
+    <article class="ia-panel">
+
+      <header class="ia-panel-header">
+
+        <div>
+          <span>ETAPA INICIAL</span>
+          <h3>Planificación de la auditoría</h3>
+          <p>
+            Define el propósito, período y recursos de esta evaluación.
+          </p>
+        </div>
+
+      </header>
+
+      <form method="post" class="ia-form">
+        {% csrf_token %}
+
+        <div class="ia-form-grid">
+
+          <label class="ia-field ia-field-full">
+            <span>Nombre de cuenta o cliente</span>
+
+            <input
+              type="text"
+              name="client_name"
+              value="{{ plan.client_name }}"
+              placeholder="Nombre de la cuenta o cliente"
+              {% if not can_edit %}disabled{% endif %}
+            >
+          </label>
+
+          <label class="ia-field ia-field-full">
+            <span>Objetivo de la auditoría</span>
+
+            <textarea
+              name="objective"
+              rows="4"
+              placeholder="Describe qué se evaluará y con qué propósito."
+              {% if not can_edit %}disabled{% endif %}
+            >{{ plan.objective }}</textarea>
+          </label>
+
+          <label class="ia-field ia-field-full">
+            <span>Alcance</span>
+
+            <textarea
+              name="scope"
+              rows="4"
+              placeholder="Procesos, áreas y período cubierto."
+              {% if not can_edit %}disabled{% endif %}
+            >{{ plan.scope }}</textarea>
+          </label>
+
+          <label class="ia-field">
+            <span>Metodología</span>
+
+            <input
+              type="text"
+              name="methodology"
+              value="{{ plan.methodology }}"
+              {% if not can_edit %}disabled{% endif %}
+            >
+          </label>
+
+          <label class="ia-field">
+            <span>Horas presupuestadas</span>
+
+            <input
+              type="number"
+              min="0"
+              name="budgeted_hours"
+              value="{{ plan.budgeted_hours }}"
+              {% if not can_edit %}disabled{% endif %}
+            >
+          </label>
+
+          <label class="ia-field">
+            <span>Fecha de inicio</span>
+
+            <input
+              type="date"
+              name="start_date"
+              value="{{ plan.start_date|date:'Y-m-d' }}"
+              {% if not can_edit %}disabled{% endif %}
+            >
+          </label>
+
+          <label class="ia-field">
+            <span>Fecha de cierre estimada</span>
+
+            <input
+              type="date"
+              name="estimated_end_date"
+              value="{{ plan.estimated_end_date|date:'Y-m-d' }}"
+              {% if not can_edit %}disabled{% endif %}
+            >
+          </label>
+
+          <label class="ia-field ia-field-full">
+            <span>Equipo asignado</span>
+
+            <input
+              type="text"
+              name="assigned_team"
+              value="{{ plan.assigned_team }}"
+              placeholder="Nombre — Rol, Nombre — Rol"
+              {% if not can_edit %}disabled{% endif %}
+            >
+          </label>
+
+        </div>
+
+        {% if can_edit %}
+
+          <div class="ia-form-actions">
+
+            <button
+              type="submit"
+              name="detail_action"
+              value="save_plan"
+              class="ia-save-button"
+            >
+              <i class="bi bi-floppy"></i>
+              Guardar planificación
+            </button>
+
+            <button
+              type="submit"
+              name="detail_action"
+              value="clear_plan"
+              class="ia-clear-button"
+              onclick="return confirm('¿Borrar los datos manuales de planificación?');"
+            >
+              <i class="bi bi-trash"></i>
+              Borrar datos
+            </button>
+
+          </div>
+
+        {% endif %}
+
+      </form>
+
+    </article>
+
+  </section>
+
+  <section
+    class="ia-tab-panel"
+    data-tab-panel="riesgos"
+  >
+
+    <div class="ia-sync-note">
+      <i class="bi bi-arrow-repeat"></i>
+      El riesgo inherente y residual se recalculan
+      automáticamente desde probabilidad, impacto y control.
+    </div>
+
+    <div class="ia-kpi-grid ia-kpi-grid-four">
+
+      <article>
+        <span>Total de riesgos</span>
+        <strong>{{ risks|length }}</strong>
+      </article>
+
+      <article>
+        <span>Residual alto</span>
+        <strong class="is-red">{{ high_residual_count }}</strong>
+      </article>
+
+      <article>
+        <span>Residual medio</span>
+        <strong class="is-amber">{{ medium_residual_count }}</strong>
+      </article>
+
+      <article>
+        <span>Residual bajo</span>
+        <strong class="is-green">{{ low_residual_count }}</strong>
+      </article>
+
+    </div>
+
+    <article class="ia-panel">
+
+      <header class="ia-panel-header">
+        <div>
+          <span>RIESGO POR PROCESO</span>
+          <h3>Matriz de Riesgos</h3>
+          <p>
+            Escala de probabilidad e impacto entre 1 y 5.
+          </p>
+        </div>
+      </header>
+
+      <div class="ia-table-wrapper">
+
+        <table class="ia-table">
+
+          <thead>
+            <tr>
+              <th>Proceso</th>
+              <th>Riesgo</th>
+              <th>Prob.</th>
+              <th>Impacto</th>
+              <th>Inherente</th>
+              <th>Control</th>
+              <th>Residual</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {% for risk in risks %}
+
+              <tr>
+                <td><strong>{{ risk.process }}</strong></td>
+                <td>{{ risk.risk }}</td>
+                <td>{{ risk.probability }}</td>
+                <td>{{ risk.impact }}</td>
+
+                <td>
+                  <span class="ia-score ia-score-{{ risk.inherent_level }}">
+                    {{ risk.inherent_score }}/25
+                  </span>
+                </td>
+
+                <td>
+                  {{ risk.get_control_level_display }}
+                </td>
+
+                <td>
+                  <span class="ia-score ia-score-{{ risk.residual_level }}">
+                    {{ risk.residual_score }}/25
+                  </span>
+                </td>
+              </tr>
+
+            {% empty %}
+
+              <tr>
+                <td colspan="7" class="ia-empty-cell">
+                  No hay riesgos registrados todavía.
+                </td>
+              </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </article>
+
+  </section>
+
+  <section
+    class="ia-tab-panel"
+    data-tab-panel="controles"
+  >
+
+    <div class="ia-sync-note">
+      <i class="bi bi-arrow-repeat"></i>
+      La efectividad del control alimenta el cálculo
+      del riesgo residual.
+    </div>
+
+    <div class="ia-kpi-grid ia-kpi-grid-three">
+
+      <article>
+        <span>Controles evaluados</span>
+        <strong>{{ controls|length }}</strong>
+      </article>
+
+      <article>
+        <span>Efectivos</span>
+        <strong class="is-green">
+          {{ effective_controls_count }}
+        </strong>
+      </article>
+
+      <article>
+        <span>Pendientes de mejora</span>
+        <strong>
+          {{ pending_controls_count }}
+        </strong>
+      </article>
+
+    </div>
+
+    <article class="ia-panel">
+
+      <header class="ia-panel-header">
+        <div>
+          <span>CONTROL INTERNO</span>
+          <h3>Evaluación de Controles</h3>
+          <p>
+            Diseño y operatividad de los controles clave.
+          </p>
+        </div>
+      </header>
+
+      <div class="ia-table-wrapper">
+
+        <table class="ia-table">
+
+          <thead>
+            <tr>
+              <th>Riesgo relacionado</th>
+              <th>Control</th>
+              <th>Tipo</th>
+              <th>Diseño</th>
+              <th>Operación</th>
+              <th>Conclusión</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {% for control in controls %}
+
+              <tr>
+                <td>
+                  {{ control.risk.process|default:"Sin relacionar" }}
+                </td>
+                <td>{{ control.control }}</td>
+                <td>{{ control.get_control_type_display }}</td>
+                <td>{{ control.get_design_display }}</td>
+                <td>{{ control.get_operation_display }}</td>
+                <td>{{ control.conclusion|default:"Sin conclusión" }}</td>
+              </tr>
+
+            {% empty %}
+
+              <tr>
+                <td colspan="6" class="ia-empty-cell">
+                  No hay controles evaluados todavía.
+                </td>
+              </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </article>
+
+  </section>
+
+  <section
+    class="ia-tab-panel"
+    data-tab-panel="hallazgos"
+  >
+
+    <div class="ia-kpi-grid ia-kpi-grid-four">
+
+      <article>
+        <span>Total hallazgos</span>
+        <strong>{{ findings|length }}</strong>
+      </article>
+
+      <article>
+        <span>Significativos</span>
+        <strong class="is-red">
+          {{ significant_findings_count }}
+        </strong>
+      </article>
+
+      <article>
+        <span>Implementados</span>
+        <strong class="is-green">
+          {{ implemented_findings_count }}
+        </strong>
+      </article>
+
+      <article>
+        <span>Vencidos</span>
+        <strong class="is-amber">
+          {{ overdue_findings_count }}
+        </strong>
+      </article>
+
+    </div>
+
+    <article class="ia-panel">
+
+      <header class="ia-panel-header">
+        <div>
+          <span>RESULTADOS DE LA EVALUACIÓN</span>
+          <h3>Hallazgos y Recomendaciones</h3>
+          <p>
+            Observaciones detectadas y responsables de atenderlas.
+          </p>
+        </div>
+      </header>
+
+      <div class="ia-table-wrapper">
+
+        <table class="ia-table">
+
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Hallazgo</th>
+              <th>Proceso</th>
+              <th>Severidad</th>
+              <th>Recomendación</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th>Seguimiento</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {% for finding in findings %}
+
+              <tr>
+                <td><strong>{{ finding.code }}</strong></td>
+                <td>{{ finding.finding }}</td>
+                <td>{{ finding.process }}</td>
+                <td>{{ finding.get_severity_display }}</td>
+                <td>{{ finding.recommendation|default:"Sin recomendación" }}</td>
+                <td>{{ finding.responsible|default:"Sin asignar" }}</td>
+                <td>{{ finding.get_status_display }}</td>
+                <td>{{ finding.follow_up_date|date:"d/m/Y"|default:"Sin fecha" }}</td>
+              </tr>
+
+            {% empty %}
+
+              <tr>
+                <td colspan="8" class="ia-empty-cell">
+                  No hay hallazgos registrados todavía.
+                </td>
+              </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </article>
+
+  </section>
+
+  <section
+    class="ia-tab-panel"
+    data-tab-panel="seguimiento"
+  >
+
+    <div class="ia-sync-note">
+      <i class="bi bi-link-45deg"></i>
+      Cada hallazgo registrado se convierte en una acción
+      de seguimiento.
+    </div>
+
+    <article class="ia-panel">
+
+      <header class="ia-panel-header">
+        <div>
+          <span>PLAN DE ACCIÓN</span>
+          <h3>Seguimiento a Recomendaciones</h3>
+          <p>
+            Estado de implementación, avance y evidencia.
+          </p>
+        </div>
+      </header>
+
+      <div class="ia-table-wrapper">
+
+        <table class="ia-table">
+
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Acción correctiva</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th>Avance</th>
+              <th>Evidencia</th>
+              <th>Fecha compromiso</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {% for finding in findings %}
+
+              <tr>
+                <td><strong>{{ finding.code }}</strong></td>
+
+                <td>
+                  {{ finding.corrective_action|default:finding.recommendation|default:"Sin definir" }}
+                </td>
+
+                <td>
+                  {{ finding.responsible|default:"Sin asignar" }}
+                </td>
+
+                <td>
+                  {{ finding.get_status_display }}
+                </td>
+
+                <td>
+                  <div class="ia-progress-cell">
+                    <div>
+                      <span style="width: {{ finding.action_progress }}%;"></span>
+                    </div>
+
+                    <strong>
+                      {{ finding.action_progress }}%
+                    </strong>
+                  </div>
+                </td>
+
+                <td>
+                  {{ finding.evidence|default:"Sin evidencia" }}
+                </td>
+
+                <td>
+                  {{ finding.follow_up_date|date:"d/m/Y"|default:"Sin fecha" }}
+                </td>
+              </tr>
+
+            {% empty %}
+
+              <tr>
+                <td colspan="7" class="ia-empty-cell">
+                  No existen acciones de seguimiento todavía.
+                </td>
+              </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </article>
+
+  </section>
+
+  <section
+    class="ia-tab-panel"
+    data-tab-panel="cronograma"
+  >
+
+    <div class="ia-kpi-grid ia-kpi-grid-three">
+
+      <article>
+        <span>Fases planificadas</span>
+        <strong>{{ phases|length }}</strong>
+      </article>
+
+      <article>
+        <span>Avance global</span>
+        <strong class="is-blue">{{ global_progress }}%</strong>
+      </article>
+
+      <article>
+        <span>Cierre estimado</span>
+        <strong>
+          {{ plan.estimated_end_date|date:"d/m/Y"|default:"Sin definir" }}
+        </strong>
+      </article>
+
+    </div>
+
+    <article class="ia-panel">
+
+      <header class="ia-panel-header">
+        <div>
+          <span>PLAN DE AUDITORÍA</span>
+          <h3>Cronograma de Fases</h3>
+          <p>
+            El estado y avance se calculan desde las fechas.
+          </p>
+        </div>
+      </header>
+
+      <div class="ia-table-wrapper">
+
+        <table class="ia-table">
+
+          <thead>
+            <tr>
+              <th>Fase</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th>Avance</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            {% for phase in phases %}
+
+              <tr>
+                <td><strong>{{ phase.phase }}</strong></td>
+                <td>{{ phase.start_date|date:"d/m/Y" }}</td>
+                <td>{{ phase.end_date|date:"d/m/Y" }}</td>
+                <td>{{ phase.responsible|default:"Sin asignar" }}</td>
+
+                <td>
+                  {% if phase.calculated_status == "completed" %}
+                    Completada
+                  {% elif phase.calculated_status == "in_progress" %}
+                    En curso
+                  {% else %}
+                    Pendiente
+                  {% endif %}
+                </td>
+
+                <td>
+                  <div class="ia-progress-cell">
+                    <div>
+                      <span style="width: {{ phase.calculated_progress }}%;"></span>
+                    </div>
+
+                    <strong>
+                      {{ phase.calculated_progress }}%
+                    </strong>
+                  </div>
+                </td>
+              </tr>
+
+            {% empty %}
+
+              <tr>
+                <td colspan="6" class="ia-empty-cell">
+                  No hay fases configuradas.
+                </td>
+              </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </article>
+
+  </section>
+
+  <section
+    class="ia-tab-panel"
+    data-tab-panel="informe"
+  >
+
+    <div class="ia-report-layout">
+
+      <aside class="ia-report-sections">
+
+        <span>SECCIONES DEL INFORME</span>
+
+        <label><input type="checkbox" checked disabled> Portada</label>
+        <label><input type="checkbox" checked disabled> Resumen Ejecutivo</label>
+        <label><input type="checkbox" checked disabled> Objetivo y Alcance</label>
+        <label><input type="checkbox" checked disabled> Metodología</label>
+        <label><input type="checkbox" checked disabled> Matriz de Riesgos</label>
+        <label><input type="checkbox" checked disabled> Hallazgos</label>
+        <label><input type="checkbox" checked disabled> Plan de Acción</label>
+        <label><input type="checkbox" checked disabled> Cronograma</label>
+        <label><input type="checkbox" checked disabled> Conclusión</label>
+
+      </aside>
+
+      <article class="ia-report-preview">
+
+        <header>
+          <span>VISTA PREVIA</span>
+          <h2>Informe de Auditoría Interna</h2>
+          <p>{{ audit.title }} · {{ plan.client_name|default:audit.identidad }}</p>
+        </header>
+
+        <div class="ia-report-summary">
+
+          <article>
+            <strong>{{ risks|length }}</strong>
+            <span>Riesgos</span>
+          </article>
+
+          <article>
+            <strong>{{ controls|length }}</strong>
+            <span>Controles</span>
+          </article>
+
+          <article>
+            <strong>{{ findings|length }}</strong>
+            <span>Hallazgos</span>
+          </article>
+
+          <article>
+            <strong>{{ global_progress }}%</strong>
+            <span>Avance</span>
+          </article>
+
+        </div>
+
+        <section>
+          <h3>Objetivo y Alcance</h3>
+
+          <p>
+            {{ plan.objective|default:"El objetivo todavía no ha sido definido." }}
+          </p>
+
+          <p>
+            {{ plan.scope|default:"El alcance todavía no ha sido definido." }}
+          </p>
+        </section>
+
+        <section>
+          <h3>Resumen de resultados</h3>
+
+          <p>
+            La evaluación contiene {{ risks|length }} riesgos,
+            {{ controls|length }} controles y {{ findings|length }}
+            hallazgos registrados. El avance global actual es
+            de {{ global_progress }}%.
+          </p>
+        </section>
+
+        <div class="ia-report-pending">
+          La selección de secciones y exportación Word/PDF
+          se habilitarán en el bloque final.
+        </div>
+
+      </article>
+
+    </div>
+
+  </section>
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const buttons = document.querySelectorAll(
+        "[data-tab-button]"
+      );
+
+      const panels = document.querySelectorAll(
+        "[data-tab-panel]"
+      );
+
+      function openTab(tabName) {
+        buttons.forEach(function (button) {
+          button.classList.toggle(
+            "is-active",
+            button.dataset.tabButton === tabName
+          );
+        });
+
+        panels.forEach(function (panel) {
+          panel.classList.toggle(
+            "is-active",
+            panel.dataset.tabPanel === tabName
+          );
+        });
+
+        window.location.hash = tabName;
+      }
+
+      buttons.forEach(function (button) {
+        button.addEventListener(
+          "click",
+          function () {
+            openTab(
+              button.dataset.tabButton
+            );
+          }
+        );
+      });
+
+      document.querySelectorAll(
+        "[data-open-tab]"
+      ).forEach(function (button) {
+        button.addEventListener(
+          "click",
+          function () {
+            openTab(
+              button.dataset.openTab
+            );
+          }
+        );
+      });
+
+      const requestedTab = (
+        window.location.hash.replace("#", "")
+      );
+
+      if (
+        requestedTab
+        && document.querySelector(
+          '[data-tab-panel="' + requestedTab + '"]'
+        )
+      ) {
+        openTab(
+          requestedTab
+        );
+      }
+    });
+  </script>
+
+{% endblock v2_scripts %}

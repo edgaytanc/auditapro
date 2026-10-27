@@ -1,0 +1,79 @@
+/* Superadministrador v2. Aislado del layout operacional de AuditaPro. */
+:root {
+  --sa-navy: #0f1b3d;
+  --sa-blue: #2563eb;
+  --sa-text: #17243d;
+  --sa-muted: #64748b;
+  --sa-border: #e4eaf2;
+  --sa-surface: #ffffff;
+  --sa-bg: #f2f5fa;
+}
+* { box-sizing: border-box; }
+html { min-height: 100%; }
+body.ap-superadmin-body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--sa-bg);
+  color: var(--sa-text);
+  font-family: 'Segoe UI', Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+.ap-superadmin-topbar {
+  background: var(--sa-navy);
+  color: #fff;
+}
+.ap-superadmin-topbar-inner,
+.ap-superadmin-section-inner,
+.ap-superadmin-main,
+.ap-superadmin-footer {
+  width: min(100% - 48px, 1420px);
+  margin-inline: auto;
+}
+.ap-superadmin-topbar-inner {
+  min-height: 80px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+}
+.ap-superadmin-brand { display: inline-flex; align-items: center; gap: 12px; color: #fff; text-decoration: none; }
+.ap-superadmin-brand:hover { color: #fff; }
+.ap-superadmin-brand-mark { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #254377; color: #91c5ff; flex: none; }
+.ap-superadmin-brand-name { display: flex; flex-direction: column; line-height: 1.25; }
+.ap-superadmin-brand-name strong { font-size: 21px; letter-spacing: -.6px; }
+.ap-superadmin-brand-name small { margin-top: 2px; font-size: 11px; color: #c4d6f6; }
+.ap-superadmin-user { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: flex-end; }
+.ap-superadmin-user-name { color: #e4edff; font-size: 13px; font-weight: 600; }
+.ap-superadmin-signout { border: 1px solid #667da9; padding: 8px 14px; border-radius: 9px; color: #fff; text-decoration: none; font-size: 13px; font-weight: 650; }
+.ap-superadmin-signout:hover { color: #fff; border-color: #dbeafe; background: #254377; }
+.ap-superadmin-section-bar { border-bottom: 1px solid var(--sa-border); background: var(--sa-surface); }
+.ap-superadmin-section-inner { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; column-gap: 20px; row-gap: 16px; padding-block: 19px; }
+.ap-superadmin-section-identity { display: flex; flex-direction: column; gap: 2px; }
+.ap-superadmin-kicker { color: var(--sa-blue); font-weight: 800; font-size: 10px; letter-spacing: .11em; }
+.ap-superadmin-section-title { color: var(--sa-text); font-size: 19px; font-weight: 800; }
+.ap-superadmin-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.ap-superadmin-nav-link { display: inline-flex; align-items: center; justify-content: center; min-height: 39px; padding: 8px 15px; border-radius: 9px; border: 1px solid transparent; text-decoration: none; white-space: nowrap; font-size: 13px; font-weight: 700; color: #475569; }
+.ap-superadmin-nav-link:hover { background: #edf4ff; color: #1d4ed8; }
+.ap-superadmin-nav-link.is-active { color: #1d4ed8; background: #eaf1ff; border-color: #cbdcfb; }
+.ap-superadmin-nav-create { background: var(--sa-blue); color: #fff; }
+.ap-superadmin-nav-create:hover, .ap-superadmin-nav-create.is-active { color: #fff; background: #1d4ed8; border-color: #1d4ed8; }
+.ap-superadmin-main { flex: 1; min-width: 0; padding-top: 28px; padding-bottom: 42px; }
+.ap-superadmin-messages { margin: 0 0 20px; }
+.ap-superadmin-content { min-width: 0; }
+.ap-superadmin-content > .container,
+.ap-superadmin-content > .container-fluid { max-width: 100%; padding-inline: 0; }
+.ap-superadmin-content .card { margin-bottom: 0; }
+.ap-superadmin-content .table-responsive { overflow-x: auto; }
+.ap-superadmin-content .table th { white-space: nowrap; }
+.ap-superadmin-footer { border-top: 1px solid var(--sa-border); padding-top: 17px; padding-bottom: 20px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--sa-muted); font-size: 12px; }
+@media (max-width: 680px) {
+  .ap-superadmin-topbar-inner, .ap-superadmin-section-inner, .ap-superadmin-main, .ap-superadmin-footer { width: min(100% - 28px, 1420px); }
+  .ap-superadmin-topbar-inner { padding-block: 13px; align-items: flex-start; }
+  .ap-superadmin-user-name { display: none; }
+  .ap-superadmin-brand-name strong { font-size: 18px; }
+  .ap-superadmin-nav { width: 100%; }
+  .ap-superadmin-nav-link { flex: 1; text-align: center; padding-inline: 10px; }
+  .ap-superadmin-main { padding-top: 19px; }
+  .ap-superadmin-content .card-body { padding: 15px; }
+}

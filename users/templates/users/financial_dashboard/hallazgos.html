@@ -1,0 +1,163 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+
+{% block title %}
+  Hallazgos y Recomendaciones — Auditoría Financiera
+{% endblock title %}
+
+{% block v2_styles %}
+<link rel="stylesheet" href="{% static 'css/financial-company.css' %}?v=1">
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/financial-module-nav.css' %}"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/financial-findings.css' %}?v=2"
+    >
+
+{% endblock v2_styles %}
+
+{% block page_title %}
+  Hallazgos y Recomendaciones
+{% endblock page_title %}
+
+{% block page_subtitle %}
+  {% include "users/financial_dashboard/_company_editor.html" %}
+{% endblock page_subtitle %}
+
+{% block page_actions %}
+
+  <button
+    type="button"
+    class="financial-findings-button financial-findings-button--secondary"
+    id="addFindingButton"
+  >
+    <i class="bi bi-plus-lg"></i>
+    Nuevo hallazgo
+  </button>
+
+  <button
+    type="button"
+    class="financial-findings-button financial-findings-button--primary"
+    id="exportFindingsExcelButton"
+  >
+    <i class="bi bi-file-earmark-spreadsheet"></i>
+    Exportar a Excel
+  </button>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  {% include "users/financial_dashboard/_module_nav.html" %}
+
+  <div class="financial-findings-page">
+
+    <div
+      id="financialFindingsStatus"
+      class="financial-findings-status"
+      role="status"
+    ></div>
+
+    <div class="financial-findings-note">
+      <i class="bi bi-check-circle"></i>
+
+      <span>
+        El hallazgo, la recomendación, la cuenta, el efecto y el responsable
+        pueden ser modificados libremente por el auditor. La severidad se
+        recalcula automáticamente comparando el efecto con la materialidad
+        de ejecución.
+      </span>
+    </div>
+
+    <div
+      class="financial-findings-kpis"
+      id="financialFindingsKpis"
+    ></div>
+
+    <div class="financial-findings-toolbar">
+
+      <div class="financial-findings-filters">
+
+        <input
+          type="search"
+          id="findingsSearchInput"
+          class="financial-findings-search"
+          placeholder="Buscar por hallazgo, cuenta o responsable..."
+        >
+
+        <select
+          id="findingsSeverityFilter"
+          class="financial-findings-filter"
+        >
+          <option value="">
+            Todas las severidades
+          </option>
+
+          <option value="significativo">
+            Significativo
+          </option>
+
+          <option value="moderado">
+            Moderado
+          </option>
+
+          <option value="leve">
+            Leve
+          </option>
+        </select>
+
+      </div>
+
+      <div
+        class="financial-findings-count"
+        id="financialFindingsCount"
+      ></div>
+
+    </div>
+
+    <section class="financial-findings-table-panel">
+
+      <div class="financial-findings-table-wrapper">
+
+        <table
+          class="financial-findings-table"
+          id="financialFindingsTable"
+        >
+
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Hallazgo / Recomendación</th>
+              <th>Cuenta</th>
+              <th>Efecto (Q)</th>
+              <th>Severidad</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody id="financialFindingsBody"></tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+  </div>
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+<script src="{% static 'js/financial-company.js' %}?v=1"></script>
+
+  <script
+    src="{% static 'js/financial-findings.js' %}"
+  ></script>
+
+{% endblock v2_scripts %}

@@ -1,0 +1,41 @@
+/* Integración visual progresiva de formularios y reportes heredados.
+   Solo afecta a plantillas dentro de .ap-legacy-content. */
+.ap-legacy-content {width:100%;min-width:0;color:#172033;font-size:14px;}
+.ap-legacy-content > * {max-width:100%;}
+.ap-legacy-content .container, .ap-legacy-content .container-fluid {max-width:100%;}
+.ap-legacy-content .card {border:1px solid #e4eaf2;border-radius:16px;background:#fff;box-shadow:0 9px 30px rgba(15,27,61,.04)!important;}
+.ap-legacy-content .card-header {background:#f8faff;border-color:#e4eaf2;border-radius:16px 16px 0 0;color:#172033;}
+.ap-legacy-content .card-body {min-width:0;}
+.ap-legacy-content .form-control, .ap-legacy-content .form-select, .ap-legacy-content .select2-container--default .select2-selection--single,
+.ap-legacy-content .select2-container--default .select2-selection--multiple {min-height:42px;border:1px solid #dbe4f0;border-radius:9px;background:#fff;color:#172033;}
+.ap-legacy-content .form-control:focus,.ap-legacy-content .form-select:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+.ap-legacy-content .form-label,.ap-legacy-content label {font-weight:600;color:#334155;}
+.ap-legacy-content .btn {border-radius:9px;min-height:38px;padding:.5rem .95rem;font-weight:600;}
+.ap-legacy-content .btn-primary {background:#2563eb;border-color:#2563eb;color:#fff;}
+.ap-legacy-content .btn-primary:hover {background:#1d4ed8;border-color:#1d4ed8;color:#fff;}
+.ap-legacy-content .btn-success {background:#059669;border-color:#059669;color:#fff;}
+.ap-legacy-content .btn-outline-secondary {border-color:#dbe4f0;color:#334155;}
+.ap-legacy-content .btn-outline-secondary:hover {background:#f1f5f9;color:#172033;}
+.ap-legacy-content .table-responsive {max-width:100%;border:1px solid #e4eaf2;border-radius:12px;overflow:auto;}
+.ap-legacy-content .table {color:#334155;vertical-align:middle;}
+.ap-legacy-content .table thead th{background:#f8faff;color:#475569;font-weight:700;border-bottom-color:#e4eaf2;}
+.ap-legacy-content h2,.ap-legacy-content h3,.ap-legacy-content h4 {color:#172033;}
+.ap-legacy-content .text-muted{color:#64748b!important;}
+.ap-legacy-content .modal-content{border:1px solid #e4eaf2;border-radius:16px;box-shadow:0 24px 68px rgba(15,27,61,.16);}
+.ap-legacy-content .modal-header,.ap-legacy-content .modal-footer {border-color:#e4eaf2;}
+.ap-legacy-content .alert {border-radius:12px;}
+.ap-legacy-content .pagination .page-link {border-color:#e4eaf2;color:#2563eb;}
+.ap-legacy-content .nav-tabs {gap:4px;border-bottom-color:#e4eaf2;}
+.ap-legacy-content .nav-tabs .nav-link {border-radius:9px 9px 0 0;color:#475569;}
+.ap-legacy-content .nav-tabs .nav-link.active {color:#2563eb;font-weight:700;}
+/* No alterar grids específicos de muestreo, gráficos o tablas; evitar desbordes del workspace. */
+.ap-workspace,.ap-main,.ap-page-content{min-width:0;}
+@media(max-width:767px){.ap-legacy-content .row>*{min-width:0;}.ap-legacy-content .card-body{padding:16px!important;}.ap-legacy-content .btn{white-space:normal;}.ap-legacy-content .table-responsive{overflow-x:auto;}}
+
+.ap-legacy-content .ap-create-audit-v2{max-width:1100px;margin:0 auto;}
+.ap-legacy-content .ap-create-audit-v2 .card-title{font-size:19px;font-weight:750;}
+/* Encabezados de pantallas secundarias con buscadores y acciones previas. */
+.ap-page-header:has(.ap-page-actions form) {flex-wrap:wrap;}
+.ap-page-actions:has(form) {flex:1 1 320px;justify-content:flex-end;flex-wrap:wrap;min-width:0;}
+.ap-page-actions form {max-width:100%;min-width:180px;}
+@media(max-width:767px){.ap-page-actions,.ap-page-actions:has(form){width:100%;flex-wrap:wrap;justify-content:flex-start;}.ap-page-actions form{width:100%!important;flex:1 1 100%;}}

@@ -67,6 +67,7 @@
   </div>
 {% endblock main_content %}
 {% block extra_scripts %}
+  {{ block.super }}
   <script>
     document.addEventListener("DOMContentLoaded", () => {
       const inputs = document.querySelectorAll(".form-control, .form-select");

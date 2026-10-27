@@ -1,0 +1,322 @@
+{% load static %}
+
+<aside class="ap-sidebar" id="apSidebar">
+
+  <div class="ap-sidebar-header">
+    <a href="{% url 'dashboard' %}" class="ap-brand">
+      <img
+        src="{% static 'images/auditapro-logo-sidebar.png' %}"
+        alt="AuditaPro"
+        class="ap-brand-logo"
+      >
+
+      <span class="ap-brand-mark">A</span>
+    </a>
+
+    <button
+      type="button"
+      class="ap-sidebar-collapse"
+      id="apSidebarCollapse"
+      aria-label="Contraer menú"
+      title="Contraer menú"
+    >
+      <i class="bi bi-layout-sidebar-inset"></i>
+    </button>
+  </div>
+
+  <div class="ap-sidebar-section-label">
+    MENÚ PRINCIPAL
+  </div>
+
+  <nav class="ap-sidebar-nav">
+
+  <!-- 1. Dashboard / Selector de panel -->
+  <a
+    href="{% url 'dashboard' %}"
+    class="
+      ap-nav-item
+      {% if request.resolver_match.url_name == 'dashboard' %}
+        active
+      {% endif %}
+    "
+  >
+    <i class="bi bi-grid-1x2"></i>
+
+    <span class="ap-nav-label">
+      Dashboard
+    </span>
+  </a>
+
+  <!-- Proyectos: módulo independiente de las tres auditorías. -->
+  <a href="{% url 'assigned_audits' %}"
+     class="ap-nav-item {% if request.resolver_match.url_name == 'assigned_audits' or request.resolver_match.url_name == 'create_audit' %}active{% endif %}">
+    <i class="bi bi-folder2-open"></i>
+    <span class="ap-nav-label">Proyectos de Auditoría</span>
+  </a>
+
+  <!-- 3. Herramientas -->
+  <a
+    href="{% url 'tools' %}"
+    class="
+      ap-nav-item
+      {% if '/herramientas/' in request.path %}
+        active
+      {% endif %}
+    "
+  >
+    <i class="bi bi-tools"></i>
+
+    <span class="ap-nav-label">
+      Herramientas
+    </span>
+  </a>
+
+  <!-- Notificaciones: módulo INDEPENDIENTE de Auditorías, mantiene sus URLs. -->
+  <div class="ap-nav-group {% if '/notificaciones/' in request.path %}open{% endif %}">
+    <button
+      type="button"
+      class="ap-nav-item ap-nav-group-button {% if '/notificaciones/' in request.path %}active{% endif %}"
+      data-sidebar-submenu
+      aria-expanded="{% if '/notificaciones/' in request.path %}true{% else %}false{% endif %}"
+    >
+      <i class="bi bi-bell"></i>
+      <span class="ap-nav-label">Notificaciones</span>
+      <i class="bi bi-chevron-down ap-nav-chevron"></i>
+    </button>
+    <div class="ap-nav-submenu">
+      <a href="{% url 'notifications' %}"
+         class="ap-nav-subitem {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+        <span class="ap-nav-subitem-dot"></span>
+        Ver notificaciones
+      </a>
+      {% if user.is_staff or user.is_superuser or user.role.name == 'audit_manager' or user.role.name == 'auditor' %}
+      <a href="{% url 'create_notification' %}"
+         class="ap-nav-subitem {% if request.resolver_match.url_name == 'create_notification' %}active{% endif %}">
+        <span class="ap-nav-subitem-dot"></span>
+        Enviar notificación
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 5. Archivo Permanente -->
+  <a
+    href="{% url 'archivo_permanente' %}"
+    class="
+      ap-nav-item
+      {% if '/archivo_permanente/' in request.path %}
+        active
+      {% endif %}
+    "
+  >
+    <i class="bi bi-archive"></i>
+
+    <span class="ap-nav-label">
+      Archivo Permanente
+    </span>
+  </a>
+
+  <!-- Portal cliente: módulo aún no habilitado (antes "Consultas IA"). -->
+  <span
+    class="ap-nav-item ap-nav-item-disabled"
+    aria-disabled="true"
+    title="Portal cliente: próximamente"
+  >
+    <i class="bi bi-person-workspace" aria-hidden="true"></i>
+    <span class="ap-nav-label">Portal cliente</span>
+    <span class="ap-nav-badge">Próximamente</span>
+  </span>
+
+  <!-- Audita Análisis: módulo de consultas del sistema. -->
+  <a
+    href="{% url 'audita_analisis' %}"
+    class="ap-nav-item {% if request.resolver_match.url_name == 'audita_analisis' %}active{% endif %}"
+    {% if request.resolver_match.url_name == 'audita_analisis' %}aria-current="page"{% endif %}
+  >
+    <i class="bi bi-stars" aria-hidden="true"></i>
+    <span class="ap-nav-label">Audita Análisis</span>
+    
+  </a>
+
+  <!-- Videos y Guías -->
+  <a
+    href="{% url 'videos_guias:index' %}"
+    class="
+      ap-nav-item
+      {% if request.resolver_match.view_name == 'videos_guias:index' or request.resolver_match.namespace == 'videos_guias' %}
+        active
+      {% endif %}
+    "
+    {% if request.resolver_match.namespace == 'videos_guias' %}aria-current="page"{% endif %}
+  >
+    <i class="bi bi-play-btn"></i>
+
+    <span class="ap-nav-label">
+      Videos y Guías
+    </span>
+
+    <span class="ap-nav-badge">
+      Nuevo
+    </span>
+  </a>
+
+  <!-- 7. Auditorías -->
+  <div
+    class="
+      ap-nav-group
+      {% if '/auditoria/' in request.path or '/auditorias/' in request.path %}
+        open
+      {% endif %}
+    "
+  >
+
+    <button
+      type="button"
+      class="
+        ap-nav-item
+        ap-nav-group-button
+        {% if '/auditoria/' in request.path or '/auditorias/' in request.path %}
+          active
+        {% endif %}
+      "
+      data-sidebar-submenu
+      aria-expanded="
+        {% if '/auditoria/' in request.path or '/auditorias/' in request.path %}
+          true
+        {% else %}
+          false
+        {% endif %}
+      "
+    >
+      <i class="bi bi-bar-chart"></i>
+
+      <span class="ap-nav-label">
+        Auditorías
+      </span>
+
+      <i class="bi bi-chevron-down ap-nav-chevron"></i>
+    </button>
+
+    <div class="ap-nav-submenu">
+
+      <a
+        href="{% url 'auditoria_financiera' %}"
+        class="
+          ap-nav-subitem
+          {% if request.resolver_match.url_name == 'auditoria_financiera' %}
+            active
+          {% endif %}
+        "
+      >
+        <span class="ap-nav-subitem-dot"></span>
+
+        Financiera
+      </a>
+
+      {% if user.revisor_fiscal or user.is_superuser or user.is_staff %}
+
+        <a
+          href="{% url 'auditoria_revisoria' %}"
+          class="
+            ap-nav-subitem
+            {% if request.resolver_match.url_name == 'auditoria_revisoria' %}
+              active
+            {% endif %}
+          "
+        >
+          <span class="ap-nav-subitem-dot"></span>
+
+          Revisoría Fiscal
+        </a>
+
+      {% endif %}
+
+      {% if user.auditoria_interna or user.is_superuser or user.is_staff %}
+      <a
+        href="{% url 'auditoria_interna' %}"
+        class="
+          ap-nav-subitem
+          {% if request.resolver_match.url_name == 'auditoria_interna' %}
+            active
+          {% endif %}
+        "
+      >
+        <span class="ap-nav-subitem-dot"></span>
+
+        Auditoría Interna
+      </a>
+      {% endif %}
+
+
+    </div>
+
+  </div>
+
+  <!-- Gestión administrativa del equipo -->
+  {% if user.is_staff or user.modalidad == 'G' and user.role and user.role.name == 'audit_manager' %}
+
+    <a
+      href="{% url 'manage_auditors' %}"
+      class="
+        ap-nav-item
+        {% if '/gestionar_auditores/' in request.path %}
+          active
+        {% endif %}
+      "
+    >
+      <i class="bi bi-people"></i>
+
+      <span class="ap-nav-label">
+        Gestionar Auditores
+      </span>
+    </a>
+
+  {% endif %}
+
+  <!-- Planes y renovación: rutas reales, sin menús ficticios del HTML original -->
+  <a href="{% url 'planes:renovacion' %}"
+     class="ap-nav-item ap-nav-renewal {% if request.resolver_match.view_name == 'planes:renovacion' %}active{% endif %}"
+     {% if request.resolver_match.view_name == 'planes:renovacion' %}aria-current="page"{% endif %}>
+    <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+    <span class="ap-nav-label">Renovación</span>
+  </a>
+  <a href="{% url 'planes:mejorar' %}"
+     class="ap-nav-item ap-nav-upgrade {% if request.resolver_match.view_name == 'planes:mejorar' %}active{% endif %}"
+     {% if request.resolver_match.view_name == 'planes:mejorar' %}aria-current="page"{% endif %}>
+    <i class="bi bi-gem" aria-hidden="true"></i>
+    <span class="ap-nav-label">Mejorar Plan</span>
+  </a>
+
+</nav>
+
+  <div class="ap-sidebar-footer">
+
+    <a href="{% url 'user' %}" class="ap-user-card">
+      <img
+        src="{% static 'images/placeholder-user.jpg' %}"
+        alt="Foto del usuario"
+        class="ap-user-avatar"
+      >
+
+      <div class="ap-user-details">
+        <strong>
+          {{ user.first_name|default:user.username }}
+          {{ user.last_name }}
+        </strong>
+
+        <span>
+          {{ user.role|default:"Usuario" }}
+        </span>
+      </div>
+
+      <i class="bi bi-chevron-right ap-user-arrow"></i>
+    </a>
+
+    <a href="{% url 'logout' %}" class="ap-logout-link">
+      <i class="bi bi-box-arrow-right"></i>
+      <span class="ap-nav-label">Cerrar sesión</span>
+    </a>
+
+  </div>
+
+</aside>

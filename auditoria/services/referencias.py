@@ -408,6 +408,12 @@ def _es_celda_de_referencia(celda):
     texto = valor.strip()
     if _PATRON_HUECO_REF.fullmatch(texto):
         return True
+    # En plantillas de Auditoría Interna / Revisoría también hay códigos
+    # jerárquicos exclusivamente numéricos (p. ej. "1.9", "2.3.4"). Solo se
+    # reconocen aquí, cuando la celda está junto a la etiqueta "Ref.", para
+    # no sustituir otros números de la hoja o normativa en el Word.
+    if re.fullmatch(r'\d{1,4}(?:\.\d{1,4}){1,5}', texto):
+        return True
     if not _PATRON_TOKEN_REF.match(texto):
         return False
     # 'NIA-530' se parece a una referencia pero es normativa

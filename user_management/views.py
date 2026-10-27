@@ -8,7 +8,8 @@ from django import forms
 import logging
 from users.emails import send_activation_email_html as send_welcome_email_html, send_admin_notification_email as send_admin_summary_email
 from django.views.decorators.http import require_POST
-from django.db import transaction
+from django.db import transaction, IntegrityError
+from django.db.models.deletion import ProtectedError, RestrictedError
 from audits.models import Audit
 
 # Configurar el logger
@@ -233,7 +234,9 @@ def create_user(request):
             plan_type = form.cleaned_data['plan']
 
             # 🔹 Nuevo: leer la marca de Revisor Fiscal desde el checkbox
-            revisor_fiscal = request.POST.get("revisor_fiscal") == "on"
+            can_manage_audit_types = u.is_superuser or role_name == "superadmin"
+            revisor_fiscal = can_manage_audit_types and request.POST.get("revisor_fiscal") == "on"
+            auditoria_interna = can_manage_audit_types and request.POST.get("auditoria_interna") == "on"
 
             logger.info(
                 f"Datos del formulario: username={username}, role={role.name}, "
@@ -267,6 +270,7 @@ def create_user(request):
                     password=make_password(password),
                     role=role,
                     revisor_fiscal=revisor_fiscal,  # 🔹 NUEVO: guardar la marca
+                    auditoria_interna=auditoria_interna,
                 )
 
                 # --- Asignar modalidad y plan ---
@@ -381,6 +385,7 @@ def edit_user(request, user_id):
         # Checks
         socio = request.POST.get("socio")
         revisor_fiscal = request.POST.get("revisor_fiscal")
+        auditoria_interna = request.POST.get("auditoria_interna")
 
         # Selects
         modalidad = request.POST.get("modalidad")   # I / G
@@ -392,9 +397,10 @@ def edit_user(request, user_id):
         user_to_edit.email = email
 
         # Solo superadmin puede cambiar estructura comercial
-        if request.user.role and request.user.role.name == "superadmin":
+        if request.user.is_superuser or (request.user.role and request.user.role.name == "superadmin"):
             user_to_edit.socio = (socio == "on")
             user_to_edit.revisor_fiscal = (revisor_fiscal == "on")
+            user_to_edit.auditoria_interna = (auditoria_interna == "on")
 
             # Modalidad
             if modalidad in ("I", "G"):
@@ -551,16 +557,29 @@ def hard_delete_users(request):
     pero SOLO si están dados de baja (is_deleted=True)
     y cumpliendo reglas de seguridad (blindaje).
     """
+    # El borrado físico es una operación exclusiva del superadministrador.
+    if not (request.user.is_superuser or (request.user.role and request.user.role.name == 'superadmin')):
+        messages.error(request, 'Solo el Super Administrador puede eliminar usuarios definitivamente.')
+        return redirect('user_list')
+
     ids = request.POST.getlist("selected_user_ids")
 
     if not ids:
         messages.error(request, "No seleccionaste usuarios.")
         return redirect("user_list")
 
+    try:
+        ids = list({int(pk) for pk in ids if pk})
+    except ValueError:
+        messages.error(request, 'La selección de usuarios no es válida.')
+        return redirect('user_list')
     qs = User.objects.filter(id__in=ids)
+    if qs.count() != len(ids):
+        messages.error(request, 'Algunos usuarios seleccionados ya no existen.')
+        return redirect('user_list')
 
     # 1) Nunca permitir hard-delete de superusers
-    if qs.filter(is_superuser=True).exists():
+    if qs.filter(is_superuser=True).exists() or qs.filter(is_staff=True).exists():
         messages.error(request, "No puedes eliminar definitivamente cuentas superusuario.")
         return redirect("user_list")
 
@@ -584,8 +603,13 @@ def hard_delete_users(request):
         messages.error(request, "No puedes eliminar definitivamente cuentas con rol Super Admin.")
         return redirect("user_list")
 
-    with transaction.atomic():
-        deleted_count, _ = qs.delete()
+    try:
+        with transaction.atomic():
+            number_of_users = qs.count()
+            qs.delete()
+    except (ProtectedError, RestrictedError, IntegrityError):
+        messages.error(request, "No se puede eliminar la cuenta porque tiene registros protegidos asociados. Revisa sus relaciones antes de eliminarla.")
+        return redirect("user_list")
 
-    messages.success(request, f"Se eliminaron definitivamente {deleted_count} usuarios.")
+    messages.success(request, f"Se eliminaron definitivamente {number_of_users} usuarios.")
     return redirect("user_list")

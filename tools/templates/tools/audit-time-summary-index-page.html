@@ -1,34 +1,665 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
-  Resumen del Tiempo de Auditorias - Herramientas
+  Resumen de Tiempo
 {% endblock title %}
 
-{% load filters %}
+{% block v2_styles %}
+  <link
+    rel="stylesheet"
+    href="{% static 'css/time-summary-index-v2.css' %}?v=3"
+  >
+  <link rel="stylesheet" href="{% static 'css/herramientas-cliente-integrado.css' %}?v=1">
+{% endblock v2_styles %}
 
 {% block page_title %}
-  Resumen del Tiempo de Auditoría
-  | {{ request.session.selected_audit.title }} - {{ request.session.selected_audit.company }}
+  Resumen de Tiempo
 {% endblock page_title %}
+
 {% block page_subtitle %}
+  Control de días y horas planificadas frente a las
+  ejecutadas para la auditoría seleccionada.
 {% endblock page_subtitle %}
-{% block main_content %}
-  <article class="w-100 gap-4"
-           style="grid-template-columns: repeat(3, 1fr);
-                  display:grid">
-    {% for title, description, link, icon in tools %}
-      <div class="card shadow-sm border rounded-lg">
-        <div class="card-header d-flex flex-row align-items-center justify-content-between pb-2 gap-3">
-          <h4 class="text-truncate text-sm fw-medium mb-0">{{ title }}</h4>
-          {{ icon|safe }}
-        </div>
-        <div class="card-body">
-          <p class="text-muted text-sm mb-4">{{ description }}</p>
-          <a href="{% url link %}">
-            <button class="btn btn-primary w-100">Ver Reporte</button>
-          </a>
-        </div>
+
+{% block page_actions %}
+  <div class="hc-downloads" aria-label="Descargar resultados del encargo">
+    <span class="hc-download-label">Descargar:</span>
+    <a class="hc-download excel" href="{% url 'tools_export_cliente' 'tiempo' 'xlsx' %}"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    <a class="hc-download word" href="{% url 'tools_export_cliente' 'tiempo' 'docx' %}"><i class="bi bi-file-earmark-word"></i> Word</a>
+    <a class="hc-download pdf" href="{% url 'tools_export_cliente' 'tiempo' 'pdf' %}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+  </div>
+
+
+  <a
+    href="{% url 'audit_time_summary_index' %}?reload_audit=true"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-repeat"></i>
+    Cambiar Auditoría
+  </a>
+
+  <a
+    href="{% url 'tools' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Herramientas
+  </a>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+<div class="hc-layout" data-herramientas="time">
+  {% include 'tools/partials/_herramientas_cliente_nav.html' with herr_section='time' %}
+  <div class="hc-main">
+    <div class="hc-page-message">Vista conectada a la auditoría seleccionada. Los cambios se guardan en el sistema mediante las acciones habituales.</div>
+
+
+  <section class="ap-time-audit-banner">
+
+    <div class="ap-time-audit-icon">
+      <i class="bi bi-clipboard2-check"></i>
+    </div>
+
+    <div class="ap-time-audit-information">
+
+      <span>
+        AUDITORÍA SELECCIONADA
+      </span>
+
+      <h2>
+        {{ selected_audit.title }}
+      </h2>
+
+      <p>
+        {{ selected_audit.identidad }}
+      </p>
+
+    </div>
+
+    <div class="ap-time-audit-period">
+      <i class="bi bi-calendar-range"></i>
+
+      <span>
+        {{ selected_audit.fechaInit|slice:":10" }}
+        –
+        {{ selected_audit.fechaEnd|slice:":10" }}
+      </span>
+    </div>
+
+  </section>
+
+  <section class="ap-time-standard-banner">
+
+    <i class="bi bi-info-circle"></i>
+
+    <div>
+      <strong>
+        NIA 220 / 230 / 300 / 320
+      </strong>
+
+      <p>
+        Control del tiempo planificado y ejecutado por
+        integrante y período de trabajo.
+      </p>
+    </div>
+
+  </section>
+
+  <section class="ap-time-kpi-grid ap-time-kpi-grid-four">
+
+    <article class="ap-time-kpi">
+
+      <div>
+        <span>Días Planificados</span>
+        <strong>{{ planned_days }}</strong>
+        <p>Planificación acumulada</p>
       </div>
-    {% endfor %}
-  </article>
-{% endblock main_content %}
+
+      <i class="bi bi-calendar-plus"></i>
+
+    </article>
+
+    <article class="ap-time-kpi">
+
+      <div>
+        <span>Días Reales</span>
+        <strong>{{ worked_days }}</strong>
+        <p>Ejecución registrada</p>
+      </div>
+
+      <i class="bi bi-calendar-check ap-time-kpi-green"></i>
+
+    </article>
+
+    <article class="ap-time-kpi">
+
+      <div>
+        <span>Variación</span>
+
+        <strong>
+          {% if difference_days > 0 %}+{% endif %}
+          {{ difference_days }}
+        </strong>
+
+        <p>Días reales menos planificados</p>
+      </div>
+
+      <i class="bi bi-arrow-left-right ap-time-kpi-orange"></i>
+
+    </article>
+
+    <article class="ap-time-kpi">
+
+      <div>
+        <span>Eficiencia</span>
+        <strong>{{ compliance }}%</strong>
+        <p>Cumplimiento del cronograma</p>
+      </div>
+
+      <i class="bi bi-graph-up-arrow ap-time-kpi-purple"></i>
+
+    </article>
+
+  </section>
+
+  <section class="ap-time-progress-panel">
+
+    <header>
+      <div>
+        <h2>
+          Ejecución General
+        </h2>
+
+        <p>
+          Comparación global entre el tiempo planificado
+          y el tiempo ejecutado.
+        </p>
+      </div>
+
+      <strong>
+        {{ compliance }}%
+      </strong>
+    </header>
+
+    <div class="ap-time-progress-track">
+      <span style="width: {{ compliance }}%;"></span>
+    </div>
+
+    <div class="ap-time-progress-details">
+
+      <span>
+        Horas planificadas:
+        <strong>{{ planned_hours }}</strong>
+      </span>
+
+      <span>
+        Horas ejecutadas:
+        <strong>{{ worked_hours }}</strong>
+      </span>
+
+      <span>
+        Variación:
+        <strong>
+          {% if difference_hours > 0 %}+{% endif %}
+          {{ difference_hours }}
+        </strong>
+      </span>
+
+    </div>
+
+  </section>
+
+  <section class="ap-time-data-panel">
+
+    <header class="ap-time-data-header">
+
+      <div>
+        <span>NIA 220</span>
+
+        <h2>
+          1. Resumen de Personal y Asignación de Tiempo
+        </h2>
+
+        <p>
+          Días planificados y ejecutados por integrante
+          del equipo de auditoría.
+        </p>
+      </div>
+
+      <a
+        href="{% url 'audit_time_summary_table' %}"
+        class="ap-time-manage-button"
+      >
+        Gestionar
+        <i class="bi bi-arrow-right"></i>
+      </a>
+
+    </header>
+
+    <div class="ap-time-table-wrapper">
+
+      <table class="ap-time-table">
+
+        <thead>
+          <tr>
+            <th>Nombramiento</th>
+            <th>Auditor</th>
+            <th>Cargo</th>
+            <th>Días planificados</th>
+            <th>Días reales</th>
+            <th>Variación</th>
+            <th>Eficiencia</th>
+            <th>Observaciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          {% for row in personnel_rows %}
+
+            <tr>
+              <td>
+                {{ row.appointment_number }}
+              </td>
+
+              <td>
+                <strong>
+                  {{ row.auditor_name }}
+                </strong>
+              </td>
+
+              <td>
+                {{ row.role_label }}
+              </td>
+
+              <td>
+                {{ row.planned_days }}
+              </td>
+
+              <td>
+                {{ row.worked_days }}
+              </td>
+
+              <td>
+                <span
+                  class="
+                    ap-time-variance
+                    {% if row.difference > 0 %}
+                      ap-time-variance-over
+                    {% elif row.difference < 0 %}
+                      ap-time-variance-under
+                    {% else %}
+                      ap-time-variance-equal
+                    {% endif %}
+                  "
+                >
+                  {% if row.difference > 0 %}+{% endif %}
+                  {{ row.difference }}
+                </span>
+              </td>
+
+              <td>
+                <span class="ap-time-percent">
+                  {{ row.compliance }}%
+                </span>
+              </td>
+
+              <td class="ap-time-observation">
+                {{ row.observations }}
+              </td>
+            </tr>
+
+          {% empty %}
+
+            <tr>
+              <td
+                colspan="8"
+                class="ap-time-empty-cell"
+              >
+                No hay registros de tiempo por auditor.
+              </td>
+            </tr>
+
+          {% endfor %}
+
+        </tbody>
+
+        {% if personnel_rows %}
+          <tfoot>
+            <tr>
+              <td colspan="3">
+                TOTAL
+              </td>
+
+              <td>
+                {{ planned_days }}
+              </td>
+
+              <td>
+                {{ worked_days }}
+              </td>
+
+              <td>
+                {% if difference_days > 0 %}+{% endif %}
+                {{ difference_days }}
+              </td>
+
+              <td>
+                {{ compliance }}%
+              </td>
+
+              <td></td>
+            </tr>
+          </tfoot>
+        {% endif %}
+
+      </table>
+
+    </div>
+
+  </section>
+
+  <section class="ap-time-data-panel">
+
+    <header class="ap-time-data-header">
+
+      <div>
+        <span>NIA 230 / 300</span>
+
+        <h2>
+          2. Horas Registradas por Período
+        </h2>
+
+        <p>
+          Horas planificadas y ejecutadas actualmente
+          organizadas por mes.
+        </p>
+      </div>
+
+      <a
+        href="{% url 'summary_worked_hours_table' %}"
+        class="ap-time-manage-button"
+      >
+        Gestionar
+        <i class="bi bi-arrow-right"></i>
+      </a>
+
+    </header>
+
+    <div class="ap-time-table-wrapper">
+
+      <table class="ap-time-table">
+
+        <thead>
+          <tr>
+            <th>Período</th>
+            <th>Horas planificadas</th>
+            <th>Horas reales</th>
+            <th>Variación</th>
+            <th>Eficiencia</th>
+            <th>Observaciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          {% for row in monthly_rows %}
+
+            <tr>
+              <td>
+                <strong>
+                  {{ row.month_name }}
+                </strong>
+              </td>
+
+              <td>
+                {{ row.planned_hours }}
+              </td>
+
+              <td>
+                {{ row.worked_hours }}
+              </td>
+
+              <td>
+                <span
+                  class="
+                    ap-time-variance
+                    {% if row.difference > 0 %}
+                      ap-time-variance-over
+                    {% elif row.difference < 0 %}
+                      ap-time-variance-under
+                    {% else %}
+                      ap-time-variance-equal
+                    {% endif %}
+                  "
+                >
+                  {% if row.difference > 0 %}+{% endif %}
+                  {{ row.difference }}
+                </span>
+              </td>
+
+              <td>
+                <span class="ap-time-percent">
+                  {{ row.compliance }}%
+                </span>
+              </td>
+
+              <td class="ap-time-observation">
+                {{ row.observations }}
+              </td>
+            </tr>
+
+          {% empty %}
+
+            <tr>
+              <td
+                colspan="6"
+                class="ap-time-empty-cell"
+              >
+                No hay horas mensuales registradas.
+              </td>
+            </tr>
+
+          {% endfor %}
+
+        </tbody>
+
+        {% if monthly_rows %}
+          <tfoot>
+            <tr>
+              <td>
+                TOTAL
+              </td>
+
+              <td>
+                {{ planned_hours }}
+              </td>
+
+              <td>
+                {{ worked_hours }}
+              </td>
+
+              <td>
+                {% if difference_hours > 0 %}+{% endif %}
+                {{ difference_hours }}
+              </td>
+
+              <td>
+                {{ compliance }}%
+              </td>
+
+              <td></td>
+            </tr>
+          </tfoot>
+        {% endif %}
+
+      </table>
+
+    </div>
+
+  </section>
+
+
+  {% if can_create_distribution %}
+
+    <section class="ap-time-data-panel">
+
+      <header class="ap-time-data-header">
+
+        <div>
+          <span>NUEVO REGISTRO</span>
+
+          <h2>
+            Agregar etapa o componente
+          </h2>
+
+          <p>
+            Registra las horas planificadas y reales
+            para la auditoría seleccionada.
+          </p>
+        </div>
+
+      </header>
+
+      <form
+        method="post"
+        class="ap-time-distribution-form"
+      >
+        {% csrf_token %}
+
+        <input
+          type="hidden"
+          name="distribution_action"
+          value="create"
+        >
+
+        <label>
+          Tipo
+          <select
+            name="distribution_type"
+            required
+          >
+            <option value="stage">
+              Etapa de Auditoría
+            </option>
+            <option value="component">
+              Componente Financiero
+            </option>
+          </select>
+        </label>
+
+        <label class="ap-time-field-wide">
+          Nombre
+          <input
+            type="text"
+            name="name"
+            maxlength="255"
+            required
+          >
+        </label>
+
+        <label>
+          Horas planificadas
+          <input
+            type="number"
+            name="planned_hours"
+            min="0"
+            step="0.01"
+            value="0"
+            required
+          >
+        </label>
+
+        <label>
+          Horas reales
+          <input
+            type="number"
+            name="actual_hours"
+            min="0"
+            step="0.01"
+            value="0"
+            required
+          >
+        </label>
+
+        <label>
+          Responsable
+          <select name="assigned_auditor">
+            <option value="">
+              Sin asignar
+            </option>
+
+            {% for auditor in auditor_options %}
+              <option value="{{ auditor.id }}">
+                {% firstof auditor.get_full_name auditor.username %}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label>
+          Materialidad
+          <select name="materiality">
+            {% for value, label in materiality_choices %}
+              <option value="{{ value }}">
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label>
+          Riesgo
+          <select name="risk_level">
+            {% for value, label in risk_choices %}
+              <option value="{{ value }}">
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label>
+          Estado
+          <select name="status">
+            {% for value, label in status_choices %}
+              <option value="{{ value }}">
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="ap-time-field-full">
+          Observaciones
+          <textarea
+            name="observations"
+            rows="2"
+          ></textarea>
+        </label>
+
+        <div class="ap-time-field-full">
+          <button
+            type="submit"
+            class="ap-time-save-button"
+          >
+            <i class="bi bi-plus-circle"></i>
+            Agregar registro
+          </button>
+        </div>
+
+      </form>
+
+    </section>
+
+  {% endif %}
+
+  {% include "tools/partials/time-distribution-table.html" with section_title="3. Distribución por Etapa de Auditoría" section_description="Planificación y ejecución de horas por etapa del encargo." records=stage_rows empty_message="No hay etapas registradas." %}
+
+  {% include "tools/partials/time-distribution-table.html" with section_title="4. Detalle por Componente Financiero" section_description="Horas, materialidad y riesgo por componente revisado." records=component_rows empty_message="No hay componentes registrados." %}
+
+  </div>
+</div>
+{% endblock v2_content %}

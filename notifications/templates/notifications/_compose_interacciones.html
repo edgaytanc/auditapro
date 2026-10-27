@@ -1,0 +1,205 @@
+{# V2: interacción local. No depende de collectstatic; la notificación interna sigue en su vista Django. #}
+<script>
+(function () {
+  "use strict";
+  const data = window.AUDITA_NOTIFICATION_DATA || {};
+  const audits = Array.isArray(data.audits) ? data.audits : [];
+  const eligibleUsers = Array.isArray(data.notifieds) ? data.notifieds : [];
+  const form = document.getElementById("notificationCreateForm");
+  const auditSelect = document.getElementById("audit_id");
+  const recipientSelect = document.getElementById("notifieds_users");
+  const preview = document.getElementById("recipientPreviewValue");
+  const recipientsNotice = document.getElementById("destinatariosAviso");
+  const mailNotice = document.getElementById("correoAviso");
+  const filesInput = document.getElementById("archivos");
+  const filesList = document.getElementById("archivosLista");
+  const primaryButton = document.getElementById("btnPrincipalCorreo");
+  if (!form || !auditSelect || !recipientSelect || !primaryButton) return;
+  if (window.AUDITA_COMPOSE_NOTIFICATIONS_VERSION === "v2-20261002") return;
+  window.AUDITA_COMPOSE_NOTIFICATIONS_VERSION = "v2-20261002";
+
+  const jq = (typeof window.jQuery === "function") ? window.jQuery : null;
+  const hasSelect2 = !!(jq && jq.fn && typeof jq.fn.select2 === "function");
+  const userName = data.currentUser || "AuditaPro";
+  const ownEmail = String(data.currentEmail || "").trim().toLowerCase();
+  const methods = ["btnPrincipalCorreo", "btnGmail", "btnOutlookWeb", "btnMailto"];
+
+  function showNotice(element, text) {
+    if (!element) return;
+    element.textContent = text;
+    element.hidden = !text;
+  }
+  function selectedIds() {
+    return Array.from(recipientSelect.selectedOptions).map(option => String(option.value));
+  }
+  function selectedUsers() {
+    const ids = new Set(selectedIds());
+    return eligibleUsers.filter(user => ids.has(String(user.id)));
+  }
+  function label(user) {
+    const name = [user.first_name, user.last_name].filter(Boolean).join(" ").trim();
+    const role = user.role?.verbose_name || user.role?.name || "";
+    return `${name || user.username || "Usuario"}${role ? " - " + role : ""}`;
+  }
+  function updatePreview() {
+    const selected = selectedUsers();
+    if (preview) {
+      preview.textContent = selected.length
+        ? selected.map(user => `${label(user)}${user.email ? " · " + user.email : " (sin correo registrado)"}`).join(" | ")
+        : "Selecciona una auditoría y uno o más destinatarios.";
+    }
+    showNotice(recipientsNotice, "");
+    showNotice(mailNotice, "");
+  }
+  function mountSelect2() {
+    if (!hasSelect2) return;
+    const $select = jq(recipientSelect);
+    if ($select.hasClass("select2-hidden-accessible")) $select.select2("destroy");
+    $select.select2({
+      width: "100%", placeholder: "Selecciona uno o varios destinatarios",
+      allowClear: true, closeOnSelect: false,
+      language: { noResults: () => "No hay usuarios disponibles para esta auditoría" }
+    });
+  }
+  function populateRecipients(auditId) {
+    const previouslySelected = new Set(selectedIds());
+    const audit = audits.find(item => String(item.id) === String(auditId));
+    const allowed = new Set((audit?.assigned_users || []).map(user => String(user.id)));
+    if (audit?.audit_manager?.id != null) allowed.add(String(audit.audit_manager.id));
+
+    // Nunca mezclar usuarios de otra auditoría ni agregar personas que el backend no autoriza.
+    recipientSelect.replaceChildren();
+    eligibleUsers.forEach(user => {
+      if (!allowed.has(String(user.id))) return;
+      const option = new Option(label(user), String(user.id), false, previouslySelected.has(String(user.id)));
+      recipientSelect.add(option);
+    });
+    mountSelect2();
+    if (hasSelect2) jq(recipientSelect).trigger("change.select2");
+    updatePreview();
+    if (auditId && !recipientSelect.options.length) {
+      showNotice(recipientsNotice, "Esta auditoría no tiene destinatarios disponibles para tu rol. Comprueba que tenga auditores asignados o un jefe asociado.");
+    }
+  }
+  function requireRecipients(externalEmail) {
+    if (!auditSelect.value) {
+      showNotice(mailNotice, "Primero selecciona la auditoría relacionada.");
+      auditSelect.focus();
+      return null;
+    }
+    const users = selectedUsers();
+    if (!users.length) {
+      showNotice(mailNotice, "Selecciona al menos un destinatario de esta auditoría antes de preparar el correo.");
+      if (hasSelect2) jq(recipientSelect).select2("open");
+      else recipientSelect.focus();
+      return null;
+    }
+    if (externalEmail) {
+      const missing = users.filter(user => !String(user.email || "").trim());
+      if (missing.length) {
+        showNotice(mailNotice, `No se puede preparar el correo porque falta la dirección electrónica de: ${missing.map(label).join(", ")}.`);
+        return null;
+      }
+    }
+    showNotice(mailNotice, "");
+    return users;
+  }
+  function auditTitle() {
+    const chosen = auditSelect.options[auditSelect.selectedIndex];
+    return chosen ? chosen.textContent.trim() : "Auditoría";
+  }
+  function mailSubject() {
+    return `Entrega de documentos diligenciados — ${auditTitle()}`;
+  }
+  function mailBody(users) {
+    const message = (document.getElementById("note")?.value || "").trim();
+    const fileNames = Array.from(filesInput?.files || []).map(file => `• ${file.name}`).join("\n");
+    const names = users.map(user => [user.first_name, user.last_name].filter(Boolean).join(" ").trim()).filter(Boolean);
+    return [
+      names.length ? `Estimado/a ${names.join(", ")},` : "Estimado/a,", "",
+      `Adjunto la comunicación correspondiente a ${auditTitle()}.`, "",
+      message ? `Nota: ${message}\n` : "", "Por favor, confirmar recepción.", "",
+      "Archivos a adjuntar manualmente desde mi equipo:",
+      fileNames || "• (sin archivos seleccionados)", "",
+      "Saludos,", userName
+    ].filter(value => value !== "").join("\n");
+  }
+  function detectDefaultProvider() {
+    if (ownEmail.endsWith("@gmail.com") || ownEmail.includes("@google")) return "gmail";
+    if (["@outlook", "@hotmail", "@office", "@bbva.com", "@audita.com"].some(item => ownEmail.includes(item))) return "outlook";
+    return "mailto";
+  }
+  const names = { gmail: "Gmail", outlook: "Outlook Web", mailto: "cliente de correo" };
+  function highlightMethod(provider) {
+    methods.forEach(id => {
+      const button = document.getElementById(id);
+      if (!button) return;
+      const matches = (id === "btnPrincipalCorreo" ? primaryButton.dataset.provider : button.dataset.provider) === provider;
+      button.classList.toggle("ap-correo-activo", matches);
+      button.setAttribute("aria-pressed", matches ? "true" : "false");
+    });
+  }
+  function launchMail(provider) {
+    const users = requireRecipients(true);
+    if (!users) return;
+    const to = users.map(user => String(user.email).trim());
+    const subject = encodeURIComponent(mailSubject());
+    const body = encodeURIComponent(mailBody(users));
+    highlightMethod(provider);
+    if (provider === "gmail") {
+      window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to.join(","))}&su=${subject}&body=${body}`, "_blank", "noopener,noreferrer");
+    } else if (provider === "outlook") {
+      window.open(`https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to.join(";"))}&subject=${subject}&body=${body}`, "_blank", "noopener,noreferrer");
+    } else {
+      window.location.href = `mailto:${to.join(",")}?subject=${subject}&body=${body}`;
+    }
+    showNotice(mailNotice, `Se solicitó abrir el borrador en ${names[provider]}. Si no aparece, revisa el bloqueo de ventanas emergentes o la configuración de tu cliente de correo. Adjunta los archivos manualmente y envía el mensaje desde esa aplicación. Guardar la notificación en AuditaPro es un paso independiente.`);
+    mailNotice?.classList.add("ap-correo-aviso-ok");
+  }
+  function bindMethod(id, provider) {
+    const button = document.getElementById(id);
+    if (!button) return;
+    button.dataset.provider = provider;
+    button.addEventListener("click", () => {
+      mailNotice?.classList.remove("ap-correo-aviso-ok");
+      launchMail(provider);
+    });
+  }
+  const preferred = detectDefaultProvider();
+  const labels = { gmail: "Preparar en Gmail", outlook: "Preparar en Outlook Web", mailto: "Abrir cliente de correo" };
+  primaryButton.replaceChildren();
+  const primaryIcon = document.createElement("i");
+  primaryIcon.className = preferred === "gmail" ? "bi bi-google" : preferred === "outlook" ? "bi bi-microsoft" : "bi bi-envelope";
+  primaryButton.append(primaryIcon, document.createTextNode(" " + labels[preferred]));
+  primaryButton.dataset.provider = preferred;
+  primaryButton.dataset.mailType = preferred;
+  // Gmail ya tiene botón propio; no mostrar segundo botón equivalente.
+  if (preferred === "gmail") primaryButton.hidden = true;
+  ["btnGmail", "btnOutlookWeb", "btnMailto"].forEach((id, index) => {
+    const button = document.getElementById(id);
+    if (button) button.dataset.mailType = ["gmail", "outlook", "mailto"][index];
+  });
+  bindMethod("btnPrincipalCorreo", preferred);
+  bindMethod("btnGmail", "gmail");
+  bindMethod("btnOutlookWeb", "outlook");
+  bindMethod("btnMailto", "mailto");
+
+  auditSelect.addEventListener("change", () => populateRecipients(auditSelect.value));
+  recipientSelect.addEventListener("change", updatePreview);
+  if (hasSelect2) jq(recipientSelect).on("change", updatePreview);
+  filesInput?.addEventListener("change", () => {
+    if (!filesList) return;
+    filesList.replaceChildren();
+    Array.from(filesInput.files || []).forEach(file => {
+      const item = document.createElement("li");
+      item.textContent = `${file.name} · ${Math.max(1, Math.round(file.size / 1024))} KB`;
+      filesList.appendChild(item);
+    });
+  });
+  form.addEventListener("submit", event => {
+    const selected = requireRecipients(false);
+    if (!selected) event.preventDefault();
+  });
+  populateRecipients(auditSelect.value);
+})();
+</script>

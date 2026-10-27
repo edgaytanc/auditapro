@@ -1,31 +1,27 @@
-<div class="dropdown">
-    <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-      {% if filter == "readed" %}
-      Leídas
-      {% elif filter == "not_readed" %}
-      No leidas
-      {% else %}
-      Filtrar Por
-      {% endif %}
-    </button>
-    <ul class="dropdown-menu">
-        {% if not filter %}
-        <li><a class="dropdown-item active" href="{% url 'notifications' %}">Todas</a></li>
-        {% else %}
-        <li><a class="dropdown-item" href="{% url 'notifications' %}">Todas</a></li>
-        {% endif %}
+<div class="ap-notif-filter-group" aria-label="Filtrar notificaciones">
+  <span class="ap-notif-filter-label">Estado</span>
 
-        {% if filter == "readed" %}
-        <li><a class="dropdown-item active" href="{% url 'notifications' %}?filter=readed">Leídas</a></li>
-        {% else %}
-        <li><a class="dropdown-item" href="{% url 'notifications' %}?filter=readed">Leídas</a></li>
-        {% endif %}
+  <a
+    href="{% url 'notifications' %}"
+    class="ap-notif-filter {% if not request.GET.filter %}active{% endif %}"
+  >
+    <i class="bi bi-grid"></i>
+    Todas
+  </a>
 
-        {% if filter == "not_readed" %}
-        <li><a class="dropdown-item active" href="{% url 'notifications' %}?filter=not_readed">No leídas</a></li>
-        {% else %}
-        <li><a class="dropdown-item" href="{% url 'notifications' %}?filter=not_readed">No leídas</a></li>
-        {% endif %}
+  <a
+    href="{% url 'notifications' %}?filter=not_readed"
+    class="ap-notif-filter {% if request.GET.filter == 'not_readed' %}active{% endif %}"
+  >
+    <i class="bi bi-envelope"></i>
+    No leídas
+  </a>
 
-    </ul>
-  </div>
+  <a
+    href="{% url 'notifications' %}?filter=readed"
+    class="ap-notif-filter {% if request.GET.filter == 'readed' %}active{% endif %}"
+  >
+    <i class="bi bi-envelope-open"></i>
+    Leídas
+  </a>
+</div>

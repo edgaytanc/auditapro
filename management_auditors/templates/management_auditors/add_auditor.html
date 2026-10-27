@@ -1,111 +1,754 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
-    Añadir Auditor
+  Nuevo Auditor
 {% endblock title %}
 
+{% block v2_styles %}
+  <link
+    rel="stylesheet"
+    href="{% static 'css/add-auditor-v2.css' %}"
+  >
+{% endblock v2_styles %}
+
 {% block page_title %}
-    Añadir Nuevo Auditor
+  Nuevo Auditor
 {% endblock page_title %}
 
 {% block page_subtitle %}
-    Complete el formulario para crear un nuevo usuario auditor
+  Registra un integrante del equipo, su perfil profesional
+  y el rol de acceso que tendrá dentro de AuditaPro.
 {% endblock page_subtitle %}
 
-{% block main_content %}
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            {{ error }}
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                <div class="mb-3">
-                    <label for="{{ form.username.id_for_label }}" class="form-label">Nombre de usuario</label>
-                    <input type="text" name="{{ form.username.name }}" id="{{ form.username.id_for_label }}" class="form-control" {% if form.username.value %}value="{{ form.username.value }}"{% endif %} required>
-                    {% if form.username.errors %}
-                        <div class="text-danger">
-                            {% for error in form.username.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.first_name.id_for_label }}" class="form-label">Nombre</label>
-                    <input type="text" name="{{ form.first_name.name }}" id="{{ form.first_name.id_for_label }}" class="form-control" {% if form.first_name.value %}value="{{ form.first_name.value }}"{% endif %} required>
-                    {% if form.first_name.errors %}
-                        <div class="text-danger">
-                            {% for error in form.first_name.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.last_name.id_for_label }}" class="form-label">Apellido</label>
-                    <input type="text" name="{{ form.last_name.name }}" id="{{ form.last_name.id_for_label }}" class="form-control" {% if form.last_name.value %}value="{{ form.last_name.value }}"{% endif %} required>
-                    {% if form.last_name.errors %}
-                        <div class="text-danger">
-                            {% for error in form.last_name.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.email.id_for_label }}" class="form-label">Correo electrónico</label>
-                    <input type="email" name="{{ form.email.name }}" id="{{ form.email.id_for_label }}" class="form-control" {% if form.email.value %}value="{{ form.email.value }}"{% endif %} required>
-                    {% if form.email.errors %}
-                        <div class="text-danger">
-                            {% for error in form.email.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.password1.id_for_label }}" class="form-label">Contraseña</label>
-                    <input type="password" name="{{ form.password1.name }}" id="{{ form.password1.id_for_label }}" class="form-control" required>
-                    {% if form.password1.errors %}
-                        <div class="text-danger">
-                            {% for error in form.password1.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                    {% if form.password1.help_text %}
-                        <small class="form-text text-muted">{{ form.password1.help_text|safe }}</small>
-                    {% endif %}
-                </div>
-                
-                <div class="mb-3">
-                    <label for="{{ form.password2.id_for_label }}" class="form-label">Confirmar contraseña</label>
-                    <input type="password" name="{{ form.password2.name }}" id="{{ form.password2.id_for_label }}" class="form-control" required>
-                    {% if form.password2.errors %}
-                        <div class="text-danger">
-                            {% for error in form.password2.errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                </div>
-                
-                <div class="d-flex justify-content-end gap-2">
-                    <a href="{% url 'manage_auditors' %}" class="btn btn-secondary">Cancelar</a>
-                    <button type="submit" class="btn btn-primary">Crear Auditor</button>
-                </div>
-            </form>
+{% block page_actions %}
+  <a
+    href="{% url 'manage_auditors' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Volver al equipo
+  </a>
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <form
+    method="post"
+    class="ap-new-auditor-form"
+    id="newAuditorForm"
+    novalidate
+  >
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <section class="ap-form-alert ap-form-alert-danger">
+        <i class="bi bi-exclamation-circle"></i>
+
+        <div>
+          <strong>No fue posible crear el auditor</strong>
+
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
         </div>
+      </section>
+    {% endif %}
+
+    <section class="ap-form-intro">
+      <div class="ap-form-intro-icon">
+        <i class="bi bi-person-plus"></i>
+      </div>
+
+      <div>
+        <h2>Información del nuevo auditor</h2>
+
+        <p>
+          Los campos marcados con
+          <strong>*</strong>
+          son obligatorios. El usuario quedará asociado
+          automáticamente a tu equipo de auditoría.
+        </p>
+      </div>
+    </section>
+
+    <div class="ap-new-auditor-layout">
+
+      <!-- Datos personales -->
+      <section class="ap-form-panel">
+
+        <header class="ap-form-panel-header">
+          <span class="ap-form-step-number">1</span>
+
+          <div>
+            <h2>Datos personales</h2>
+
+            <p>
+              Información básica para identificar al integrante
+              dentro del sistema.
+            </p>
+          </div>
+        </header>
+
+        <div class="ap-form-grid ap-form-grid-two">
+
+          <div class="ap-form-field">
+            <label for="{{ form.first_name.id_for_label }}">
+              Nombre
+              <span>*</span>
+            </label>
+
+            <div class="ap-input-wrapper">
+              <i class="bi bi-person"></i>
+
+              <input
+                type="text"
+                name="{{ form.first_name.name }}"
+                id="{{ form.first_name.id_for_label }}"
+                value="{{ form.first_name.value|default_if_none:'' }}"
+                class="
+                  ap-form-input
+                  {% if form.first_name.errors %}ap-input-error{% endif %}
+                "
+                placeholder="Ejemplo: María"
+                maxlength="30"
+                autocomplete="given-name"
+                required
+              >
+            </div>
+
+            {% for error in form.first_name.errors %}
+              <p class="ap-form-error">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ error }}
+              </p>
+            {% endfor %}
+          </div>
+
+          <div class="ap-form-field">
+            <label for="{{ form.last_name.id_for_label }}">
+              Apellido
+              <span>*</span>
+            </label>
+
+            <div class="ap-input-wrapper">
+              <i class="bi bi-person"></i>
+
+              <input
+                type="text"
+                name="{{ form.last_name.name }}"
+                id="{{ form.last_name.id_for_label }}"
+                value="{{ form.last_name.value|default_if_none:'' }}"
+                class="
+                  ap-form-input
+                  {% if form.last_name.errors %}ap-input-error{% endif %}
+                "
+                placeholder="Ejemplo: López"
+                maxlength="30"
+                autocomplete="family-name"
+                required
+              >
+            </div>
+
+            {% for error in form.last_name.errors %}
+              <p class="ap-form-error">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ error }}
+              </p>
+            {% endfor %}
+          </div>
+
+        </div>
+
+        <div class="ap-form-grid">
+
+          <div class="ap-form-field">
+            <label for="{{ form.email.id_for_label }}">
+              Correo electrónico
+              <span>*</span>
+            </label>
+
+            <div class="ap-input-wrapper">
+              <i class="bi bi-envelope"></i>
+
+              <input
+                type="email"
+                name="{{ form.email.name }}"
+                id="{{ form.email.id_for_label }}"
+                value="{{ form.email.value|default_if_none:'' }}"
+                class="
+                  ap-form-input
+                  {% if form.email.errors %}ap-input-error{% endif %}
+                "
+                placeholder="auditor@empresa.com"
+                autocomplete="email"
+                required
+              >
+            </div>
+
+            <p class="ap-form-help">
+              El correo será utilizado como medio principal
+              de contacto y recuperación de acceso.
+            </p>
+
+            {% for error in form.email.errors %}
+              <p class="ap-form-error">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ error }}
+              </p>
+            {% endfor %}
+          </div>
+
+          <div class="ap-form-field">
+            <label for="{{ form.username.id_for_label }}">
+              Nombre de usuario
+              <span>*</span>
+            </label>
+
+            <div class="ap-input-wrapper">
+              <i class="bi bi-at"></i>
+
+              <input
+                type="text"
+                name="{{ form.username.name }}"
+                id="{{ form.username.id_for_label }}"
+                value="{{ form.username.value|default_if_none:'' }}"
+                class="
+                  ap-form-input
+                  {% if form.username.errors %}ap-input-error{% endif %}
+                "
+                placeholder="maria.lopez"
+                maxlength="150"
+                autocomplete="username"
+                required
+              >
+            </div>
+
+            <p class="ap-form-help">
+              Puedes escribirlo manualmente o dejar que se sugiera
+              desde el correo electrónico.
+            </p>
+
+            {% for error in form.username.errors %}
+              <p class="ap-form-error">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ error }}
+              </p>
+            {% endfor %}
+          </div>
+
+        </div>
+<div class="ap-form-divider">
+  <span>Perfil profesional</span>
+</div>
+
+<div class="ap-form-grid ap-form-grid-two">
+
+  <div class="ap-form-field">
+    <label for="auditorPhone">
+      Teléfono
+    </label>
+
+    <div class="ap-input-wrapper">
+      <i class="bi bi-telephone"></i>
+
+      <input
+        type="tel"
+        name="phone"
+        id="auditorPhone"
+        class="ap-form-input"
+        placeholder="+502 0000-0000"
+        autocomplete="tel"
+      >
     </div>
-{% endblock main_content %}
+  </div>
+
+  <div class="ap-form-field">
+    <label for="auditorCity">
+      Ciudad
+    </label>
+
+    <div class="ap-input-wrapper">
+      <i class="bi bi-geo-alt"></i>
+
+      <input
+        type="text"
+        name="city"
+        id="auditorCity"
+        class="ap-form-input"
+        placeholder="Ejemplo: Guatemala"
+        maxlength="100"
+      >
+    </div>
+  </div>
+
+</div>
+
+<div class="ap-form-grid ap-form-grid-two">
+
+  <div class="ap-form-field">
+    <label for="auditorLevel">
+      Nivel profesional
+      <span>*</span>
+    </label>
+
+    <div class="ap-input-wrapper">
+      <i class="bi bi-award"></i>
+
+      <select
+        name="professional_level"
+        id="auditorLevel"
+        class="ap-form-input"
+        required
+      >
+        <option value="">
+          — Seleccionar nivel —
+        </option>
+
+        <option value="junior">
+          Junior
+        </option>
+
+        <option value="semi_senior">
+          Semi-Senior
+        </option>
+
+        <option value="senior">
+          Senior
+        </option>
+
+        <option value="manager">
+          Gerente
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <div class="ap-form-field">
+    <label for="auditorEntryDate">
+      Fecha de ingreso
+    </label>
+
+    <div class="ap-input-wrapper">
+      <i class="bi bi-calendar3"></i>
+
+      <input
+        type="date"
+        name="entry_date"
+        id="auditorEntryDate"
+        class="ap-form-input"
+      >
+    </div>
+  </div>
+
+</div>
+
+<div class="ap-form-grid">
+
+  <div class="ap-form-field">
+    <label for="auditorStatus">
+      Estado
+    </label>
+
+    <div class="ap-input-wrapper">
+      <i class="bi bi-person-check"></i>
+
+      <select
+        name="professional_status"
+        id="auditorStatus"
+        class="ap-form-input"
+      >
+        <option value="active" selected>
+          Activo
+        </option>
+
+        <option value="inactive">
+          Inactivo
+        </option>
+      </select>
+    </div>
+  </div>
+
+</div>
+
+<div class="ap-form-grid">
+
+  <div class="ap-form-field">
+    <label>
+      Especialidades
+    </label>
+
+    <div class="ap-option-grid">
+
+      <label class="ap-option-chip">
+        <input
+          type="checkbox"
+          name="specialties"
+          value="fiscal"
+        >
+        <span>
+          <i class="bi bi-bank"></i>
+          Fiscal
+        </span>
+      </label>
+
+      <label class="ap-option-chip">
+        <input
+          type="checkbox"
+          name="specialties"
+          value="financial"
+        >
+        <span>
+          <i class="bi bi-graph-up"></i>
+          Financiera
+        </span>
+      </label>
+
+      <label class="ap-option-chip">
+        <input
+          type="checkbox"
+          name="specialties"
+          value="operational"
+        >
+        <span>
+          <i class="bi bi-diagram-3"></i>
+          Operacional
+        </span>
+      </label>
+
+      <label class="ap-option-chip">
+        <input
+          type="checkbox"
+          name="specialties"
+          value="compliance"
+        >
+        <span>
+          <i class="bi bi-shield-check"></i>
+          Cumplimiento
+        </span>
+      </label>
+
+    </div>
+  </div>
+
+</div>
+
+<div class="ap-form-grid">
+
+  <div class="ap-form-field">
+    <label>
+      Certificaciones
+    </label>
+
+    <div class="ap-option-grid">
+
+      <label class="ap-option-chip">
+        <input
+          type="checkbox"
+          name="certifications"
+          value="CPA"
+        >
+        <span>CPA</span>
+      </label>
+
+      <label class="ap-option-chip">
+        <input
+          type="checkbox"
+          name="certifications"
+          value="CIA"
+        >
+        <span>CIA</span>
+      </label>
+
+      <label class="ap-option-chip">
+        <input
+          type="checkbox"
+          name="certifications"
+          value="CISA"
+        >
+        <span>CISA</span>
+      </label>
+
+      <label class="ap-option-chip">
+        <input
+          type="checkbox"
+          name="certifications"
+          value="CFE"
+        >
+        <span>CFE</span>
+      </label>
+
+    </div>
+
+    <p class="ap-form-help">
+      Estas opciones se conectarán al perfil profesional
+      durante la fase funcional.
+    </p>
+  </div>
+
+</div>
+      </section>
+
+      <!-- Acceso -->
+      <section class="ap-form-panel">
+
+        <header class="ap-form-panel-header">
+          <span class="ap-form-step-number">2</span>
+
+          <div>
+            <h2>Acceso al sistema</h2>
+
+            <p>
+              Define las credenciales iniciales y revisa el rol
+              asignado actualmente.
+            </p>
+          </div>
+        </header>
+
+        <div class="ap-form-field">
+  <label for="auditorSystemRole">
+    Rol del sistema
+    <span>*</span>
+  </label>
+
+  <div class="ap-input-wrapper">
+    <i class="bi bi-shield-check"></i>
+
+    <select
+      name="{{ form.system_role.name }}"
+      id="{{ form.system_role.id_for_label }}"
+      class="
+        ap-form-input
+        {% if form.system_role.errors %}
+          ap-input-error
+        {% endif %}
+      "
+      required
+    >
+
+      <option value="">
+        — Seleccionar rol de acceso —
+      </option>
+
+      <option
+        value="auditor"
+        {% if form.system_role.value == "auditor" or not form.system_role.value %}
+          selected
+        {% endif %}
+      >
+        Auditor
+      </option>
+
+      <option
+        value="supervisor"
+        {% if form.system_role.value == "supervisor" %}
+          selected
+        {% endif %}
+      >
+        Supervisor
+      </option>
+
+      <option
+        value="readonly"
+        {% if form.system_role.value == "readonly" %}
+          selected
+        {% endif %}
+      >
+        Solo Lectura
+      </option>
+
+    </select>
+  </div>
+
+{% for error in form.system_role.errors %}
+
+  <p class="ap-form-error">
+    <i class="bi bi-exclamation-circle"></i>
+    {{ error }}
+  </p>
+
+{% endfor %}
+
+
+  <div
+    class="ap-role-preview"
+    id="auditorRolePreview"
+  >
+    <div class="ap-role-preview-icon">
+      <i class="bi bi-person-check"></i>
+    </div>
+
+    <div>
+      <strong id="auditorRoleTitle">
+        Auditor
+      </strong>
+
+      <p id="auditorRoleDescription">
+        Puede trabajar en auditorías, papeles de trabajo,
+        hallazgos y reportes según los permisos asignados.
+      </p>
+    </div>
+  </div>
+
+  <div class="ap-role-information">
+    <i class="bi bi-info-circle"></i>
+
+    <p>
+      El rol seleccionado se guardará en el usuario y utilizará
+      la configuración correspondiente de la Matriz de Permisos.
+      Desde esta pantalla pueden crearse
+      <strong>Auditores, Supervisores y usuarios de Solo Lectura</strong>.
+    </p>
+  </div>
+</div>
+
+        <div class="ap-form-grid ap-form-grid-two">
+
+          <div class="ap-form-field">
+            <label for="{{ form.password1.id_for_label }}">
+              Contraseña
+              <span>*</span>
+            </label>
+
+            <div class="ap-input-wrapper ap-password-wrapper">
+              <i class="bi bi-lock"></i>
+
+              <input
+                type="password"
+                name="{{ form.password1.name }}"
+                id="{{ form.password1.id_for_label }}"
+                class="
+                  ap-form-input
+                  {% if form.password1.errors %}ap-input-error{% endif %}
+                "
+                placeholder="Crea una contraseña segura"
+                autocomplete="new-password"
+                required
+              >
+
+              <button
+                type="button"
+                class="ap-password-toggle"
+                data-password-toggle="{{ form.password1.id_for_label }}"
+                aria-label="Mostrar contraseña"
+                title="Mostrar contraseña"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+
+            {% for error in form.password1.errors %}
+              <p class="ap-form-error">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ error }}
+              </p>
+            {% endfor %}
+          </div>
+
+          <div class="ap-form-field">
+            <label for="{{ form.password2.id_for_label }}">
+              Confirmar contraseña
+              <span>*</span>
+            </label>
+
+            <div class="ap-input-wrapper ap-password-wrapper">
+              <i class="bi bi-lock-fill"></i>
+
+              <input
+                type="password"
+                name="{{ form.password2.name }}"
+                id="{{ form.password2.id_for_label }}"
+                class="
+                  ap-form-input
+                  {% if form.password2.errors %}ap-input-error{% endif %}
+                "
+                placeholder="Repite la contraseña"
+                autocomplete="new-password"
+                required
+              >
+
+              <button
+                type="button"
+                class="ap-password-toggle"
+                data-password-toggle="{{ form.password2.id_for_label }}"
+                aria-label="Mostrar contraseña"
+                title="Mostrar contraseña"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+
+            <p
+              class="ap-password-match"
+              id="passwordMatchMessage"
+            ></p>
+
+            {% for error in form.password2.errors %}
+              <p class="ap-form-error">
+                <i class="bi bi-exclamation-circle"></i>
+                {{ error }}
+              </p>
+            {% endfor %}
+          </div>
+
+        </div>
+
+        <div class="ap-password-requirements">
+          <div class="ap-password-requirements-icon">
+            <i class="bi bi-key"></i>
+          </div>
+
+          <div>
+            <strong>Recomendaciones de seguridad</strong>
+
+            <ul>
+              <li>Utiliza al menos ocho caracteres.</li>
+              <li>No uses datos personales fáciles de identificar.</li>
+              <li>Evita contraseñas completamente numéricas.</li>
+              <li>Combina letras, números y caracteres especiales.</li>
+            </ul>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <footer class="ap-form-footer">
+      <div class="ap-form-footer-note">
+        <i class="bi bi-shield-lock"></i>
+
+        <span>
+          El auditor será asociado automáticamente a
+          <strong>{{ user.get_full_name|default:user.username }}</strong>.
+        </span>
+      </div>
+
+      <div class="ap-form-footer-actions">
+        <a
+          href="{% url 'manage_auditors' %}"
+          class="ap-form-cancel-button"
+        >
+          Cancelar
+        </a>
+
+        <button
+          type="submit"
+          class="ap-form-submit-button"
+          id="createAuditorButton"
+        >
+          <i class="bi bi-person-check"></i>
+          Crear auditor
+        </button>
+      </div>
+    </footer>
+
+  </form>
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+  <script
+    src="{% static 'js/add-auditor-v2.js' %}"
+  ></script>
+{% endblock v2_scripts %}

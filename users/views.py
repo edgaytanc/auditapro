@@ -99,18 +99,46 @@ def login_user(req):
         return login_page(req)
     user = authenticate(request=req, email=email, password=password)
     if user is not None:
+    # Los superusuarios ingresan directamente.
         if user.is_superuser:
             login_func(req, user)
-            messages.success(req, f"Bienvenido de nuevo, {user.get_full_name() or user.username}.")
-            # Si el usuario tiene rol superadmin, enviarlo al dashboard de gestión de usuarios
-            if getattr(user, 'role', None) and user.role and user.role.name == 'superadmin':
+
+            messages.success(
+                req,
+                f"Bienvenido de nuevo, "
+                f"{user.get_full_name() or user.username}."
+            )
+
+            if (
+                getattr(user, "role", None)
+                and user.role
+                and user.role.name == "superadmin"
+            ):
                 return redirect("superadmin_dashboard")
-            # Para otros superusuarios, llevar al dashboard general
+
             return redirect("dashboard")
-        else:
+
+        # ==========================================================
+        # PRODUCCIÓN: FLUJO NORMAL CON 2FA
+        # ==========================================================
+        try:
             send_2fa_code(user)
-            req.session['pre_2fa_user_id'] = user.id
+            req.session["pre_2fa_user_id"] = user.id
             return redirect("verify_2fa")
+
+        except Exception:
+            logger.exception(
+                "No fue posible enviar el código 2FA al usuario %s.",
+                user.pk,
+            )
+
+            messages.error(
+                req,
+                "No fue posible enviar el código de verificación. "
+                "Por favor, inténtelo nuevamente."
+            )
+
+            return login_page(req)
     else:
         messages.error(req, "Correo electrónico o contraseña incorrectos.")
         return login_page(req)
@@ -164,12 +192,45 @@ def delete_account(req):
         return redirect("user")
 
 def index_page(req: HttpRequest):
+    """
+    Entrada principal de AuditaPro.
+
+    Usuarios autenticados:
+        Selector Financiera / Interna.
+
+    Superadministradores:
+        Panel de administración.
+
+    Visitantes:
+        Página pública.
+    """
+
     if req.user.is_authenticated:
-        if getattr(req.user, 'role', None) and req.user.role and req.user.role.name == 'superadmin':
-            return redirect('superadmin_dashboard')
-        return render(req, "users/index-system.html")
-    else:
-        return render(req, "common/home.html")
+
+        role = getattr(
+            req.user,
+            "role",
+            None
+        )
+
+        if (
+            role
+            and role.name == "superadmin"
+        ):
+
+            return redirect(
+                "superadmin_dashboard"
+            )
+
+        return redirect(
+            "dashboard"
+        )
+
+    return render(
+        req,
+        "common/home.html"
+    )
+
 
 def login_page(req):
     if req.user.is_authenticated:
@@ -188,9 +249,110 @@ def user_page(req):
 
 @login_required
 def dashboard(req):
-    if req.user.role and req.user.role.name == 'superadmin':
-        return redirect('superadmin_dashboard')
-    return render(req, "users/dashboard.html", {})
+    """
+    Pantalla de selección del panel principal.
+
+    Desde aquí el usuario puede entrar al flujo de Auditoría
+    Financiera o al flujo de Auditoría Interna.
+    """
+    role = getattr(req.user, "role", None)
+
+    if role and role.name == "superadmin":
+        return redirect("superadmin_dashboard")
+
+    return render(
+        req,
+        "users/dashboard_selector.html",
+        {},
+    )
+
+
+@login_required
+def dashboard_financiera(req):
+    """
+    Entrada al módulo de Auditoría Financiera.
+
+    Después de seleccionar Auditoría Financiera,
+    el usuario es enviado directamente a la
+    Matriz de Riesgos.
+    """
+    role = getattr(req.user, "role", None)
+
+    if role and role.name == "superadmin":
+        return redirect("superadmin_dashboard")
+
+    return redirect("matriz_riesgos_financiera")
+
+
+from .risk_exports import exportar_matriz_riesgos
+from .financial_identity import financial_company
+
+@login_required
+def matriz_riesgos_financiera(req):
+    """
+    Página manual y automatizada de la Matriz de Riesgos
+    del módulo de Auditoría Financiera.
+    """
+    role = getattr(req.user, "role", None)
+
+    if role and role.name == "superadmin":
+        return redirect("superadmin_dashboard")
+
+    return render(
+        req,
+        "users/financial_dashboard/matriz_riesgos.html",
+        {"financial_company_name": financial_company(req)},
+    )
+    
+    
+@login_required
+def hallazgos_financiera(req):
+    """
+    Página editable de Hallazgos y Recomendaciones
+    del módulo de Auditoría Financiera.
+    """
+    role = getattr(req.user, "role", None)
+
+    if role and role.name == "superadmin":
+        return redirect("superadmin_dashboard")
+
+    return render(
+        req,
+        "users/financial_dashboard/hallazgos.html",
+        {"financial_company_name": financial_company(req)},
+    )
+
+@login_required
+def informe_final_financiera(req):
+    """
+    Informe Final editable del módulo
+    de Auditoría Financiera.
+    """
+    role = getattr(req.user, "role", None)
+
+    if role and role.name == "superadmin":
+        return redirect("superadmin_dashboard")
+
+    return render(
+        req,
+        "users/financial_dashboard/informe_final.html",
+        {"financial_company_name": financial_company(req)},
+    )
+
+@login_required
+def dashboard_interna(req):
+    """
+    Entrada temporal al módulo existente de Auditoría Interna.
+
+    Más adelante esta redirección será reemplazada por el nuevo
+    listado de auditorías internas solicitado por el cliente.
+    """
+    role = getattr(req.user, "role", None)
+
+    if role and role.name == "superadmin":
+        return redirect("superadmin_dashboard")
+
+    return redirect("auditoria_interna")
 
 def demo_signup_page(req):
     storage = messages.get_messages(req)

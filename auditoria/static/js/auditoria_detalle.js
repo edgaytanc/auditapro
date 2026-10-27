@@ -1,10 +1,4 @@
-const { audit_id, import_url, anios_url, referencia_url } =
-    window.AUDIT_CTX || { audit_id: null, import_url: null, anios_url: null, referencia_url: null };
-
-function csrfToken() {
-    const campo = document.querySelector("[name=csrfmiddlewaretoken]");
-    return campo ? campo.value : "";
-}
+const { audit_id, import_url } = window.AUDIT_CTX || { audit_id: null, import_url: null };
 
 function toggleFolder(folderId) {
     const element = document.getElementById(folderId);
@@ -31,7 +25,7 @@ function goBackToImportMain() {
 }
 
 function goToImportUpload(tipo) {
-    document.getElementById("importUploadTitle").innerText = "Importar Excel Financiero";
+    document.getElementById("importUploadTitle").innerText = "Importar Estado Financiero";
     document.getElementById("import-main-section").style.display = "none";
     document.getElementById("import-upload-section").style.display = "block";
 }
@@ -68,9 +62,6 @@ function submitImportForm(event) {
             if (data.success) {
                 alert("✅ " + data.message);
                 closeImportModal();
-                // Los años de los cuadros comparativos se toman del Excel:
-                // se recarga para que el panel muestre los recién importados.
-                window.location.reload();
             } else {
                 alert("❌ Error: " + data.message);
             }
@@ -92,59 +83,100 @@ window.onclick = function (event) {
     }
 };
 
-/* ------------------------------------------------------------------
- * Años de la auditoría (cuadros comparativos)
- *
- * Se llenan solos al importar el Excel Financiero y el auditor puede
- * corregirlos aquí; su valor manda sobre el del archivo.
- * ------------------------------------------------------------------ */
 
-function openAniosModal() {
+function csrfToken() {
+    const field = document.querySelector("[name=csrfmiddlewaretoken]");
+    return field ? field.value : "";
+}
+
+/* Años: usa las rutas, validaciones y reglas que ya tiene el backend actualizado. */
+async function auditJson(response) {
+    let data;
+    try {
+        data = await response.json();
+    } catch (_) {
+        throw new Error(`El servidor respondió ${response.status}. Compruebe su sesión y los permisos de Papeles de Trabajo.`);
+    }
+    if (!response.ok || !data.success) {
+        throw new Error(data.message || `No se pudo completar la operación (HTTP ${response.status}).`);
+    }
+    return data;
+}
+
+async function openAniosModal() {
     const modal = document.getElementById("aniosModal");
-    if (!modal || !anios_url) return;
+    const url = window.AUDIT_CTX && window.AUDIT_CTX.anios_url;
+    if (!modal || !url) {
+        alert("No está disponible la configuración de años de esta auditoría.");
+        return;
+    }
     modal.style.display = "block";
-    document.getElementById("aniosMensaje").textContent = "Cargando…";
-
-    fetch(anios_url)
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) return;
-            document.getElementById("anioActual").value = data.anio_actual || "";
-            document.getElementById("anioAnterior").value = data.anio_anterior || "";
-            document.getElementById("aniosMensaje").textContent = data.manuales
-                ? "Años fijados manualmente por el auditor."
-                : "Años tomados del Excel Financiero importado.";
-        })
-        .catch(() => {
-            document.getElementById("aniosMensaje").textContent =
-                "No se pudieron cargar los años.";
-        });
+    modal.setAttribute("aria-hidden", "false");
+    const mensaje = document.getElementById("aniosMensaje");
+    mensaje.textContent = "Cargando años…";
+    try {
+        const response = await fetch(url, { credentials: "same-origin", headers: { "Accept": "application/json" } });
+        const data = await auditJson(response);
+        document.getElementById("anioActual").value = data.anio_actual ?? "";
+        document.getElementById("anioAnterior").value = data.anio_anterior ?? "";
+        mensaje.textContent = data.manuales
+            ? "Años fijados manualmente por el auditor."
+            : "Años obtenidos del Excel Financiero (si está importado).";
+    } catch (error) {
+        mensaje.textContent = error.message || "No se pudieron consultar los años.";
+    }
 }
 
 function closeAniosModal() {
     const modal = document.getElementById("aniosModal");
-    if (modal) modal.style.display = "none";
+    if (modal) {
+        modal.style.display = "none";
+        modal.setAttribute("aria-hidden", "true");
+    }
 }
 
-function guardarAnios(event) {
+async function guardarAnios(event) {
     event.preventDefault();
     const mensaje = document.getElementById("aniosMensaje");
-    mensaje.textContent = "Guardando…";
+    const url = window.AUDIT_CTX && window.AUDIT_CTX.anios_url;
+    if (!url) {
+        mensaje.textContent = "No está disponible la ruta de guardado.";
+        return;
+    }
+    mensaje.textContent = "Guardando años…";
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "X-CSRFToken": csrfToken()
+            },
+            body: JSON.stringify({
+                anio_actual: document.getElementById("anioActual").value,
+                anio_anterior: document.getElementById("anioAnterior").value
+            })
+        });
+        const data = await auditJson(response);
+        mensaje.textContent = data.message || "Años guardados correctamente.";
+        document.getElementById("anioActual").value = data.anio_actual ?? "";
+        document.getElementById("anioAnterior").value = data.anio_anterior ?? "";
+        setTimeout(closeAniosModal, 1200);
+    } catch (error) {
+        mensaje.textContent = error.message || "No se pudieron guardar los años.";
+    }
+}
 
-    fetch(anios_url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
-        body: JSON.stringify({
-            anio_actual: document.getElementById("anioActual").value,
-            anio_anterior: document.getElementById("anioAnterior").value
-        })
-    })
-        .then(r => r.json())
-        .then(data => {
-            mensaje.textContent = data.message || "";
-            if (data.success) setTimeout(closeAniosModal, 1200);
-        })
-        .catch(() => { mensaje.textContent = "Error inesperado al guardar los años."; });
+// No sustituir window.onclick (lo usa la importación y la exportación).
+const auditAniosBackdrop = document.getElementById("aniosModal");
+if (auditAniosBackdrop) {
+    auditAniosBackdrop.addEventListener("click", event => {
+        if (event.target === auditAniosBackdrop) closeAniosModal();
+    });
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape" && auditAniosBackdrop.style.display === "block") closeAniosModal();
+    });
 }
 
 /* ------------------------------------------------------------------
@@ -155,13 +187,16 @@ function guardarAnios(event) {
  * Dejar el campo vacío devuelve el papel a la referencia automática.
  * ------------------------------------------------------------------ */
 
-function editarReferencia(pastilla) {
-    if (!referencia_url) return;
+async function editarReferencia(pastilla) {
+    const url = window.AUDIT_CTX && window.AUDIT_CTX.referencia_url;
+    if (!url) {
+        alert("No está disponible la ruta para guardar referencias.");
+        return;
+    }
 
     const carpeta = pastilla.dataset.carpeta || "";
     const archivo = pastilla.dataset.archivo || "";
     const actual = pastilla.dataset.ref || "";
-
     const nueva = window.prompt(
         `Referencia para:\n${archivo}\n\n` +
         "Escriba la referencia que quiera usar (el sistema no la sobrescribirá).\n" +
@@ -170,24 +205,36 @@ function editarReferencia(pastilla) {
     );
     if (nueva === null) return;
 
-    fetch(referencia_url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() },
-        body: JSON.stringify({ carpeta: carpeta, archivo: archivo, referencia: nueva })
-    })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) {
-                alert("❌ " + (data.message || "No se pudo guardar la referencia."));
-                return;
-            }
-            pastilla.dataset.ref = data.referencia || "";
-            pastilla.dataset.manual = data.manual ? "1" : "0";
-            pastilla.textContent = "Ref. " + (data.referencia || "");
-            pastilla.classList.toggle("ref-pill-manual", !!data.manual);
-            pastilla.title = data.manual
-                ? "Referencia fijada por el auditor. Clic para editarla."
-                : "Referencia automática. Clic para fijar una referencia propia.";
-        })
-        .catch(() => alert("❌ Error inesperado al guardar la referencia."));
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "X-CSRFToken": csrfToken()
+            },
+            body: JSON.stringify({ carpeta, archivo, referencia: nueva })
+        });
+        const data = await auditJson(response);
+        pastilla.dataset.ref = data.referencia || "";
+        pastilla.dataset.manual = data.manual ? "1" : "0";
+        pastilla.textContent = "Ref. " + (data.referencia || "");
+        pastilla.classList.toggle("ref-pill-manual", !!data.manual);
+        pastilla.title = data.manual
+            ? "Referencia fijada por el auditor. Clic para editarla."
+            : "Referencia automática. Clic para fijar una referencia propia.";
+    } catch (error) {
+        alert("No se pudo guardar la referencia: " + (error.message || "error inesperado"));
+    }
 }
+
+// Las pastillas ya usan onclick desde el generador existente; permitir también teclado.
+document.addEventListener("keydown", event => {
+    const pill = event.target;
+    if (pill && pill.classList && pill.classList.contains("ref-pill") &&
+        (event.key === "Enter" || event.key === " ")) {
+        event.preventDefault();
+        editarReferencia(pill);
+    }
+});

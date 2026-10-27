@@ -1,0 +1,8 @@
+{% load static %}
+<nav class="hc-local-nav" aria-label="Submódulos de Herramientas">
+  <div class="hc-brand"><strong>AuditaPro</strong><span>Herramientas del encargo</span></div>
+  <a href="{% url 'audit_time_summary_index' %}" class="hc-local-link {% if herr_section == 'time' %}hc-active{% endif %}" {% if herr_section == 'time' %}aria-current="page"{% endif %}><span class="hc-step">1</span><span>Resumen de Tiempo</span></a>
+  <a href="{% url 'status_of_work_papers_table' %}" class="hc-local-link {% if herr_section == 'papers' %}hc-active{% endif %}" {% if herr_section == 'papers' %}aria-current="page"{% endif %}><span class="hc-step">2</span><span>Estado de Papeles de Trabajo</span></a>
+  <a href="{% url 'activities_page' %}" class="hc-local-link {% if herr_section == 'activities' %}hc-active{% endif %}" {% if herr_section == 'activities' %}aria-current="page"{% endif %}><span class="hc-step">3</span><span>Cronograma de Actividades</span></a>
+  <div class="hc-brand hc-footnote">Los registros se guardan por auditoría en Django; no solo en este navegador.</div>
+</nav>

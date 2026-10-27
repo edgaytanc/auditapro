@@ -1,0 +1,445 @@
+.financial-risk-page {
+  --risk-teal: #0d9488;
+  --risk-blue: #3b82f6;
+  --risk-green: #22c55e;
+  --risk-amber: #f59e0b;
+  --risk-red: #ef4444;
+  --risk-text: #1e2433;
+  --risk-muted: #7a8299;
+  --risk-border: #e7eaf2;
+  --risk-card: #ffffff;
+}
+
+.financial-risk-button {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease;
+}
+
+.financial-risk-button:hover {
+  transform: translateY(-1px);
+}
+
+.financial-risk-button--secondary {
+  border: 1px solid #dfe4ed;
+  background: #ffffff;
+  color: #334155;
+}
+
+.financial-risk-button--secondary:hover {
+  border-color: var(--risk-teal);
+  color: var(--risk-teal);
+}
+
+.financial-risk-button--primary {
+  border: 1px solid #0d9488 !important;
+  background-color: #0d9488 !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  box-shadow: 0 5px 12px rgba(13, 148, 136, 0.18);
+}
+
+.financial-risk-button--primary:hover {
+  border-color: #0f766e !important;
+  background-color: #0f766e !important;
+  color: #ffffff !important;
+}
+
+.financial-risk-status {
+  display: none;
+  margin-bottom: 12px;
+  padding: 10px 13px;
+  border: 1px solid #bae6fd;
+  border-radius: 9px;
+  background: #f0f9ff;
+  color: #075985;
+  font-size: 12px;
+}
+
+.financial-risk-status.visible {
+  display: block;
+}
+
+.financial-risk-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 9px 14px;
+  border: 1px solid;
+  border-radius: 9px;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.financial-risk-note--success {
+  border-color: #cdf0dc;
+  background: #e9faf1;
+  color: #168451;
+}
+
+.financial-risk-note--info {
+  margin-bottom: 18px;
+  border-color: #d3e2ff;
+  background: #eaf1ff;
+  color: #1d4ed8;
+}
+
+.financial-risk-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.financial-risk-kpi {
+  padding: 16px 18px;
+  border: 1px solid var(--risk-border);
+  border-radius: 14px;
+  background: var(--risk-card);
+}
+
+.financial-risk-kpi__label {
+  margin-bottom: 6px;
+  color: var(--risk-muted);
+  font-size: 11.5px;
+}
+
+.financial-risk-kpi__value {
+  color: var(--risk-text);
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.financial-risk-kpi__value--blue {
+  color: var(--risk-blue);
+}
+
+.financial-risk-kpi__value--red {
+  color: var(--risk-red);
+}
+
+.financial-risk-kpi__value--amber {
+  color: var(--risk-amber);
+}
+
+.financial-risk-kpi__value--green {
+  color: var(--risk-green);
+}
+
+.financial-risk-kpi__value--teal {
+  color: var(--risk-teal);
+}
+
+.financial-risk-kpi__sub {
+  margin-top: 3px;
+  color: var(--risk-muted);
+  font-size: 10.5px;
+}
+
+.financial-risk-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(450px, 1.6fr);
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 20px;
+}
+
+.financial-risk-panel {
+  padding: 20px 22px;
+  border: 1px solid var(--risk-border);
+  border-radius: 14px;
+  background: var(--risk-card);
+}
+
+.financial-risk-panel h2 {
+  margin: 0 0 3px;
+  color: var(--risk-text);
+  font-size: 14.5px;
+}
+
+.financial-risk-panel > p,
+.financial-risk-detail-header p {
+  margin: 0 0 14px;
+  color: var(--risk-muted);
+  font-size: 11.5px;
+}
+
+.financial-risk-heatmap {
+  display: grid;
+  grid-template-columns: 70px repeat(5, minmax(38px, 1fr));
+  gap: 4px;
+}
+
+.financial-risk-heatmap-corner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 5px 4px 0;
+  color: var(--risk-muted);
+  font-size: 10px;
+}
+
+.financial-risk-heatmap-column {
+  padding-bottom: 4px;
+  color: var(--risk-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.financial-risk-heatmap-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  color: var(--risk-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.financial-risk-heatmap-cell {
+  display: flex;
+  aspect-ratio: 1;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.financial-risk-axis-label {
+  margin-top: 4px;
+  color: var(--risk-muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.financial-risk-residual-item {
+  margin-bottom: 12px;
+}
+
+.financial-risk-residual-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.financial-risk-residual-score {
+  color: var(--risk-muted);
+}
+
+.financial-risk-residual-track {
+  position: relative;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #eef0f7;
+}
+
+.financial-risk-residual-inherent,
+.financial-risk-residual-value {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 6px;
+}
+
+.financial-risk-residual-inherent {
+  background: #fbd3d3;
+}
+
+.financial-risk-detail-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.financial-risk-detail-header {
+  padding: 20px 22px 6px;
+}
+
+.financial-risk-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.financial-risk-table {
+  width: 100%;
+  min-width: 1240px;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.financial-risk-table th {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--risk-border);
+  background: #f8f9fd;
+  color: var(--risk-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.financial-risk-table td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--risk-border);
+  vertical-align: middle;
+}
+
+.financial-risk-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.financial-risk-input,
+.financial-risk-textarea,
+.financial-risk-select {
+  width: 100%;
+  border: 1px solid var(--risk-border);
+  border-radius: 7px;
+  background: #fafbfe;
+  color: var(--risk-text);
+  font-family: inherit;
+  font-size: 11.8px;
+}
+
+.financial-risk-input,
+.financial-risk-select {
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
+.financial-risk-balance {
+  width: 110px;
+  margin-top: 5px;
+}
+
+.financial-risk-textarea {
+  min-height: 58px;
+  padding: 7px 8px;
+  resize: vertical;
+}
+
+.financial-risk-input:focus,
+.financial-risk-textarea:focus,
+.financial-risk-select:focus {
+  border-color: var(--risk-teal);
+  outline: none;
+}
+
+.financial-risk-cell-subtitle {
+  margin-top: 3px;
+  color: var(--risk-muted);
+  font-size: 10.5px;
+}
+
+.financial-risk-materiality {
+  display: inline-block;
+  margin: 5px 0 0 4px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: #f0e9fd;
+  color: #7c3aed;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.financial-risk-pill {
+  display: inline-block;
+  min-width: 52px;
+  padding: 4px 9px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.financial-risk-pill.alto {
+  background: #fde8e8;
+  color: #c0392b;
+}
+
+.financial-risk-pill.medio {
+  background: #fef3d8;
+  color: #b7791f;
+}
+
+.financial-risk-pill.bajo {
+  background: #e2f8ee;
+  color: #1a8f5c;
+}
+
+.financial-risk-score {
+  display: block;
+  margin-top: 3px;
+  color: var(--risk-muted);
+  font-size: 10px;
+}
+
+@media (max-width: 1180px) {
+  .financial-risk-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .financial-risk-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .financial-risk-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .financial-risk-button {
+    width: 100%;
+  }
+}
+
+.financial-risk-delete-button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #dc2626;
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+
+.financial-risk-delete-button:hover {
+  border-color: #dc2626;
+  background: #fef2f2;
+  color: #b91c1c;
+}

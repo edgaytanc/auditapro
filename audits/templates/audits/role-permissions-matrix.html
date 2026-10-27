@@ -1,0 +1,352 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+
+{% block title %}
+  Matriz de Permisos — AuditaPro
+{% endblock title %}
+
+{% block v2_styles %}
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/role-permissions-matrix.css' %}?v=2"
+  >
+
+{% endblock v2_styles %}
+
+{% block page_title %}
+  Matriz de Permisos
+{% endblock page_title %}
+
+{% block page_subtitle %}
+  Configura qué acciones puede realizar cada rol dentro de los módulos de AuditaPro.
+{% endblock page_subtitle %}
+
+{% block page_actions %}
+
+  <a
+    href="{% url 'assigned_audits' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Volver a Auditorías
+  </a>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <div class="permission-matrix-page">
+
+    <!-- Selección del rol -->
+    <section class="permission-matrix-intro">
+
+      <div class="permission-step-label">
+        Paso 1 — Seleccionar el rol
+      </div>
+
+      <div class="permission-role-selector-layout">
+
+        <form
+          method="get"
+          class="permission-role-form"
+          autocomplete="off"
+        >
+
+          <div class="permission-field">
+
+            <label for="permissionRoleSelector">
+              Rol a configurar
+            </label>
+
+            <select
+              id="permissionRoleSelector"
+              name="role"
+              class="permission-select"
+              onchange="this.form.submit()"
+            >
+
+              {% for role_option in role_options %}
+
+                <option
+                  value="{{ role_option.name }}"
+                  {% if selected_role_name == role_option.name %}
+                    selected
+                  {% endif %}
+                >
+                  {{ role_option.label }}
+                </option>
+
+              {% endfor %}
+
+            </select>
+
+          </div>
+
+        </form>
+
+        <div class="permission-role-explanation">
+
+          <i class="bi bi-info-circle"></i>
+
+          <span>
+            Cada rol tiene una matriz independiente. La configuración
+            predeterminada se crea automáticamente la primera vez que
+            seleccionas el rol. Después puedes modificarla y guardarla.
+          </span>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- Edición de permisos -->
+    <section class="permission-matrix-panel">
+
+      <header class="permission-matrix-header">
+
+        <div>
+
+          <div class="permission-step-label">
+            Paso 2 — Editar permisos
+          </div>
+
+          <h2>
+            {{ selected_role.verbose_name }}
+          </h2>
+
+          <p>
+            Marca o desmarca las acciones permitidas para este rol.
+            Los cambios no se conservarán hasta pulsar Guardar permisos.
+          </p>
+
+        </div>
+
+        <span class="permission-role-badge">
+          {{ selected_role.verbose_name }}
+        </span>
+
+      </header>
+
+      <form
+        method="post"
+        id="permissionMatrixForm"
+        autocomplete="off"
+      >
+        {% csrf_token %}
+
+        <input
+          type="hidden"
+          name="role_name"
+          value="{{ selected_role_name }}"
+        >
+
+        <div class="permission-table-wrapper">
+
+          <table class="permission-table">
+
+            <thead>
+
+              <tr>
+                <th>Módulo</th>
+                <th>Ver</th>
+                <th>Crear</th>
+                <th>Editar</th>
+                <th>Eliminar</th>
+              </tr>
+
+            </thead>
+
+            <tbody id="permissionMatrixBody">
+
+              {% for row in permission_rows %}
+
+                <tr data-module="{{ row.module }}">
+
+                  <!-- Nombre del módulo -->
+                  <td>
+
+                    <div class="permission-module-name">
+
+                      {% if row.module == "audits" %}
+
+                        <i class="bi bi-clipboard-data"></i>
+
+                      {% elif row.module == "clients" %}
+
+                        <i class="bi bi-building"></i>
+
+                      {% elif row.module == "workpapers" %}
+
+                        <i class="bi bi-file-earmark-text"></i>
+
+                      {% elif row.module == "findings" %}
+
+                        <i class="bi bi-exclamation-diamond"></i>
+
+                      {% elif row.module == "reports" %}
+
+                        <i class="bi bi-file-earmark-bar-graph"></i>
+
+                      {% elif row.module == "users" %}
+
+                        <i class="bi bi-people"></i>
+
+                      {% else %}
+
+                        <i class="bi bi-grid"></i>
+
+                      {% endif %}
+
+                      <span>
+                        {{ row.label }}
+                      </span>
+
+                    </div>
+
+                  </td>
+
+                  <!-- Ver -->
+                  <td>
+
+                    <input
+                      type="checkbox"
+                      class="permission-checkbox"
+                      name="permission_{{ row.module }}_view"
+                      autocomplete="off"
+                      data-saved="{% if row.can_view %}1{% else %}0{% endif %}"
+                      aria-label="Permitir ver {{ row.label }}"
+                      {% if row.can_view %}
+                        checked
+                      {% endif %}
+                    >
+
+                  </td>
+
+                  <!-- Crear -->
+                  <td>
+
+                    <input
+                      type="checkbox"
+                      class="permission-checkbox"
+                      name="permission_{{ row.module }}_create"
+                      autocomplete="off"
+                      data-saved="{% if row.can_create %}1{% else %}0{% endif %}"
+                      aria-label="Permitir crear en {{ row.label }}"
+                      {% if row.can_create %}
+                        checked
+                      {% endif %}
+                    >
+
+                  </td>
+
+                  <!-- Editar -->
+                  <td>
+
+                    <input
+                      type="checkbox"
+                      class="permission-checkbox"
+                      name="permission_{{ row.module }}_edit"
+                      autocomplete="off"
+                      data-saved="{% if row.can_edit %}1{% else %}0{% endif %}"
+                      aria-label="Permitir editar en {{ row.label }}"
+                      {% if row.can_edit %}
+                        checked
+                      {% endif %}
+                    >
+
+                  </td>
+
+                  <!-- Eliminar -->
+                  <td>
+
+                    <input
+                      type="checkbox"
+                      class="permission-checkbox"
+                      name="permission_{{ row.module }}_delete"
+                      autocomplete="off"
+                      data-saved="{% if row.can_delete %}1{% else %}0{% endif %}"
+                      aria-label="Permitir eliminar en {{ row.label }}"
+                      {% if row.can_delete %}
+                        checked
+                      {% endif %}
+                    >
+
+                  </td>
+
+                </tr>
+
+              {% empty %}
+
+                <tr>
+
+                  <td
+                    colspan="5"
+                    class="text-center py-5"
+                  >
+                    No se encontraron módulos para configurar.
+                  </td>
+
+                </tr>
+
+              {% endfor %}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+        <footer class="permission-matrix-actions">
+
+          <a
+            href="{% url 'assigned_audits' %}"
+            class="permission-cancel-button"
+          >
+            Cancelar
+          </a>
+
+          <button
+            type="submit"
+            class="permission-save-button"
+          >
+            <i class="bi bi-floppy"></i>
+            Guardar permisos
+          </button>
+
+        </footer>
+
+      </form>
+
+    </section>
+
+  </div>
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+  {{ block.super }}
+
+  <script>
+    document.addEventListener(
+      "DOMContentLoaded",
+      function () {
+        /*
+         * Chrome puede intentar conservar visualmente el estado anterior
+         * de algunos checkbox al navegar hacia otro rol.
+         *
+         * data-saved contiene el valor enviado por Django desde la base
+         * de datos para el rol actualmente seleccionado.
+         */
+        document
+          .querySelectorAll(".permission-checkbox")
+          .forEach(function (checkbox) {
+            checkbox.checked =
+              checkbox.dataset.saved === "1";
+          });
+      }
+    );
+  </script>
+
+{% endblock v2_scripts %}

@@ -339,6 +339,7 @@
   </div>
 {% endblock main_content %}
 {% block extra_scripts %}
+  {{ block.super }}
   <script type="module">
     const saveButtonsContainer = document.getElementById('save-data-buttons')
     const inputs = document.querySelectorAll('.form-control')

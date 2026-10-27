@@ -13,8 +13,8 @@ Cubren las dos consultas del cliente:
 import json
 
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.http import JsonResponse, Http404
+from audits.access import get_audit_for_user_or_404, allowed_audit_type_codes
 from django.views.decorators.http import require_http_methods
 
 from audits.models import Audit
@@ -39,12 +39,9 @@ def _cuerpo(request):
 
 def _auditoria_accesible(request, audit_id):
     """La auditoría solo es accesible para su jefe o los auditores asignados."""
-    audit = get_object_or_404(Audit, id=audit_id)
-    if audit.audit_manager_id == request.user.id:
-        return audit
-    if audit.assigned_users.filter(id=request.user.id).exists():
-        return audit
-    return None
+    return get_audit_for_user_or_404(
+        request.user, audit_id, action="view", module="workpapers"
+    )
 
 
 # ---------------------------------------------------------------------
@@ -56,10 +53,6 @@ def _auditoria_accesible(request, audit_id):
 def anios_auditoria(request, audit_id):
     """Consulta (GET) o guarda (POST) los años de los cuadros comparativos."""
     audit = _auditoria_accesible(request, audit_id)
-    if audit is None:
-        return JsonResponse(
-            {'success': False, 'message': 'No tiene acceso a esta auditoría.'}, status=403
-        )
 
     if request.method == 'GET':
         parametros = obtener_parametros(audit_id)
@@ -70,6 +63,8 @@ def anios_auditoria(request, audit_id):
             'manuales': parametros.anios_manuales,
         })
 
+    # Escritura: exigir la matriz de permisos del sistema actualizado.
+    get_audit_for_user_or_404(request.user, audit_id, action="edit", module="workpapers")
     datos = _cuerpo(request)
     try:
         anio_actual, anio_anterior = guardar_anios_manuales(
@@ -101,11 +96,8 @@ def referencia_papel(request, audit_id):
     borra la personalización y devuelve el papel a la referencia automática.
     """
     audit = _auditoria_accesible(request, audit_id)
-    if audit is None:
-        return JsonResponse(
-            {'success': False, 'message': 'No tiene acceso a esta auditoría.'}, status=403
-        )
 
+    get_audit_for_user_or_404(request.user, audit_id, action="edit", module="workpapers")
     datos = _cuerpo(request)
     carpeta = (datos.get('carpeta') or '').replace('\\', '/').strip('/')
     archivo = (datos.get('archivo') or '').strip()
@@ -116,7 +108,17 @@ def referencia_papel(request, audit_id):
             {'success': False, 'message': 'Falta el papel de trabajo.'}, status=400
         )
 
-    automatica = ref_automatica(audit.tipoAuditoria, carpeta, archivo)
+    # En proyectos con varios módulos, la Ref. automática corresponde al
+    # tipo abierto en la pantalla, no al tipo histórico de Audit.
+    permitidos = allowed_audit_type_codes(request.user, audit)
+    tipo = request.GET.get('tipo') or (
+        audit.tipoAuditoria if audit.tipoAuditoria in permitidos else
+        (permitidos[0] if permitidos else None)
+    )
+    if tipo not in permitidos:
+        raise Http404('Tipo de auditoría no autorizado.')
+
+    automatica = ref_automatica(tipo, carpeta, archivo)
 
     # Vacío o igual a la automática: se elimina la personalización
     if not referencia or referencia == automatica:

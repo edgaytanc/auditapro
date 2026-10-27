@@ -1,0 +1,110 @@
+{# Asistente de preparación + descarga. Reutiliza endpoints existentes sin crear migraciones. #}
+<div id="apPaperFlow" class="ap-paper-flow" role="presentation" hidden>
+  <div class="ap-paper-flow__shade" data-flow-close></div>
+  <section class="ap-paper-flow__dialog" role="dialog" aria-modal="true"
+           aria-labelledby="apPaperFlowTitle" aria-describedby="apPaperFlowDescription" tabindex="-1">
+    <header class="ap-paper-flow__header">
+      <div>
+        <p class="ap-paper-flow__eyebrow">Papeles de trabajo · {{ audit.title }}</p>
+        <h2 id="apPaperFlowTitle">Preparar y descargar documentos</h2>
+        <p id="apPaperFlowDescription">Combina los datos del auditor y jefe con las marcas de auditoría aplicables a cada plantilla.</p>
+      </div>
+      <button type="button" class="ap-paper-flow__close" data-flow-close aria-label="Cerrar asistente">&times;</button>
+    </header>
+
+    <nav class="ap-paper-flow__steps" aria-label="Pasos de preparación">
+      <button type="button" id="apFlowStep1Tab" class="ap-paper-flow__step is-current" data-flow-step="1" aria-current="step">
+        <span>1</span> Marcas de auditoría
+      </button>
+      <span class="ap-paper-flow__step-line" aria-hidden="true"></span>
+      <button type="button" id="apFlowStep2Tab" class="ap-paper-flow__step" data-flow-step="2">
+        <span>2</span> Documento y descarga
+      </button>
+    </nav>
+
+    <div class="ap-paper-flow__content">
+      <section id="apFlowStep1" class="ap-paper-flow__panel" aria-labelledby="apFlowStep1Tab">
+        <div class="ap-paper-flow__intro">
+          <h3>1. Configura las marcas (opcional)</h3>
+          <p>Si ya importaste marcas para esta auditoría, <strong>no necesitas volver a cargarlas</strong>. Se aplican automáticamente a los documentos cuyo nombre coincida con el papel de trabajo de la plantilla de marcas.</p>
+        </div>
+        <div class="ap-paper-flow__status" id="apFlowMarksStatus" role="status" aria-live="polite">
+          Consultando las marcas disponibles…
+        </div>
+        <div class="ap-paper-flow__tip">
+          <div>
+            <strong>Plantilla modelo de marcas</strong>
+            <p>Descarga el Excel y diligencia las columnas Símbolo, Descripción y Papel de Trabajo. Escribe el nombre del papel en MAYÚSCULAS (ej.: SUMARIA CAJAS Y BANCOS). Las filas verdes se importan; las blancas y amarillas se omiten.</p>
+          </div>
+          <a class="ap-paper-flow__outline" href="{% url 'download_audit_mark_template' %}">
+            <i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Descargar modelo Excel
+          </a>
+        </div>
+        <form id="apFlowMarksForm" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <label class="ap-paper-flow__label" for="apFlowExcel">Cargar o actualizar marcas</label>
+          <input class="ap-paper-flow__input" type="file" id="apFlowExcel" name="excel_file"
+                 accept=".xlsx,.xlsm">
+          <label class="ap-paper-flow__check" for="apFlowReplaceMarks">
+            <input type="checkbox" id="apFlowReplaceMarks" name="replace_existing">
+            Reemplazar marcas anteriores de esta auditoría (si no marcas, agrega las nuevas)
+          </label>
+          <p class="ap-paper-flow__help">Formatos admitidos: XLSX y XLSM, máximo 5 MB. La carga es independiente de los datos Auditor/Jefe.</p>
+        </form>
+        <div id="apFlowMarkMessage" class="ap-paper-flow__message" role="status" aria-live="polite" hidden></div>
+        <div class="ap-paper-flow__actions">
+          <button type="button" class="ap-paper-flow__outline" data-flow-close>Cancelar</button>
+          <button type="button" id="apFlowUpload" class="ap-paper-flow__secondary">Cargar marcas y continuar</button>
+          <button type="button" id="apFlowSkip" class="ap-paper-flow__primary">Continuar sin cargar <i class="bi bi-arrow-right"></i></button>
+        </div>
+      </section>
+
+      <section id="apFlowStep2" class="ap-paper-flow__panel" aria-labelledby="apFlowStep2Tab" hidden>
+        <div class="ap-paper-flow__intro">
+          <h3>2. Elige el papel y genera el documento</h3>
+          <p>Se conservarán las automatizaciones de la plantilla, los datos de Auditor/Jefe y las marcas cargadas que correspondan a ese papel de trabajo.</p>
+        </div>
+        <div class="ap-paper-flow__form-grid">
+          <label class="ap-paper-flow__field">
+            <span>Carpeta</span>
+            <select id="apFlowFolder" class="ap-paper-flow__input">
+              <option value="">Seleccione una carpeta</option>
+            </select>
+          </label>
+          <label class="ap-paper-flow__field">
+            <span>Documento</span>
+            <select id="apFlowDocument" class="ap-paper-flow__input" disabled>
+              <option value="">Seleccione un documento</option>
+            </select>
+          </label>
+          <label class="ap-paper-flow__field">
+            <span>Auditor</span>
+            <input id="apFlowAuditor" class="ap-paper-flow__input" type="text" readonly>
+          </label>
+          <label class="ap-paper-flow__field">
+            <span>Supervisor / jefe</span>
+            <input id="apFlowSupervisor" class="ap-paper-flow__input" type="text" readonly>
+          </label>
+          <label class="ap-paper-flow__field">
+            <span>Fecha de elaboración</span>
+            <input id="apFlowDatePrepared" class="ap-paper-flow__input" type="date">
+          </label>
+          <label class="ap-paper-flow__field">
+            <span>Fecha de aprobación</span>
+            <input id="apFlowDateApproved" class="ap-paper-flow__input" type="date">
+          </label>
+        </div>
+        <div class="ap-paper-flow__summary" id="apFlowSummary" role="status" aria-live="polite">
+          Las marcas registradas se agregan al descargar si coinciden con el papel seleccionado.
+        </div>
+        <div id="apFlowDownloadMessage" class="ap-paper-flow__message" role="status" aria-live="polite" hidden></div>
+        <div class="ap-paper-flow__actions">
+          <button type="button" id="apFlowBack" class="ap-paper-flow__outline"><i class="bi bi-arrow-left"></i> Volver a marcas</button>
+          <button type="button" id="apFlowDownload" class="ap-paper-flow__primary">
+            <i class="bi bi-download"></i> Generar y descargar
+          </button>
+        </div>
+      </section>
+    </div>
+  </section>
+</div>

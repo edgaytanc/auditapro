@@ -1,37 +1,337 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
   Herramientas
 {% endblock title %}
+
+{% block v2_styles %}
+  {{ block.super }}
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/tools-v2.css' %}?v=2"
+  >
+{% endblock v2_styles %}
+
 {% block page_title %}
   Herramientas
 {% endblock page_title %}
+
 {% block page_subtitle %}
+  Controla el tiempo, el estado de los papeles de trabajo
+  y el cronograma de la auditoría seleccionada.
 {% endblock page_subtitle %}
-{% block main_header_content %}
-  <p class="w-100">
-    <b>Instrucción:</b> Haz clic en el botón "Descargar" para obtener la herramienta correspondiente.
-    Los archivos se descargarán en formato Excel o Word y podrás editarlos en tu aplicación de ofimática preferida.
-  </p>
-{% endblock main_header_content %}
 
-{% load static %}
+{% block page_actions %}
+  <button
+    type="button"
+    class="ap-tools-guide-button"
+    id="toolsGuideButton"
+  >
+    <i class="bi bi-question-circle"></i>
+    Guía del módulo
+  </button>
+{% endblock page_actions %}
 
-{% block main_content %}
-  <div class="row g-3">
-    {% for documento in documentos %}
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">{{ documento.nombre }}</h5>
-          <div class="mt-auto">
-            <a href="{% url 'descargar_herramienta' documento.archivo %}" class="btn btn-primary w-100">
-              <i class="bi bi-download me-2"></i>Descargar
-            </a>
-          </div>
-        </div>
-      </div>
+{% block v2_content %}
+
+  <section class="ap-tools-information">
+
+    <div class="ap-tools-information-icon">
+      <i class="bi bi-stars"></i>
     </div>
-    {% endfor %}
+
+    <div>
+      <strong>
+        Herramientas del encargo
+      </strong>
+
+      <p>
+        Este módulo contiene únicamente los tres submódulos
+        definidos para el control operativo de la auditoría:
+        Resumen de Tiempo, Estado de Papeles de Trabajo y
+        Cronograma de Actividades.
+      </p>
+    </div>
+
+  </section>
+
+  <section class="ap-tools-kpi-grid">
+
+    <article class="ap-tools-kpi">
+      <div>
+        <span>Total herramientas</span>
+        <strong>{{ total_tools }}</strong>
+        <p>Submódulos incluidos en la guía</p>
+      </div>
+
+      <i class="bi bi-grid-3x3-gap"></i>
+    </article>
+
+    <article class="ap-tools-kpi">
+      <div>
+        <span>Módulos disponibles</span>
+        <strong>{{ available_tools }}</strong>
+        <p>Con funciones existentes en AuditaPro</p>
+      </div>
+
+      <i class="bi bi-check2-circle ap-tools-kpi-success"></i>
+    </article>
+
+    <article class="ap-tools-kpi">
+      <div>
+        <span>Formato actual</span>
+        <strong>{{ available_formats }}</strong>
+        <p>Excel disponible; Word y PDF se integrarán por módulo</p>
+      </div>
+
+      <i class="bi bi-file-earmark-spreadsheet ap-tools-kpi-excel"></i>
+    </article>
+
+  </section>
+
+  <section class="ap-tools-toolbar">
+
+    <div class="ap-tools-search">
+      <i class="bi bi-search"></i>
+
+      <input
+        type="search"
+        id="toolsSearch"
+        placeholder="Buscar una herramienta..."
+        autocomplete="off"
+      >
+    </div>
+
+    <div class="ap-tools-results">
+      <strong id="toolsResultsCount">
+        {{ total_tools }}
+      </strong>
+
+      <span>resultados</span>
+    </div>
+
+  </section>
+
+  <section class="ap-tools-section">
+
+    <header class="ap-tools-section-header">
+      <div>
+        <span>HERRAMIENTAS DISPONIBLES</span>
+
+        <h2>
+          Control operativo del encargo
+        </h2>
+
+        <p>
+          Los registros se trabajan sobre la auditoría seleccionada
+          y se mantienen separados por encargo.
+        </p>
+      </div>
+
+      <span class="ap-tools-section-count">
+        {{ available_tools }}
+      </span>
+    </header>
+
+    <div class="ap-tools-grid">
+
+      {% for tool in functional_tools %}
+
+        <article
+          class="ap-tool-card"
+          data-tool-card
+          data-search="
+            {{ tool.name|lower }}
+            {{ tool.description|lower }}
+            {{ tool.standard|lower }}
+          "
+        >
+
+          <header class="ap-tool-card-header">
+
+            <span
+              class="
+                ap-tool-number
+                ap-tool-number-{{ tool.tone }}
+              "
+            >
+              {{ tool.number }}
+            </span>
+
+            <span class="ap-tool-status ap-tool-status-success">
+              <span></span>
+              {{ tool.status }}
+            </span>
+
+          </header>
+
+          <div
+            class="
+              ap-tool-icon
+              ap-tool-icon-{{ tool.tone }}
+            "
+          >
+            <i class="bi {{ tool.icon }}"></i>
+          </div>
+
+          <div class="ap-tool-content">
+            <span class="ap-tool-standard">
+              {{ tool.standard }}
+            </span>
+
+            <h3>
+              {{ tool.name }}
+            </h3>
+
+            <p>
+              {{ tool.description }}
+            </p>
+          </div>
+
+          <footer class="ap-tool-card-footer">
+
+            <a
+              href="{% url tool.url_name %}"
+              class="ap-tool-open-button"
+            >
+              Abrir módulo
+              <i class="bi bi-arrow-right"></i>
+            </a>
+
+            <a
+              href="{% url 'descargar_herramienta' tool.file %}"
+              class="ap-tool-download-button"
+              title="Descargar plantilla Excel"
+              aria-label="Descargar plantilla Excel de {{ tool.name }}"
+            >
+              <i class="bi bi-download"></i>
+            </a>
+
+          </footer>
+
+        </article>
+
+      {% endfor %}
+
+    </div>
+
+  </section>
+
+  <section
+    class="ap-tools-empty"
+    id="toolsEmptyState"
+    hidden
+  >
+    <i class="bi bi-search"></i>
+
+    <h2>
+      No se encontraron herramientas
+    </h2>
+
+    <p>
+      Cambia el término de búsqueda.
+    </p>
+  </section>
+
+  <div
+    class="ap-tools-guide-modal"
+    id="toolsGuideModal"
+    hidden
+  >
+
+    <button
+      type="button"
+      class="ap-tools-guide-backdrop"
+      data-close-tools-guide
+      aria-label="Cerrar guía"
+    ></button>
+
+    <section
+      class="ap-tools-guide-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="toolsGuideTitle"
+    >
+
+      <header>
+        <div>
+          <span>AYUDA DEL MÓDULO</span>
+          <h2 id="toolsGuideTitle">Cómo usar Herramientas</h2>
+        </div>
+
+        <button
+          type="button"
+          data-close-tools-guide
+          aria-label="Cerrar"
+        >
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </header>
+
+      <div class="ap-tools-guide-body">
+
+        <article>
+          <span>1</span>
+
+          <div>
+            <strong>Selecciona una auditoría</strong>
+
+            <p>
+              Los tres submódulos utilizan la auditoría activa
+              como contexto para consultar y guardar registros.
+            </p>
+          </div>
+        </article>
+
+        <article>
+          <span>2</span>
+
+          <div>
+            <strong>Abre la herramienta requerida</strong>
+
+            <p>
+              Consulta el Resumen de Tiempo, el Estado de los
+              Papeles de Trabajo o el Cronograma de Actividades.
+            </p>
+          </div>
+        </article>
+
+        <article>
+          <span>3</span>
+
+          <div>
+            <strong>Actualiza y exporta</strong>
+
+            <p>
+              Registra la información permitida para tu rol y
+              descarga los reportes disponibles para el encargo.
+            </p>
+          </div>
+        </article>
+
+      </div>
+
+      <footer>
+        <button
+          type="button"
+          data-close-tools-guide
+        >
+          Entendido
+        </button>
+      </footer>
+
+    </section>
+
   </div>
-{% endblock main_content %}
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+  {{ block.super }}
+
+  <script
+    src="{% static 'js/tools-v2.js' %}?v=2"
+  ></script>
+{% endblock v2_scripts %}

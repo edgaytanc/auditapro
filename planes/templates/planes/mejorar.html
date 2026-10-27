@@ -1,0 +1,202 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+
+{% block title %}Elige el plan ideal para ti{% endblock title %}
+{% block v2_styles %}
+  <link rel="stylesheet" href="{% static 'planes/mejorar.css' %}">
+{% endblock v2_styles %}
+{% block page_title %}Elige el plan ideal para ti{% endblock page_title %}
+{% block page_subtitle %}Planes individuales de AuditaPro y Audita Análisis. Cambia o actualiza cuando quieras.{% endblock page_subtitle %}
+{% block v2_content %}
+<section class="ap-planes ap-planes-upgrade" aria-label="Elige el plan ideal para ti">
+<div class="plan-toggle" id="planes-tabs" role="tablist" aria-label="Tipo de plan">
+      <button type="button" id="tab-individual" class="active" data-tab="individual" role="tab" aria-controls="panel-individual" aria-selected="true">Individual</button>
+      <button type="button" id="tab-grupos" data-tab="grupos" role="tab" aria-controls="panel-grupos" aria-selected="false">Grupos</button>
+    </div>
+
+    <!-- ================= INDIVIDUAL ================= -->
+    <div id="panel-individual" data-view="individual" class="active" role="tabpanel" aria-labelledby="tab-individual">
+      <div class="plans-grid grid-4">
+
+        <div class="plan-card">
+          <div class="plan-eyebrow blue">AUDITAPRO MENSUAL</div>
+          <h2>El sistema completo, por usuario</h2>
+          <p class="sub">Todo incluido, mes a mes</p>
+          <div class="plan-price"><span class="n">$78</span><span class="u">/mes</span></div>
+          <div class="plan-note">Cancela cuando quieras, sin permanencia</div>
+          <a class="plan-cta blue" href="{% url 'planes:comprar' 'auditapro-mensual' %}" target="_blank" rel="noopener noreferrer">Elegir AuditaPro</a>
+          <div class="plan-list-label">Lo que automatizas con AuditaPro:</div>
+          <ul class="plan-list">
+            <li><span class="chk">✓</span>Importación de EEFF con generación automática de cédulas centralizadoras y sumarias</li>
+            <li><span class="chk">✓</span>Creación ilimitada de auditorías, con encabezados trasladados automáticamente a los PT</li>
+            <li><span class="chk">✓</span>Análisis financiero automatizado en cada auditoría</li>
+            <li><span class="chk">✓</span>Muestreo automatizado, pruebas sustantivas listas para ejecutar</li>
+            <li><span class="chk">✓</span>Sistema de marcas y referencias de papeles de trabajo (PT)</li>
+            <li><span class="chk">✓</span>Control por auditor o grupo: jefe de equipo, fechas de elaboración y revisión</li>
+            <li><span class="chk">✓</span>Notificaciones del equipo al correo y solicitudes al cliente</li>
+            <li><span class="chk">✓</span>Certificado digital + soporte prioritario</li>
+            <li><span class="chk">✓</span>Regalo: 1 mes de Audita Análisis — pruébalo sin costo</li>
+            <li><span class="chk">✓</span>Libro de Auditoría Práctica de Estados Financieros</li>
+            <li><span class="chk">✓</span>Capacitación online — coordinada por WhatsApp</li>
+          </ul>
+          <a class="plan-whatsapp" href="https://wa.me/50230911642?text=Hola%2C%20me%20interesa%20el%20plan%20AuditaPro%20Mensual%20%28%2478/mes%29.%20%C2%BFMe%20pueden%20dar%20m%C3%A1s%20informaci%C3%B3n%3F" target="_blank" rel="noopener">💬 Respuestas por WhatsApp<br>00502 3091-1642</a>
+        </div>
+
+        <div class="plan-card featured-blue">
+          <span class="plan-flag blue">MÁS POPULAR</span>
+          <div class="plan-eyebrow blue">AUDITAPRO ANUAL</div>
+          <h2>El sistema completo, por usuario</h2>
+          <p class="sub">Todo incluido</p>
+          <div class="plan-price"><span class="n">$169</span><span class="u">/año</span></div>
+          <div class="plan-note">Sin renovación automática — decides cada año</div>
+          <div class="plan-strip green">Un competidor cobra desde $1,320/año · Hoy ahorras +87%</div>
+          <a class="plan-cta blue" href="{% url 'planes:comprar' 'auditapro-anual' %}" target="_blank" rel="noopener noreferrer">Elegir AuditaPro</a>
+          <div class="plan-list-label">Lo que automatizas con AuditaPro:</div>
+          <ul class="plan-list">
+            <li><span class="chk">✓</span>Importación de EEFF con generación automática de cédulas centralizadoras y sumarias</li>
+            <li><span class="chk">✓</span>Creación ilimitada de auditorías, con encabezados trasladados automáticamente a los PT</li>
+            <li><span class="chk">✓</span>Análisis financiero automatizado en cada auditoría</li>
+            <li><span class="chk">✓</span>Muestreo automatizado, pruebas sustantivas listas para ejecutar</li>
+            <li><span class="chk">✓</span>Sistema de marcas y referencias de papeles de trabajo (PT)</li>
+            <li><span class="chk">✓</span>Control por auditor o grupo: jefe de equipo, fechas de elaboración y revisión</li>
+            <li><span class="chk">✓</span>Notificaciones del equipo al correo y solicitudes al cliente</li>
+            <li><span class="chk">✓</span>Certificado digital + soporte prioritario</li>
+            <li><span class="chk">✓</span>Regalo: 1 mes de Audita Análisis — pruébalo sin costo</li>
+            <li><span class="chk">✓</span>Libro de Auditoría Práctica de Estados Financieros</li>
+            <li><span class="chk">✓</span>Capacitación online — coordinada por WhatsApp</li>
+          </ul>
+          <a class="plan-whatsapp" href="https://wa.me/50230911642?text=Hola%2C%20me%20interesa%20el%20plan%20AuditaPro%20Anual%20%28%24169/a%C3%B1o%29.%20%C2%BFMe%20pueden%20dar%20m%C3%A1s%20informaci%C3%B3n%3F" target="_blank" rel="noopener">💬 Respuestas por WhatsApp<br>00502 3091-1642</a>
+        </div>
+
+        <div class="plan-card">
+          <div class="plan-eyebrow ink">AUDITA ANÁLISIS MENSUAL</div>
+          <h2>La solución para auditores</h2>
+          <p class="sub">Tu asistente Audita Análisis, mes a mes</p>
+          <div class="plan-price"><span class="n">$79</span><span class="u">/mes</span></div>
+          <div class="plan-note">Cancela cuando quieras, sin permanencia</div>
+          <a class="plan-cta dark" href="{% url 'planes:comprar' 'analisis-mensual' %}" target="_blank" rel="noopener noreferrer">Quiero mi Audita Análisis</a>
+          <div class="plan-list-label">Incluye plantillas y prompts para:</div>
+          <ul class="plan-list">
+            <li><span class="chk">✓</span>Análisis Masivo de Datos</li>
+            <li><span class="chk">✓</span>Análisis Predictivo</li>
+            <li><span class="chk">✓</span>Detección de Fraudes</li>
+            <li><span class="chk">✓</span>Revisión de Contratos</li>
+            <li><span class="chk">✓</span>Papeles de Trabajo Automatizados</li>
+            <li><span class="chk">✓</span>Informes de Auditoría Profesionales</li>
+            <li><span class="chk">✓</span>Sube tu archivo y descarga resultados en minutos</li>
+            <li><span class="chk">✓</span>Certificado digital + soporte prioritario</li>
+            <li><span class="chk">✓</span>Libro de Auditoría Práctica de Estados Financieros</li>
+            <li><span class="chk">✓</span>Capacitación online — coordinada por WhatsApp</li>
+          </ul>
+          <a class="plan-whatsapp" href="https://wa.me/50230911642?text=Hola%2C%20me%20interesa%20el%20plan%20Audita%20An%C3%A1lisis%20Mensual%20%28%2479/mes%29.%20%C2%BFMe%20pueden%20dar%20m%C3%A1s%20informaci%C3%B3n%3F" target="_blank" rel="noopener">💬 Respuestas por WhatsApp<br>00502 3091-1642</a>
+        </div>
+
+        <div class="plan-card featured-orange">
+          <span class="plan-flag orange">TODO INCLUIDO</span>
+          <div class="plan-eyebrow orange">AUDITA ANÁLISIS MAX ANUAL</div>
+          <h2>La solución para auditores</h2>
+          <p class="sub">El paquete más completo</p>
+          <div class="plan-price"><span class="n">$599</span><span class="u">/año</span></div>
+          <div class="plan-note">Equivale a $1.64 al día · Sin renovación automática</div>
+          <div class="plan-strip orange">Valor real combinado: $845+ · Hoy $599</div>
+          <a class="plan-cta orange" href="{% url 'planes:comprar' 'analisis-max-anual' %}" target="_blank" rel="noopener noreferrer">Quiero el paquete completo</a>
+          <div class="plan-list-label">Incluye plantillas y prompts para:</div>
+          <ul class="plan-list">
+            <li><span class="chk">✓</span>Análisis Masivo de Datos</li>
+            <li><span class="chk">✓</span>Análisis Predictivo</li>
+            <li><span class="chk">✓</span>Detección de Fraudes</li>
+            <li><span class="chk">✓</span>Revisión de Contratos</li>
+            <li><span class="chk">✓</span>Papeles de Trabajo Automatizados</li>
+            <li><span class="chk">✓</span>Informes de Auditoría Profesionales</li>
+            <li><span class="chk">✓</span>Certificado digital + soporte prioritario</li>
+            <li><span class="chk">✓</span>AuditaPro por 1 año incluido</li>
+            <li><span class="chk">✓</span>500+ plantillas automatizadas incluidas</li>
+            <li><span class="chk">✓</span>Libro de Auditoría Práctica de Estados Financieros</li>
+            <li><span class="chk">✓</span>Capacitación online — coordinada por WhatsApp</li>
+          </ul>
+          <a class="plan-whatsapp" href="https://wa.me/50230911642?text=Hola%2C%20me%20interesa%20el%20plan%20Audita%20An%C3%A1lisis%20Max%20Anual%20%28%24599/a%C3%B1o%29.%20%C2%BFMe%20pueden%20dar%20m%C3%A1s%20informaci%C3%B3n%3F" target="_blank" rel="noopener">💬 Respuestas por WhatsApp<br>00502 3091-1642</a>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ================= GRUPOS ================= -->
+    <div id="panel-grupos" data-view="grupos" role="tabpanel" aria-labelledby="tab-grupos" hidden>
+      <div class="team-banner">📌 <b>AuditaPro Anual en equipo</b> — todas las herramientas de AuditaPro, licenciadas para todo tu equipo de auditoría bajo un solo acuerdo.</div>
+
+      <div class="plans-grid">
+
+        <div class="plan-card">
+          <div class="plan-eyebrow ink">2 USUARIOS</div>
+          <div class="plan-price"><span class="n">$298</span><span class="u">/año</span></div>
+          <div class="plan-note">AuditaPro Anual en equipo</div>
+          <a class="plan-cta outline" href="{% url 'planes:comprar' 'grupo-2' %}" target="_blank" rel="noopener noreferrer">Comprar AuditaPro Grupos</a>
+          <div class="plan-list-label">Lo que tu equipo automatiza con AuditaPro:</div>
+          <ul class="plan-list">
+            <li><span class="chk">✓</span>Importación de EEFF con generación automática de cédulas centralizadoras y sumarias</li>
+            <li><span class="chk">✓</span>Creación ilimitada de auditorías, con encabezados trasladados automáticamente a los PT</li>
+            <li><span class="chk">✓</span>Análisis financiero automatizado en cada auditoría</li>
+            <li><span class="chk">✓</span>Muestreo automatizado, programas y pruebas sustantivas listos para ejecutar</li>
+            <li><span class="chk">✓</span>Sistema de marcas y referencias cruzadas de papeles de trabajo (PT)</li>
+            <li><span class="chk">✓</span>Control por auditor o grupo: jefe de equipo, fechas de elaboración y revisión</li>
+            <li><span class="chk">✓</span>Notificaciones del equipo conectadas directo a tu correo</li>
+            <li><span class="chk">✓</span>Certificado digital + soporte prioritario</li>
+            <li><span class="chk">✓</span>Regalo: 1 mes de Audita Análisis — pruébalo sin costo</li>
+            <li><span class="chk">✓</span>Libro de Auditoría Práctica de Estados Financieros</li>
+            <li><span class="chk">✓</span>Capacitación online para el grupo — coordinada por WhatsApp</li>
+          </ul>
+          <a class="plan-whatsapp" href="https://wa.me/50230911642?text=Hola%2C%20me%20interesa%20AuditaPro%20Grupos%20para%202%20usuarios%20%28%24298/a%C3%B1o%29.%20%C2%BFMe%20pueden%20dar%20m%C3%A1s%20informaci%C3%B3n%3F" target="_blank" rel="noopener">💬 Coordinar por WhatsApp<br>00502 3091-1642</a>
+        </div>
+
+        <div class="plan-card featured-orange">
+          <span class="plan-flag orange">MÁS ELEGIDO</span>
+          <div class="plan-eyebrow orange">3 USUARIOS</div>
+          <div class="plan-price"><span class="n">$399</span><span class="u">/año</span></div>
+          <div class="plan-note">AuditaPro Anual en equipo</div>
+          <a class="plan-cta orange" href="{% url 'planes:comprar' 'grupo-3' %}" target="_blank" rel="noopener noreferrer">Comprar AuditaPro Grupos</a>
+          <div class="plan-list-label">Lo que tu equipo automatiza con AuditaPro:</div>
+          <ul class="plan-list">
+            <li><span class="chk">✓</span>Importación de EEFF con generación automática de cédulas centralizadoras y sumarias</li>
+            <li><span class="chk">✓</span>Creación ilimitada de auditorías, con encabezados trasladados automáticamente a los PT</li>
+            <li><span class="chk">✓</span>Análisis financiero automatizado en cada auditoría</li>
+            <li><span class="chk">✓</span>Muestreo automatizado, programas y pruebas sustantivas listos para ejecutar</li>
+            <li><span class="chk">✓</span>Sistema de marcas y referencias cruzadas de papeles de trabajo (PT)</li>
+            <li><span class="chk">✓</span>Control por auditor o grupo: jefe de equipo, fechas de elaboración y revisión</li>
+            <li><span class="chk">✓</span>Notificaciones del equipo conectadas directo a tu correo</li>
+            <li><span class="chk">✓</span>Certificado digital + soporte prioritario</li>
+            <li><span class="chk">✓</span>Regalo: 1 mes de Audita Análisis — pruébalo sin costo</li>
+            <li><span class="chk">✓</span>Libro de Auditoría Práctica de Estados Financieros</li>
+            <li><span class="chk">✓</span>Capacitación online para el grupo — coordinada por WhatsApp</li>
+          </ul>
+          <a class="plan-whatsapp" href="https://wa.me/50230911642?text=Hola%2C%20me%20interesa%20AuditaPro%20Grupos%20para%203%20usuarios%20%28%24399/a%C3%B1o%29.%20%C2%BFMe%20pueden%20dar%20m%C3%A1s%20informaci%C3%B3n%3F" target="_blank" rel="noopener">💬 Coordinar por WhatsApp<br>00502 3091-1642</a>
+        </div>
+
+        <div class="plan-card">
+          <div class="plan-eyebrow ink">4+ USUARIOS</div>
+          <div class="plan-price"><span class="n" style="font-size:24px">A medida</span></div>
+          <div class="plan-note">Contacta a ventas</div>
+          <a class="plan-cta outline" href="https://wa.me/50230911642?text=Hola%2C%20me%20interesa%20AuditaPro%20Grupos%20para%204%20o%20m%C3%A1s%20usuarios.%20%C2%BFMe%20pueden%20enviar%20una%20cotizaci%C3%B3n%3F" target="_blank" rel="noopener noreferrer">Contacta a ventas</a>
+          <div class="plan-list-label">Lo que tu equipo automatiza con AuditaPro:</div>
+          <ul class="plan-list">
+            <li><span class="chk">✓</span>Importación de EEFF con generación automática de cédulas centralizadoras y sumarias</li>
+            <li><span class="chk">✓</span>Creación ilimitada de auditorías, con encabezados trasladados automáticamente a los PT</li>
+            <li><span class="chk">✓</span>Análisis financiero automatizado en cada auditoría</li>
+            <li><span class="chk">✓</span>Muestreo automatizado, programas y pruebas sustantivas listos para ejecutar</li>
+            <li><span class="chk">✓</span>Sistema de marcas y referencias cruzadas de papeles de trabajo (PT)</li>
+            <li><span class="chk">✓</span>Control por auditor o grupo: jefe de equipo, fechas de elaboración y revisión</li>
+            <li><span class="chk">✓</span>Notificaciones del equipo conectadas directo a tu correo</li>
+            <li><span class="chk">✓</span>Certificado digital + soporte prioritario</li>
+            <li><span class="chk">✓</span>Regalo: 1 mes de Audita Análisis — pruébalo sin costo</li>
+            <li><span class="chk">✓</span>Libro de Auditoría Práctica de Estados Financieros</li>
+            <li><span class="chk">✓</span>Capacitación online para el grupo — coordinada por WhatsApp</li>
+          </ul>
+          <a class="plan-whatsapp" href="https://wa.me/50230911642?text=Hola%2C%20me%20interesa%20AuditaPro%20Grupos%20para%204%20o%20m%C3%A1s%20usuarios.%20%C2%BFMe%20pueden%20enviar%20una%20cotizaci%C3%B3n%3F" target="_blank" rel="noopener">💬 Coordinar por WhatsApp<br>00502 3091-1642</a>
+        </div>
+
+      </div>
+    </div>
+</section>
+{% endblock v2_content %}
+{% block v2_scripts %}
+<script defer src="{% static 'planes/mejorar.js' %}"></script>
+{% endblock v2_scripts %}

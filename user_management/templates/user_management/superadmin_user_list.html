@@ -80,7 +80,7 @@ Lista de Usuarios
                 </div>
 
                 <!-- Botón submit que borra en DB SOLO si todos seleccionados están dados de baja -->
-                {% if status == "inactive" %}
+                {% if status == "inactive" and request.user.is_superuser or status == "inactive" and request.user.role.name == "superadmin" %}
                 <button type="submit" form="bulkDeleteForm" class="btn btn-danger" id="bulkDeleteBtn" disabled>
                     Eliminar definitivamente
                 </button>
@@ -93,7 +93,7 @@ Lista de Usuarios
             </div>
 
             <small class="text-muted d-block mt-2">
-                * Eliminar definitivamente solo está permitido para usuarios <b>dados de baja</b>.
+                * Para eliminar definitivamente, primero da de baja al usuario desde Ver Detalles, abre la pestaña <b>Dados de baja</b> y marca su casilla. Esta acción no se puede deshacer.
             </small>
         </div>
     </div>
@@ -127,7 +127,7 @@ Lista de Usuarios
                             <tr>
                                 <!-- ✅ Checkbox para selección -->
                                 <td>
-                                {% if not user.is_superuser and user.role and user.role.name != "superadmin" %}
+                                {% if status == "inactive" and request.user.is_superuser and user.is_deleted and not user.is_superuser and not user.is_staff and not user.role.name == "superadmin" or status == "inactive" and request.user.role.name == "superadmin" and user.is_deleted and not user.is_superuser and not user.is_staff and not user.role.name == "superadmin" %}
                                     <input
                                         type="checkbox"
                                         class="form-check-input row-check"
@@ -257,13 +257,13 @@ Lista de Usuarios
             const selected = checks.filter(c => c.checked);
 
             if (selected.length === 0) {
-                deleteBtn.disabled = true;
+                if (deleteBtn) deleteBtn.disabled = true;
                 return;
             }
 
             // Solo habilitar si TODOS están dados de baja
             const anyActive = selected.some(c => c.dataset.isDeleted === "0");
-            deleteBtn.disabled = anyActive;
+            if (deleteBtn) deleteBtn.disabled = anyActive;
         }
 
         if (selectAll) {
@@ -276,7 +276,7 @@ Lista de Usuarios
         checks.forEach(c => {
             c.addEventListener("change", () => {
                 if (selectAll) {
-                    selectAll.checked = checks.every(x => x.checked);
+                    selectAll.checked = checks.length > 0 && checks.every(x => x.checked);
                 }
                 updateDeleteButtonState();
             });

@@ -12,6 +12,16 @@ User = get_user_model()
 
 
 class Notification(models.Model):
+    REVIEW_STATUS_PENDING = "pending"
+    REVIEW_STATUS_APPROVED = "approved"
+    REVIEW_STATUS_REJECTED = "rejected"
+
+    REVIEW_STATUS_CHOICES = (
+        (REVIEW_STATUS_PENDING, "Pendiente"),
+        (REVIEW_STATUS_APPROVED, "Aprobada"),
+        (REVIEW_STATUS_REJECTED, "Rechazada"),
+    )
+
     notifier = models.ForeignKey(
         User, related_name="notifier", on_delete=models.CASCADE
     )
@@ -25,8 +35,25 @@ class Notification(models.Model):
         Audit, related_name="notification_audit", on_delete=models.CASCADE
     )
 
+    # Campos de revisión. Son aditivos y mantienen compatibilidad con
+    # las notificaciones creadas antes de esta integración.
+    review_status = models.CharField(
+        max_length=20,
+        choices=REVIEW_STATUS_CHOICES,
+        default=REVIEW_STATUS_PENDING,
+    )
+    reviewed_by = models.ForeignKey(
+        User,
+        related_name="notifications_reviewed",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_meta = models.JSONField(default=dict, blank=True)
+
     def check_and_delete_if_done(self):
-        if all(notified.is_read == True for notified in self.notified_users.all()):
+        if all(notified.is_read is True for notified in self.notified_users.all()):
             self.delete()
 
     def __str__(self):
@@ -40,7 +67,11 @@ class NotificationStatus(models.Model):
     readed_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user.first_name} {self.user.last_name} - {self.notification.note} - {'Leída' if self.is_read else 'Sin leer'}"
+        return (
+            f"{self.user.first_name} {self.user.last_name} - "
+            f"{self.notification.note} - "
+            f"{'Leída' if self.is_read else 'Sin leer'}"
+        )
 
     def read_notification(self):
         self.is_read = True
@@ -55,8 +86,8 @@ class NotificationStatus(models.Model):
             and self.user.id != self.notification.audit.audit_manager.id
         ):
             raise AuditNotAssignantToUser(self.user.get_full_name())
-        
-        # Validar que la comunicación sea solo entre audit_manager y auditor
+
+        # Validar que la comunicación sea solo entre audit_manager y auditor.
         if (
             self.notification.notifier.role.name == "auditor"
             and self.user.role.name != "audit_manager"
@@ -67,5 +98,5 @@ class NotificationStatus(models.Model):
             and self.user.role.name != "auditor"
         ):
             raise SupervisorInvalidNotifierError()
-            
+
         super().save(*args, **kwargs)

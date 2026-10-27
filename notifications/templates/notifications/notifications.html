@@ -1,81 +1,326 @@
-{% extends "common/system-base.html" %}
-
-{% block title %}
-    Notificaciones
-{% endblock title %}
-{% block styles %}
-    <style>
-    .readed {
-        border-left: 5px solid rgb(108, 117, 125);
-    }
-    
-    .not-readed {
-        border-left: 5px solid #007bff;
-    }
-    </style>
-{% endblock styles %}
-
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 {% load filters %}
 
+{% block title %}
+  Notificaciones
+{% endblock title %}
+
+{% block v2_styles %}
+  {{ block.super }}
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/notifications-v2.css' %}?v=1"
+  >
+{% endblock v2_styles %}
+
 {% block page_title %}
-    Notificaciones
+  Notificaciones
 {% endblock page_title %}
+
 {% block page_subtitle %}
+  Consulta, revisa y gestiona las comunicaciones relacionadas con tus auditorías.
 {% endblock page_subtitle %}
-{% block main_content %}
-    {% if notifications %}
-        <div class="ml-auto mb-5">
 
-            {% include "notifications/_notifications-dropdown-filter.html" %}
+{% block page_actions %}
 
+  {% if user.role.name == 'auditor' or user.role.name == 'audit_manager' %}
+    <button
+      type="button"
+      class="ap-secondary-button"
+      data-clean-notifications
+      data-url="{% url 'delete_notifications' %}"
+      data-confirm="¿Deseas limpiar las notificaciones de tu bandeja? Esta acción no se puede deshacer."
+    >
+      <i class="bi bi-trash3"></i>
+      Limpiar bandeja
+    </button>
+  {% endif %}
+
+  {% if user.is_staff or user.modalidad == 'G' and user.role and user.role.name == 'audit_manager' %}
+    <a
+      href="{% url 'create_notification' %}"
+      class="ap-notif-page-primary"
+    >
+      <i class="bi bi-send"></i>
+      Enviar notificación
+    </a>
+  {% endif %}
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <div
+    class="ap-notifications-page"
+    data-notifications-page
+  >
+
+    <section class="ap-notif-info">
+
+      <span class="ap-notif-info-icon">
+        <i class="bi bi-bell"></i>
+      </span>
+
+      <div>
+        <strong>Centro de comunicaciones</strong>
+        <p>
+          Las notificaciones se relacionan directamente con las auditorías asignadas.
+          Desde aquí puedes abrir el detalle, marcar mensajes como leídos y, cuando corresponda,
+          gestionar la revisión de una comunicación.
+        </p>
+      </div>
+
+    </section>
+
+    <section class="ap-notif-kpi-grid">
+
+      <article class="ap-notif-kpi ap-notif-kpi-blue">
+        <div>
+          <span>Total en bandeja</span>
+          <strong data-count="total">{{ notifications|length }}</strong>
+          <p>Comunicaciones disponibles</p>
         </div>
-        <ul class="list-group gap-5 container" style="list-style: none;">
-            {% for notification_status in notifications %}
-                <li class="rounded bg-light-subtle p-3 shadow
-                           {% if notification_status.is_read %}
-                               readed
-                           {% else %}
-                               not-readed
-                           {% endif %}"
-                    id="notification-card-{{ notification_status.id }}">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h5 class="fs-5 fw-bold m-0">Auditoría: {{ notification_status.notification.audit.title }}</h5>
-                        {% if notification_status.is_read %}
-                            <h5>
-                                <span class="badge bg-secondary rounded-pill">Leída</span>
-                            </h5>
-                        {% else %}
-                            <h5>
-                                <span class="badge bg-primary rounded-pill">No leída</span>
-                            </h5>
-                        {% endif %}
-                    </div>
-                    <div class="mb-2">
-                        <p class="fs-6 mb-2" style="line-height: 1.5;">{{ notification_status.notification.note }}</p>
-                        <p class="text-body-secondary mb-1" style="font-size: 0.9rem;">
-                            De: {{ notification_status.notification.notifier.get_full_name }}
-                        </p>
-                        <p class="text-body-secondary mb-1" style="font-size: 0.9rem;">
-                            {{ notification_status.notification.created_at|format_date }}
-                        </p>
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <button class="btn btn-primary btn-sm"
-                                data-bs-toggle="modal"
-                                data-bs-target="#detailsModal{{ notification_status.notification.id }}">
-                            Detalles
-                        </button>
-                    </div>
-                </li>
+        <i class="bi bi-inbox"></i>
+      </article>
 
-                {% include "notifications/_notification-details-modal.html" with notification_status=notification_status %}
+      <article class="ap-notif-kpi ap-notif-kpi-orange">
+        <div>
+          <span>Sin leer</span>
+          <strong data-count="unread">0</strong>
+          <p>Requieren consulta</p>
+        </div>
+        <i class="bi bi-envelope"></i>
+      </article>
 
-            {% endfor %}
-        </ul>
+      <article class="ap-notif-kpi ap-notif-kpi-green">
+        <div>
+          <span>Revisadas</span>
+          <strong data-count="reviewed">0</strong>
+          <p>Aprobadas o rechazadas</p>
+        </div>
+        <i class="bi bi-check2-circle"></i>
+      </article>
+
+    </section>
+
+    {% if notifications %}
+
+      <section class="ap-notif-toolbar">
+
+        {% include "notifications/_notifications-dropdown-filter.html" %}
+
+        <div class="ap-notif-toolbar-spacer"></div>
+
+        <label class="ap-notif-search" aria-label="Buscar notificaciones">
+          <i class="bi bi-search"></i>
+          <input
+            type="search"
+            placeholder="Buscar auditoría, remitente o contenido..."
+            data-notification-search
+            autocomplete="off"
+          >
+        </label>
+
+        <span class="ap-notif-result-count">
+          <strong data-filtered-count>{{ notifications|length }}</strong>
+          resultados
+        </span>
+
+      </section>
+
+      <section class="ap-notif-list">
+
+        {% for notification_status in notifications %}
+
+          {% with notification=notification_status.notification audit=notification_status.notification.audit %}
+
+            <article
+              class="ap-notif-card {% if not notification_status.is_read %}unread{% endif %} {% if notification.review_status == 'approved' %}review-approved{% elif notification.review_status == 'rejected' %}review-rejected{% endif %}"
+              id="notification-card-{{ notification_status.id }}"
+              data-notification-card
+              data-read="{{ notification_status.is_read|yesno:'true,false' }}"
+              data-review-status="{{ notification.review_status|default:'pending' }}"
+              data-search="{{ audit.title|lower }} {{ audit.identidad|default:''|lower }} {{ notification.note|lower }} {{ notification.notifier.get_full_name|lower }}"
+            >
+
+              <header class="ap-notif-card-head">
+
+                <div class="ap-notif-card-title">
+                  <span>COMUNICACIÓN · #{{ notification.id }}</span>
+                  <h2 title="{{ audit.title }}">
+                    {{ audit.title }}
+                  </h2>
+                </div>
+
+                {% if notification.review_status == 'approved' %}
+                  <span class="ap-notif-status ap-notif-status-approved">
+                    <i class="bi bi-check-circle"></i>
+                    Aprobada
+                  </span>
+                {% elif notification.review_status == 'rejected' %}
+                  <span class="ap-notif-status ap-notif-status-rejected">
+                    <i class="bi bi-x-circle"></i>
+                    Rechazada
+                  </span>
+                {% elif notification_status.is_read %}
+                  <span class="ap-notif-status ap-notif-status-read">
+                    <i class="bi bi-envelope-open"></i>
+                    Leída
+                  </span>
+                {% else %}
+                  <span class="ap-notif-status ap-notif-status-unread">
+                    <i class="bi bi-envelope"></i>
+                    No leída
+                  </span>
+                {% endif %}
+
+              </header>
+
+              <div class="ap-notif-card-audit">
+                <i class="bi bi-briefcase"></i>
+                <div>
+                  <span class="ap-notif-audit-label">Auditoría</span>
+                  <span class="ap-notif-audit-value">
+                    {{ audit.title }}{% if audit.identidad %} · {{ audit.identidad }}{% endif %}
+                  </span>
+                </div>
+              </div>
+
+              <p class="ap-notif-note">
+                {{ notification.note }}
+              </p>
+
+              <div class="ap-notif-card-meta">
+
+                <span class="ap-notif-meta-item">
+                  <i class="bi bi-person"></i>
+                  De: {{ notification.notifier.get_full_name }}
+                </span>
+
+                <span class="ap-notif-meta-item">
+                  <i class="bi bi-calendar3"></i>
+                  {{ notification.created_at|format_date }}
+                </span>
+
+                {% if notification_status.is_read and notification_status.readed_date %}
+                  <span class="ap-notif-meta-item">
+                    <i class="bi bi-check2"></i>
+                    Leída: {{ notification_status.readed_date|date:"d/m/Y H:i" }}
+                  </span>
+                {% endif %}
+
+              </div>
+
+              <footer class="ap-notif-card-foot">
+
+                <span class="ap-notif-meta-item">
+                  {% if audit.audit_manager_id == request.user.id %}
+                    <i class="bi bi-shield-check"></i>
+                    Eres jefe de esta auditoría
+                  {% else %}
+                    <i class="bi bi-eye"></i>
+                    Comunicación recibida
+                  {% endif %}
+                </span>
+
+                <div class="ap-notif-actions">
+
+                  {% if not notification_status.is_read %}
+                    <form
+                      action="{% url 'mark_notification_as_read' notification_status.id %}"
+                      method="post"
+                    >
+                      {% csrf_token %}
+                      <button
+                        type="submit"
+                        class="ap-notif-button"
+                        title="Marcar como leída"
+                      >
+                        <i class="bi bi-check2"></i>
+                        Marcar leída
+                      </button>
+                    </form>
+                  {% endif %}
+
+                  {% if audit.audit_manager_id == request.user.id and notification.review_status == 'pending' %}
+                    <button
+                      type="button"
+                      class="ap-notif-button ap-notif-button-success"
+                      data-bs-toggle="modal"
+                      data-bs-target="#detailsModal{{ notification.id }}"
+                    >
+                      <i class="bi bi-clipboard-check"></i>
+                      Revisar
+                    </button>
+                  {% endif %}
+
+                  <button
+                    type="button"
+                    class="ap-notif-button ap-notif-button-primary"
+                    data-bs-toggle="modal"
+                    data-bs-target="#detailsModal{{ notification.id }}"
+                  >
+                    <i class="bi bi-eye"></i>
+                    Detalles
+                  </button>
+
+                  {% if user.role.name == 'auditor' or user.role.name == 'audit_manager' %}
+                    <button
+                      type="button"
+                      class="ap-notif-button ap-notif-button-danger"
+                      data-delete-notification
+                      data-url="/notificaciones/status/{{ notification_status.id }}/delete/"
+                      data-modal-selector="#detailsModal{{ notification.id }}"
+                      title="Eliminar esta notificación"
+                    >
+                      <i class="bi bi-trash3"></i>
+                    </button>
+                  {% endif %}
+
+                </div>
+
+              </footer>
+
+            </article>
+
+            {% include "notifications/_notification-details-modal.html" with notification_status=notification_status %}
+
+          {% endwith %}
+
+        {% endfor %}
+
+      </section>
+
     {% else %}
-        <h2 class="mb-4 display-6">No tiene notificaciones pendientes.</h2>
+
+      <section class="ap-notif-empty">
+        <span class="ap-notif-empty-icon">
+          <i class="bi bi-bell-slash"></i>
+        </span>
+
+        <h2>No tienes notificaciones</h2>
+        <p>
+          Cuando recibas una comunicación relacionada con una auditoría aparecerá aquí.
+        </p>
+
+        {% if user.is_staff or user.modalidad == 'G' and user.role and user.role.name == 'audit_manager' %}
+          <div class="mt-3">
+            <a href="{% url 'create_notification' %}" class="ap-notif-page-primary">
+              <i class="bi bi-send"></i>
+              Enviar una notificación
+            </a>
+          </div>
+        {% endif %}
+      </section>
+
     {% endif %}
-    <div class="mt-4">
-        <a href="{% url 'create_notification' %}" class="btn btn-primary btn-lg">Enviar Notificación</a>
-    </div>
-{% endblock main_content %}
+
+  </div>
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+  <script src="{% static 'js/notifications-v2.js' %}?v=1"></script>
+{% endblock v2_scripts %}

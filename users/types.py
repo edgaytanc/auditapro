@@ -3,7 +3,12 @@ from datetime import datetime
 
 from common.utils import is_valid_date
 
-ROLES = Literal["auditor", "supervisor", "audit_manager"]
+ROLES = Literal[
+    "auditor",
+    "supervisor",
+    "readonly",
+    "audit_manager",
+]
 
 
 class User(TypedDict):
@@ -36,7 +41,7 @@ def is_user_type(user: User) -> bool:
             and isinstance(user["last_name"], str)
             and isinstance(user["signature"], str)
             and user.get("role").get("name")
-            in ("auditor", "supervisor", "audit_manager")
+            in ("auditor", "supervisor", "readonly", "audit_manager",)
         )
     except KeyError:
         return False

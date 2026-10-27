@@ -1,0 +1,62 @@
+/* AuditaPro v2 — circuito único de marcas, identificaciones y descargas.
+   Aislado por prefijo ap-paper-flow para no alterar modales heredados. */
+.ap-paper-flow[hidden], .ap-paper-flow__panel[hidden] { display: none !important; }
+.ap-paper-flow { position: fixed; inset: 0; z-index: 20050; display: grid; place-items: center; padding: 18px; }
+.ap-paper-flow__shade { position: absolute; inset: 0; background: rgba(15,23,42,.68); backdrop-filter: blur(3px); }
+.ap-paper-flow__dialog {
+  position: relative; width: min(760px, 100%); max-height: min(92dvh, 930px);
+  overflow-y: auto; overscroll-behavior: contain; border: 1px solid #e2e8f0;
+  border-radius: 20px; background: #fff; color: #13213a;
+  box-shadow: 0 28px 80px rgba(15,23,42,.22);
+}
+.ap-paper-flow__header { display: flex; gap: 20px; align-items: flex-start; justify-content: space-between; padding: 26px 28px 20px; border-bottom: 1px solid #e2e8f0; }
+.ap-paper-flow__eyebrow { margin: 0 0 7px; color: #2563eb; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; }
+.ap-paper-flow__header h2 { margin: 0; font-size: clamp(19px, 2vw, 25px); font-weight: 800; line-height: 1.3; color: #0f172a; }
+.ap-paper-flow__header p:not(.ap-paper-flow__eyebrow) { margin: 9px 0 0; color: #64748b; font-size: 13px; line-height: 1.6; }
+.ap-paper-flow__close { border: 0; background: #f1f5f9; border-radius: 10px; color: #475569; font-size: 28px; line-height: 1; width: 38px; height: 38px; flex: 0 0 38px; cursor: pointer; }
+.ap-paper-flow__steps { display: flex; gap: 10px; align-items: center; padding: 20px 28px 4px; }
+.ap-paper-flow__step { display: inline-flex; gap: 8px; align-items: center; border: none; padding: 5px 0; background: transparent; font-weight: 700; font-size: 13px; color: #64748b; cursor: pointer; }
+.ap-paper-flow__step span { display: inline-grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; background: #e2e8f0; color: #475569; font-weight: 800; }
+.ap-paper-flow__step.is-current { color: #1d4ed8; }
+.ap-paper-flow__step.is-current span { background: #2563eb; color: white; }
+.ap-paper-flow__step-line { height: 1px; background: #cbd5e1; flex: 1; }
+.ap-paper-flow__content { padding: 16px 28px 26px; }
+.ap-paper-flow__intro h3 { margin: 0 0 7px; font-size: 17px; color: #0f172a; font-weight: 800; }
+.ap-paper-flow__intro p { margin: 0 0 18px; color: #64748b; font-size: 13px; line-height: 1.65; }
+.ap-paper-flow__status, .ap-paper-flow__summary { padding: 13px 15px; border: 1px solid #bfdbfe; border-radius: 11px; background: #eff6ff; color: #1e40af; font-size: 13px; line-height: 1.55; }
+.ap-paper-flow__tip { margin: 16px 0; display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 18px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 13px; }
+.ap-paper-flow__tip > div { flex: 1 1 255px; }
+.ap-paper-flow__tip strong { display: block; font-size: 13px; color: #0f172a; }
+.ap-paper-flow__tip p { font-size: 12px; color: #64748b; line-height: 1.55; margin: 6px 0 0; }
+.ap-paper-flow__label, .ap-paper-flow__field span { display: block; color: #334155; font-size: 12px; font-weight: 700; margin-bottom: 7px; }
+.ap-paper-flow__input { width: 100%; max-width: 100%; min-width: 0; border: 1px solid #cbd5e1; border-radius: 10px; padding: 11px 13px; font: inherit; font-size: 14px; color: #1e293b; background: white; box-sizing: border-box; }
+.ap-paper-flow__input:disabled, .ap-paper-flow__input:read-only:not(select) { background: #f8fafc; color: #475569; }
+.ap-paper-flow__input:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.ap-paper-flow__check { display: flex; align-items: start; gap: 10px; margin-top: 12px; font-size: 12px; line-height: 1.5; color: #475569; }
+.ap-paper-flow__check input { flex: 0 0 auto; margin-top: 3px; accent-color: #2563eb; }
+.ap-paper-flow__help { margin: 9px 0 0; color: #64748b; font-size: 11px; }
+.ap-paper-flow__form-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; margin-bottom: 18px; }
+.ap-paper-flow__field { min-width: 0; }
+.ap-paper-flow__message { margin: 15px 0 0; padding: 12px 14px; font-size: 12px; border-radius: 10px; border: 1px solid #bae6fd; background: #f0f9ff; color: #075985; line-height: 1.5; }
+.ap-paper-flow__message.is-error { border-color: #fecaca; color: #991b1b; background: #fef2f2; }
+.ap-paper-flow__message.is-success { border-color: #a7f3d0; color: #065f46; background: #ecfdf5; }
+.ap-paper-flow__actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; margin-top: 22px; border-top: 1px solid #e2e8f0; padding-top: 19px; }
+.ap-paper-flow__primary, .ap-paper-flow__secondary, .ap-paper-flow__outline { display: inline-flex; gap: 8px; align-items: center; justify-content: center; border-radius: 10px; padding: 11px 15px; font-size: 12px; font-weight: 800; cursor: pointer; text-decoration: none; transition: background .15s; }
+.ap-paper-flow__primary { color: white; background: #2563eb; border: 1px solid #2563eb; }
+.ap-paper-flow__primary:hover { color: white; background: #1d4ed8; }
+.ap-paper-flow__secondary { color: #1d4ed8; border: 1px solid #bfdbfe; background: #eff6ff; }
+.ap-paper-flow__secondary:hover { background: #dbeafe; }
+.ap-paper-flow__outline { color: #334155; border: 1px solid #cbd5e1; background: white; }
+.ap-paper-flow__outline:hover { background: #f8fafc; color: #0f172a; }
+.ap-paper-flow button:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 650px) {
+  .ap-paper-flow { padding: 9px; }
+  .ap-paper-flow__dialog { max-height: 94dvh; border-radius: 14px; }
+  .ap-paper-flow__header { padding: 18px 17px 14px; }
+  .ap-paper-flow__steps { padding: 14px 17px 0; }
+  .ap-paper-flow__content { padding: 14px 17px 20px; }
+  .ap-paper-flow__form-grid { grid-template-columns: 1fr; gap: 12px; }
+  .ap-paper-flow__actions button { flex: 1 1 auto; }
+  .ap-paper-flow__step { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) { .ap-paper-flow * { transition: none !important; } }

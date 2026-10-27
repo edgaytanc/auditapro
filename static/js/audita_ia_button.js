@@ -4,11 +4,15 @@ document.addEventListener('DOMContentLoaded', function () {
   const closeBtn = document.getElementById('closeAuditaIaModal');
   const cancelBtn = document.getElementById('cancelAuditaIaModal');
 
-  if (openBtn && modal) {
-    openBtn.addEventListener('click', function (e) {
-      e.preventDefault();
-      modal.classList.add('show');
-      document.body.style.overflow = 'hidden';
+  if (modal) {
+    const shortcuts = Array.from(document.querySelectorAll('[data-open-audita-ia]'));
+    if (openBtn) shortcuts.push(openBtn);
+    shortcuts.forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault();
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+      });
     });
   }
 

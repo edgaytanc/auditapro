@@ -79,6 +79,11 @@ class User(AbstractUser):
         help_text="Indica si el usuario tiene acceso al módulo de Revisoría Fiscal."
     )
 
+    auditoria_interna = models.BooleanField(
+        default=False,
+        help_text="Acceso autorizado por el administrador al módulo de Auditoría Interna.",
+    )
+
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
@@ -133,6 +138,122 @@ class User(AbstractUser):
     def can_create_users(self):
         return self.is_superuser or (self.is_admin() and self.socio)
 
+class RoleModulePermission(models.Model):
+    """
+    Permisos configurados por cada Jefe de Auditoría
+    para un rol y un módulo determinado.
+
+    Cada rol tiene una fila por módulo y cuatro acciones:
+    ver, crear, editar y eliminar.
+    """
+
+    MODULE_CHOICES = [
+        (
+            "audits",
+            "Auditorías",
+        ),
+        (
+            "clients",
+            "Clientes",
+        ),
+        (
+            "workpapers",
+            "Papeles de Trabajo",
+        ),
+        (
+            "findings",
+            "Hallazgos",
+        ),
+        (
+            "reports",
+            "Reportes",
+        ),
+        (
+            "users",
+            "Usuarios y Roles",
+        ),
+    ]
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name="configured_role_permissions",
+        on_delete=models.CASCADE,
+        verbose_name="Jefe de Auditoría",
+    )
+
+    role = models.ForeignKey(
+        Roles,
+        related_name="module_permissions",
+        on_delete=models.CASCADE,
+        verbose_name="Rol",
+    )
+
+    module = models.CharField(
+        max_length=30,
+        choices=MODULE_CHOICES,
+        verbose_name="Módulo",
+    )
+
+    can_view = models.BooleanField(
+        default=False,
+        verbose_name="Puede ver",
+    )
+
+    can_create = models.BooleanField(
+        default=False,
+        verbose_name="Puede crear",
+    )
+
+    can_edit = models.BooleanField(
+        default=False,
+        verbose_name="Puede editar",
+    )
+
+    can_delete = models.BooleanField(
+        default=False,
+        verbose_name="Puede eliminar",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+        verbose_name = "Permiso por rol y módulo"
+        verbose_name_plural = (
+            "Permisos por rol y módulo"
+        )
+
+        ordering = [
+            "role__verbose_name",
+            "module",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "owner",
+                    "role",
+                    "module",
+                ],
+                name=(
+                    "unique_owner_role_module_permission"
+                ),
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.owner} · "
+            f"{self.role.verbose_name} · "
+            f"{self.get_module_display()}"
+        )
+
+
 class RegistroInvitacion(models.Model):
     """
     Invitaciones que envía un socio para que otra persona se autoregistre.
@@ -152,3 +273,22 @@ class RegistroInvitacion(models.Model):
 
     def __str__(self):
         return f"Invitación a {self.email} (usado={self.usado})"
+
+class FinancialDashboardIdentity(models.Model):
+    """Nombre manual del cliente para las pantallas y exportaciones financieras.
+
+    No altera Audit.identidad ni las plantillas de papeles de trabajo.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="financial_dashboard_identities",
+    )
+    scope_key = models.CharField(max_length=64, default="general")
+    company_name = models.CharField(max_length=255)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(
+            fields=["user", "scope_key"],
+            name="unique_financial_dashboard_user_scope",
+        )]

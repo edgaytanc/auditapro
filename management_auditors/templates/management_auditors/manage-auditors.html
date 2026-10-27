@@ -1,81 +1,415 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
-Gestionar Auditores
+  Gestionar Auditores
 {% endblock title %}
-{% block styles %}
-<style>
-    @media (min-width: 576px) {
-        .user-cards-container {
-            display: grid;
-            grid-template-columns: 1fr;
-        }
-    }
 
-    @media (min-width: 768px) {
-        .user-cards-container {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
+{% block v2_styles %}
+  <link
+    rel="stylesheet"
+    href="{% static 'css/manage-auditors-v2.css' %}"
+  >
+{% endblock v2_styles %}
 
-    @media (min-width: 992px) {
-        .user-cards-container {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-</style>
-{% endblock styles %}
 {% block page_title %}
-Gestionar Auditores
+  Gestionar Auditores
 {% endblock page_title %}
+
 {% block page_subtitle %}
-Gestionar sus auditores ({{ user_count }}/{{ max_users }})
+  Administra el equipo de auditoría, sus asignaciones,
+  disponibilidad y desempeño.
 {% endblock page_subtitle %}
-{% block main_header_content %}
-{% if can_add_more_users %}
-<a href="{% url 'add_auditor' %}" class="btn btn-primary">Añadir Usuario</a>
-{% else %}
-<button class="btn btn-secondary" disabled title="Ha alcanzado el límite de {{ max_users }} usuarios">Añadir
-    Usuario</button>
-{% endif %}
-{% endblock main_header_content %}
-{% block main_content %}
-<section class="row w-100">
-    <ul class="user-cards-container gap-3 mx-auto">
-        {% for user in users_to_manage %}
-        {% if user.first_name %}
-        <li class="card shadow-sm mb-4" style="border-radius: 0.75rem;">
-            <div class="card-body d-flex flex-column">
-                <span class="position-relative d-flex overflow-hidden rounded-circle mb-4" style="width: 3rem;
-                                         height: 3rem">
 
-                    {% load static %}
+{% block page_actions %}
 
-                    <img class="img-fluid rounded-circle" height="200" width="200" alt="User Avatar"
-                        src="{% static 'images/placeholder-user.jpg' %}" />
-                </span>
-                <div class="text-start d-flex flex-column gap-2">
-                    <div class="h5 font-weight-medium">{{ user.get_full_name }}</div>
-                    <div class="text-muted">
-                        <strong>Usuario:</strong>{{ user.username }}
-                    </div>
-                    <div class="text-muted">
-                        <strong>Correo:</strong>{{ user.email }}
-                    </div>
-                    <div class="text-muted">
-                        <strong>Rol:</strong>{{ user.role }}
-                    </div>
-                </div>
-                <div class="mt-3 d-flex justify-content-end gap-2">
-                    <a href="{% url 'manage_auditor' user.id %}">
-                        <button class="btn btn-secondary">Ver Auditorías</button>
-                    </a>
-                    <button class="btn btn-outline-primary">Notify</button>
-                </div>
+  {% if can_add_more_users %}
+    <a
+      href="{% url 'add_auditor' %}"
+      class="ap-primary-button"
+    >
+      <i class="bi bi-person-plus"></i>
+      Nuevo auditor
+    </a>
+  {% else %}
+    <button
+      type="button"
+      class="ap-primary-button"
+      disabled
+      title="Has alcanzado el límite de {{ max_users }} usuarios"
+    >
+      <i class="bi bi-person-plus"></i>
+      Límite alcanzado
+    </button>
+  {% endif %}
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <section class="ap-auditors-kpi-grid">
+
+    <article class="ap-kpi-card">
+      <div class="ap-kpi-card-header">
+        <p class="ap-kpi-label">
+          TOTAL AUDITORES
+        </p>
+
+        <span class="ap-kpi-icon">
+          <i class="bi bi-people"></i>
+        </span>
+      </div>
+
+      <p class="ap-kpi-value">
+        {{ user_count }}
+      </p>
+
+      <p class="ap-kpi-note">
+        {{ user_count }} de {{ max_users }} cupos utilizados
+      </p>
+    </article>
+
+    <article class="ap-kpi-card">
+      <div class="ap-kpi-card-header">
+        <p class="ap-kpi-label">
+          ACTIVOS
+        </p>
+
+        <span class="ap-kpi-icon ap-kpi-icon-success">
+          <i class="bi bi-person-check"></i>
+        </span>
+      </div>
+
+      <p class="ap-kpi-value">
+        {{ active_users }}
+      </p>
+
+      <p class="ap-kpi-note">
+        Usuarios habilitados actualmente
+      </p>
+    </article>
+
+    <article class="ap-kpi-card">
+      <div class="ap-kpi-card-header">
+        <p class="ap-kpi-label">
+          CON ASIGNACIONES
+        </p>
+
+        <span class="ap-kpi-icon ap-kpi-icon-warning">
+          <i class="bi bi-clipboard2-check"></i>
+        </span>
+      </div>
+
+      <p class="ap-kpi-value">
+        {{ users_with_assignments }}
+      </p>
+
+      <p class="ap-kpi-note">
+        {{ available_users }} disponibles
+      </p>
+    </article>
+
+    <article class="ap-kpi-card">
+      <div class="ap-kpi-card-header">
+        <p class="ap-kpi-label">
+          HORAS EJECUTADAS
+        </p>
+
+        <span class="ap-kpi-icon ap-kpi-icon-purple">
+          <i class="bi bi-clock-history"></i>
+        </span>
+      </div>
+
+      <p class="ap-kpi-value">
+        {{ executed_hours }}
+      </p>
+
+      <p class="ap-kpi-note">
+        Horas registradas durante el mes
+      </p>
+    </article>
+
+  </section>
+
+  <section class="ap-auditors-toolbar">
+
+    <div class="ap-auditors-toolbar-left">
+
+      <div class="ap-search-control">
+        <i class="bi bi-search"></i>
+
+        <input
+          type="search"
+          id="auditorSearch"
+          placeholder="Buscar por nombre, usuario o correo..."
+          autocomplete="off"
+        >
+      </div>
+
+      <div class="ap-filter-control">
+        <i class="bi bi-funnel"></i>
+
+        <select id="auditorStatusFilter">
+          <option value="all">
+            Todos los estados
+          </option>
+
+          <option value="available">
+            Disponibles
+          </option>
+
+          <option value="assigned">
+            Con asignación
+          </option>
+        </select>
+      </div>
+
+    </div>
+
+    <div class="ap-auditors-toolbar-summary">
+      <span id="auditorResultsCount">
+        {{ user_count }}
+      </span>
+
+      <span>
+        auditores encontrados
+      </span>
+    </div>
+
+  </section>
+
+  {% if auditor_cards %}
+
+    <section
+      class="ap-auditors-grid"
+      id="auditorsGrid"
+    >
+
+      {% for card in auditor_cards %}
+
+        <article
+          class="ap-auditor-card"
+          data-auditor-card
+          data-status="{{ card.availability_status }}"
+          data-search="
+            {{ card.full_name|lower }}
+            {{ card.user.username|lower }}
+            {{ card.user.email|lower }}
+            {{ card.role_label|lower }}
+          "
+        >
+
+          <header class="ap-auditor-card-header">
+
+            <div class="ap-auditor-identity">
+
+              <div class="ap-auditor-avatar">
+                {{ card.initials }}
+              </div>
+
+              <div class="ap-auditor-name-area">
+                <h2>
+                  {{ card.full_name }}
+                </h2>
+
+                <p>
+                  {{ card.role_label }}
+                </p>
+              </div>
+
             </div>
-        </li>
-        {% endif %}
-        {% endfor %}
-    </ul>
-</section>
-{% endblock main_content %}
+
+            <span
+              class="
+                ap-auditor-status
+                ap-auditor-status-{{ card.availability_status }}
+              "
+            >
+              <span></span>
+              {{ card.availability_label }}
+            </span>
+
+          </header>
+
+          <div class="ap-auditor-contact">
+
+            <div>
+              <i class="bi bi-envelope"></i>
+
+              <span>
+                {{ card.user.email|default:"Correo no registrado" }}
+              </span>
+            </div>
+
+            <div>
+              <i class="bi bi-person"></i>
+
+              <span>
+                {{ card.user.username }}
+              </span>
+            </div>
+
+          </div>
+
+          <div class="ap-auditor-tags-section">
+
+            <div>
+              <span class="ap-auditor-field-label">
+                Especialidades
+              </span>
+
+              <div class="ap-auditor-tags">
+                <span class="ap-auditor-tag ap-auditor-tag-muted">
+                  Pendiente de configurar
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <span class="ap-auditor-field-label">
+                Certificaciones
+              </span>
+
+              <div class="ap-auditor-tags">
+                <span class="ap-auditor-tag ap-auditor-tag-muted">
+                  Sin certificaciones registradas
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="ap-auditor-metrics">
+
+            <div class="ap-auditor-metric">
+              <strong>
+                {{ card.worked_hours }}
+              </strong>
+
+              <span>
+                Horas del mes
+              </span>
+            </div>
+
+            <div class="ap-auditor-metric">
+              <strong>
+                {{ card.active_assignments }}
+              </strong>
+
+              <span>
+                Asignaciones activas
+              </span>
+            </div>
+
+            <div class="ap-auditor-metric">
+              <strong>
+                {{ card.performance_display }}
+              </strong>
+
+              <span>
+                Desempeño
+              </span>
+            </div>
+
+          </div>
+
+          <div class="ap-auditor-performance">
+
+            <div class="ap-auditor-performance-header">
+              <span>
+                Cumplimiento de horas
+              </span>
+
+              <strong>
+                {{ card.performance_display }}
+              </strong>
+            </div>
+
+            <div class="ap-auditor-progress-track">
+              <span
+                style="width: {{ card.performance }}%;"
+              ></span>
+            </div>
+
+            <p>
+              {{ card.worked_hours }} ejecutadas de
+              {{ card.scheduled_hours }} programadas
+            </p>
+
+          </div>
+
+          <footer class="ap-auditor-card-footer">
+
+            <span class="ap-auditor-history">
+              {{ card.total_assignments }}
+              auditorías históricas
+            </span>
+
+            <a
+              href="{% url 'manage_auditor' card.user.id %}"
+              class="ap-auditor-view-button"
+            >
+              Gestionar
+              <i class="bi bi-arrow-right"></i>
+            </a>
+
+          </footer>
+
+        </article>
+
+      {% endfor %}
+
+    </section>
+
+    <section
+      class="ap-auditors-no-results"
+      id="auditorsNoResults"
+      hidden
+    >
+      <i class="bi bi-search"></i>
+
+      <h2>
+        No se encontraron auditores
+      </h2>
+
+      <p>
+        Prueba cambiando el texto de búsqueda o el filtro seleccionado.
+      </p>
+    </section>
+
+  {% else %}
+
+    <section class="ap-auditors-empty-state">
+      <div class="ap-auditors-empty-icon">
+        <i class="bi bi-people"></i>
+      </div>
+
+      <h2>
+        Aún no tienes auditores registrados
+      </h2>
+
+      <p>
+        Agrega el primer integrante de tu equipo para comenzar
+        a asignarle auditorías.
+      </p>
+
+      {% if can_add_more_users %}
+        <a
+          href="{% url 'add_auditor' %}"
+          class="ap-primary-button"
+        >
+          <i class="bi bi-person-plus"></i>
+          Agregar primer auditor
+        </a>
+      {% endif %}
+    </section>
+
+  {% endif %}
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+  <script
+    src="{% static 'js/manage-auditors-v2.js' %}"
+  ></script>
+{% endblock v2_scripts %}

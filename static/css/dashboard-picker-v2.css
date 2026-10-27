@@ -1,0 +1,18 @@
+.ap-picker-intro{display:flex;gap:14px;align-items:center;padding:20px 24px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px;margin-bottom:20px;}
+.ap-picker-intro>i{display:grid;place-items:center;width:46px;height:46px;flex:none;background:#dbeafe;border-radius:12px;color:#2563eb;font-size:21px;}
+.ap-picker-intro strong{font-size:16px;font-weight:750;color:#172033;}.ap-picker-intro p{margin:4px 0 0;color:#64748b;font-size:13px;}
+.ap-picker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:18px;}
+.ap-picker-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:25px;min-height:270px;background:#fff;border:1px solid #e4eaf2;border-radius:17px;text-decoration:none;box-shadow:0 6px 26px rgba(15,27,61,.04);transition:border-color .15s,transform .15s;}
+.ap-picker-card:hover{transform:translateY(-3px);border-color:#93c5fd;}
+.ap-picker-icon{display:grid;place-items:center;width:52px;height:52px;border-radius:14px;background:#eff6ff;color:#2563eb;font-size:23px;}
+.ap-picker-icon-green{background:#ecfdf5;color:#059669;}.ap-picker-label{font-size:10px;letter-spacing:.12em;color:#2563eb;font-weight:800;}
+.ap-picker-card h2{margin:0;color:#172033;font-size:20px;font-weight:750;}.ap-picker-card p{margin:0;color:#64748b;font-size:13px;line-height:1.7;}
+.ap-picker-go{display:flex;align-items:center;justify-content:space-between;margin-top:auto;width:100%;font-size:13px;color:#2563eb;font-weight:700;}
+.ap-picker-notice{margin-top:20px;padding:12px 15px;color:#64748b;font-size:12px;}
+@media(max-width:600px){.ap-picker-intro{padding:16px;align-items:flex-start;}.ap-picker-card{min-height:240px;}}
+
+/* Solicitud de cliente: Financiera azul con texto blanco; Interna blanca */
+.ap-picker-grid>.ap-picker-card:first-child{background:#1746a3;border-color:#1746a3;color:#fff;}
+.ap-picker-grid>.ap-picker-card:first-child :is(h2,p,.ap-picker-label,.ap-picker-go){color:#fff;}
+.ap-picker-grid>.ap-picker-card:first-child .ap-picker-icon{background:rgba(255,255,255,.17);color:#fff;}
+.ap-picker-grid>.ap-picker-card:first-child:hover{background:#1d55bd;}

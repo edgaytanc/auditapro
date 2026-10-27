@@ -139,8 +139,7 @@ class TemplateConfigValidator:
 
         # Validar contra archivos existentes usando WorkPaperValidator
         try:
-            # WorkPaperValidator no recibe audit_id: su firma es (use_cache=True)
-            validator = WorkPaperValidator()
+            validator = WorkPaperValidator(self.audit_id)
             result = validator.validate_work_paper_name(workbook_name)
 
             if result.is_excluded:
@@ -154,9 +153,7 @@ class TemplateConfigValidator:
                 message = f'No se encontró archivo coincidente: {workbook_name}'
 
                 if result.suggestions:
-                    # Las sugerencias son diccionarios; usar el nombre de visualización
-                    nombres_sugeridos = [s['display_name'] for s in result.suggestions[:3]]
-                    message += f' Sugerencias: {", ".join(nombres_sugeridos)}'
+                    message += f' Sugerencias: {", ".join(result.suggestions[:3])}'
 
                 self.warnings.append(ValidationError(
                     'workbook_name',
@@ -362,8 +359,7 @@ class TemplateConfigValidator:
             }
 
         try:
-            # WorkPaperValidator no recibe audit_id: su firma es (use_cache=True)
-            validator = WorkPaperValidator()
+            validator = WorkPaperValidator(self.audit_id)
             result = validator.validate_work_paper_name(workbook_name)
 
             if result.is_excluded:

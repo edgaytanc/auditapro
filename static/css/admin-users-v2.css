@@ -1,0 +1,23 @@
+/* Revestimiento visual de pantallas de administración sin alterar formularios JS. */
+.ap-admin-v2 {width:100%;min-width:0;color:#172033;}
+.ap-admin-v2>.container,.ap-admin-v2>.container-fluid{max-width:100%;padding:0;}
+.ap-admin-v2 .card,.ap-admin-v2 .bg-white{border:1px solid #e4eaf2!important;border-radius:16px!important;background:#fff!important;box-shadow:0 8px 28px rgba(15,27,61,.05)!important;}
+.ap-admin-v2 .card-header{background:#f8faff;border-color:#e4eaf2;}
+.ap-admin-v2 .form-label,.ap-admin-v2 label {color:#334155;font-weight:600;}
+.ap-admin-v2 .form-control,.ap-admin-v2 .form-select{border-color:#dbe4f0;border-radius:9px;min-height:42px;}
+.ap-admin-v2 .form-control:focus,.ap-admin-v2 .form-select:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12);}
+.ap-admin-v2 .btn {border-radius:9px;font-weight:600;}
+.ap-admin-v2 .btn-primary{background:#2563eb;border-color:#2563eb;}
+.ap-admin-v2 .btn-danger{background:#dc2626;border-color:#dc2626;}
+.ap-admin-v2 h1,.ap-admin-v2 h2,.ap-admin-v2 h3{color:#172033;}
+.ap-admin-v2 .table-responsive {overflow-x:auto;max-width:100%;}
+.ap-admin-v2 .table{vertical-align:middle;}
+.ap-admin-v2 .table thead th{background:#f8faff;color:#475569;border-color:#e4eaf2;}
+.ap-admin-v2 .modal-content {border-radius:16px;}
+.ap-admin-v2 .nav-tabs .nav-link.active {color:#2563eb;font-weight:700;}
+.ap-admin-v2 .text-muted{color:#64748b!important;}
+.ap-admin-v2 .row>*{min-width:0;}
+@media(max-width:767px){.ap-admin-v2 .card-body{padding:16px}.ap-admin-v2 .table-responsive{overflow-x:auto;}}
+.ap-page-actions .ap-primary-button {display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:42px;padding:9px 15px;border-radius:10px;background:#2563eb;color:#fff;text-decoration:none;font-weight:700;font-size:13px;}
+.ap-page-actions .ap-primary-button:hover{background:#1d4ed8;color:#fff;}
+@media(max-width:767px){.ap-page-actions{flex-wrap:wrap;}}

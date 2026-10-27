@@ -1,0 +1,7 @@
+<span class="financial-company-inline" data-save-url="{% url 'financial_company_save' %}">
+  <span>Auditoría Financiera · Empresa:</span>
+  {% csrf_token %}
+  <input id="financialCompanyName" class="financial-company-name" type="text" maxlength="255" placeholder="Escriba el nombre de la empresa" value="{{ financial_company_name|default:'' }}" aria-label="Nombre de la empresa" autocomplete="off">
+  <button type="button" class="financial-company-save" id="financialCompanySave">Guardar nombre</button>
+  <span id="financialCompanyFeedback" role="status" aria-live="polite"></span>
+</span>

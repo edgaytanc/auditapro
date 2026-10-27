@@ -79,82 +79,143 @@ def create_audit_time_summary(
     observations: str,
     assigned_auditor: str,
 ):
-    try:
-        if not req:
-            raise UserUnauthorized()
-        if not isinstance(req, HttpRequest):
-            raise UserUnauthorized()
-        if not req.user:
-            raise UserUnauthorized()
-        user_id = req.user.id
-        if not user_id:
-            raise UserUnauthorized()
-        if not assigned_auditor:
-            raise AuditorNullError()
-        if not assigned_auditor.isdigit():
-            raise AuditorInvalidError()
-        if not audit:
-            raise NullAuditError()
-        if not is_audit_type(audit=audit):
-            raise AuditDoNotExits()
-        if not appointment_number:
-            raise NullAppointmentNumberError()
-        if not scheduled_days:
-            raise NullScheduledDaysError()
-        if not appointment_number.isdigit():
-            raise InvalidAppointmentNumberError()
-        if not scheduled_days.isdigit():
-            raise InvalidScheduledDaysError()
-        if worked_days is None:
-            raise NullWorkedDaysError()
-        if not worked_days.isdigit() or int(worked_days) < 0:
-            raise InvalidWorkedDaysError()
+    """
+    Crea el resumen de tiempo de un auditor validando:
+    - Auditoría seleccionada.
+    - Permisos del usuario.
+    - Auditor perteneciente al equipo.
+    - Días programados mayores que cero.
+    - Días trabajados no mayores a los programados.
+    """
+    if not isinstance(req, HttpRequest):
+        raise UserUnauthorized()
 
-        audit_to_assing = Audit.objects.get(pk=int(audit["id"]))
+    if not req.user or not req.user.is_authenticated:
+        raise UserUnauthorized()
 
-        if not audit_to_assing:
-            raise UserUnauthorized()
-        user_role = req.user.role.name
-
-        if not user_role:
-            raise UserUnauthorized()
-
-        if user_role == "audit_manager" and audit_to_assing.audit_manager != req.user:
-            raise UserUnauthorized()
-
-        if (
-            user_role == "supervisor" or user_role == "auditor"
-        ) and not audit_to_assing.assigned_users.filter(id=user_id).exists():
-            raise UserUnauthorized()
-
-        assigned_auditor_instance = get_object_or_404(
-            User,
-            pk=int(assigned_auditor),
-        )
-
-        if not audit_to_assing.assigned_users.filter(
-            pk=assigned_auditor_instance.pk
-        ).exists():
-            raise UserDoNotExits()
-
-        scheduled_days_duration = format_duration_field(int(scheduled_days), "days")
-        worked_days_duration = format_duration_field(int(worked_days), "days")
-
-        new_audit_time_summary = AuditTimeSummary.objects.create(
-            audit=audit_to_assing,
-            auditor=req.user,
-            appointment_number=int(appointment_number),
-            assigned_auditor=assigned_auditor_instance,
-            scheduled_days=scheduled_days_duration,
-            worked_days=worked_days_duration,
-            observations=observations if observations else None,
-        )
-
-        new_audit_time_summary.save()
-    except Audit.DoesNotExist:
+    if not audit or not is_audit_type(audit):
         raise AuditDoNotExits()
-    except Exception as e:
-        raise e
+
+    appointment_number = str(
+        appointment_number or ""
+    ).strip()
+
+    scheduled_days = str(
+        scheduled_days or ""
+    ).strip()
+
+    worked_days = str(
+        worked_days
+        if worked_days is not None
+        else ""
+    ).strip()
+
+    assigned_auditor = str(
+        assigned_auditor or ""
+    ).strip()
+
+    if not assigned_auditor:
+        raise AuditorNullError()
+
+    if not assigned_auditor.isdigit():
+        raise AuditorInvalidError()
+
+    if not appointment_number:
+        raise NullAppointmentNumberError()
+
+    if not appointment_number.isdigit():
+        raise InvalidAppointmentNumberError()
+
+    if not scheduled_days:
+        raise NullScheduledDaysError()
+
+    if not scheduled_days.isdigit():
+        raise InvalidScheduledDaysError()
+
+    if not worked_days:
+        raise NullWorkedDaysError()
+
+    if not worked_days.isdigit():
+        raise InvalidWorkedDaysError()
+
+    scheduled_days_value = int(scheduled_days)
+    worked_days_value = int(worked_days)
+
+    if scheduled_days_value <= 0:
+        raise InvalidScheduledDaysError()
+
+    if worked_days_value < 0:
+        raise InvalidWorkedDaysError()
+
+    if worked_days_value > scheduled_days_value:
+        raise TotalWorkedDaysHigherThanScheduledDaysError()
+
+    try:
+        audit_to_assign = Audit.objects.get(
+            pk=int(audit["id"])
+        )
+
+    except Audit.DoesNotExist as exc:
+        raise AuditDoNotExits() from exc
+
+    role = getattr(req.user, "role", None)
+    role_name = getattr(role, "name", None)
+
+    if role_name == "audit_manager":
+        if audit_to_assign.audit_manager_id != req.user.id:
+            raise UserUnauthorized()
+
+    elif role_name in ("supervisor", "auditor"):
+        if not audit_to_assign.assigned_users.filter(
+            id=req.user.id
+        ).exists():
+            raise UserUnauthorized()
+
+    else:
+        raise UserUnauthorized()
+
+    try:
+        assigned_auditor_instance = User.objects.get(
+            pk=int(assigned_auditor),
+            is_active=True,
+        )
+
+    except User.DoesNotExist as exc:
+        raise UserDoNotExits() from exc
+
+    if not audit_to_assign.assigned_users.filter(
+        pk=assigned_auditor_instance.pk
+    ).exists():
+        raise UserDoNotExits()
+
+    if AuditTimeSummary.objects.filter(
+        audit=audit_to_assign,
+        assigned_auditor=assigned_auditor_instance,
+    ).exists():
+        raise ValueError(
+            "El auditor seleccionado ya tiene un "
+            "registro de tiempo para esta auditoría."
+        )
+
+    AuditTimeSummary.objects.create(
+        audit=audit_to_assign,
+        auditor=req.user,
+        appointment_number=appointment_number,
+        assigned_auditor=assigned_auditor_instance,
+        scheduled_days=format_duration_field(
+            scheduled_days_value,
+            "days",
+        ),
+        worked_days=format_duration_field(
+            worked_days_value,
+            "days",
+        ),
+        observations=(
+            observations.strip()
+            if observations and observations.strip()
+            else None
+        ),
+    )
 
 
 def delete_audit_time_summary(audit_summary_time_to_delete: AuditTimeSummary):

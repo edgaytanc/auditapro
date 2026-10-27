@@ -1,0 +1,174 @@
+{# Actualización puntual autocontenida: referencias y años. No reemplaza los demás scripts. #}
+<style>
+/* Solo la página de papeles: conserva el resto del tema y las acciones existentes. */
+#papeles-integracion-v3 > .toolbar {
+  width: 100%; background: #fff; border: 1px solid #dedede;
+  border-radius: 8px; padding: 10px 14px; box-shadow: 0 1px 4px #0000000b;
+}
+#papeles-integracion-v3 > .folder-structure {
+  width: 100%; background: #fff; border: 1px solid #dedede;
+  border-radius: 8px; padding: 20px 25px; box-shadow: 0 1px 4px #00000009;
+}
+#papeles-integracion-v3 .folder-structure ul {list-style: none; margin: 0; padding: 0;}
+#papeles-integracion-v3 .folder-structure .folder-item > div > ul {padding-left: 28px; padding-right: 4px;}
+#papeles-integracion-v3 .folder-structure .folder-button {
+  border: 0; padding: 5px 0; color: #111827; text-align: left;
+  background: transparent; font-size: 15px; font-weight: 500; cursor: pointer;
+}
+#papeles-integracion-v3 .folder-structure .folder-button:hover {color: #1559ba;}
+#papeles-integracion-v3 .folder-structure .file-item {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 5px; width: 100%; min-height: 32px;
+  padding: 4px 9px; border-radius: 5px; background: #f6f6f6;
+  margin: 2px 0; box-sizing: border-box;
+}
+#papeles-integracion-v3 .folder-structure .file-item:hover {background: #eff4fa;}
+#papeles-integracion-v3 .folder-structure .file-item > .file-link {
+  display: inline-flex; align-items: center; min-width: 0; color: #64748b;
+  text-decoration: none; overflow-wrap: anywhere; line-height: 1.4;
+}
+#papeles-integracion-v3 .folder-structure .file-item > .file-link:hover {color: #1469ca; text-decoration: underline;}
+#papeles-integracion-v3 .folder-structure .file-item.file-locked > .file-link-disabled {width: 100%;}
+#papeles-integracion-v3 .folder-structure .ref-pill {
+  display: inline-flex !important; align-items: center;
+  margin-left: 8px; padding: 2px 11px;
+  border: 1px solid #cdeedd !important; border-radius: 99px !important;
+  background: #e9f9f0 !important; color: #178249 !important;
+  font-size: 11px !important; font-weight: 700 !important;
+  line-height: 1.6; white-space: nowrap; vertical-align: middle;
+  cursor: pointer; text-decoration: none;
+}
+#papeles-integracion-v3 .folder-structure .ref-pill:hover,
+#papeles-integracion-v3 .folder-structure .ref-pill:focus-visible {background: #d7f0e2 !important; outline-offset: 2px;}
+#papeles-integracion-v3 .folder-structure .ref-pill.ref-pill-manual {
+  background: #fff1df !important; color: #9a5a12 !important; border-color: #f5d6af !important;
+}
+/* El diálogo de años no usa .modal de Bootstrap; se muestra independientemente. */
+#aniosModal.audit-years-overlay {position: fixed; inset: 0; z-index: 1200; overflow: auto;
+  padding: 32px 12px; background: #0006; box-sizing: border-box;}
+#aniosModal .audit-years-panel {position: relative; width: min(100%, 520px); margin: 7vh auto 0;
+  padding: 32px 40px; border-radius: 11px; background: #fff;
+  color: #1f2937; box-shadow: 0 12px 36px #0003; box-sizing: border-box;}
+#aniosModal .audit-years-close {position: absolute; left: 28px; top: 15px;
+  border: none; background: transparent; font-size: 28px; color: #999; cursor: pointer;}
+#aniosModal .audit-years-title {padding-bottom: 17px; margin: 25px 0 20px;
+  border-bottom: 1px solid #ddd; font-size: 20px; font-weight: 700; text-align: center;}
+#aniosModal .audit-years-help {color: #64748b; font-size: 13px; line-height: 1.55; margin-bottom: 22px;}
+#aniosModal .audit-years-fields {display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 18px;}
+#aniosModal .audit-years-fields label {display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600;}
+#aniosModal .audit-years-fields input {max-width: 130px;}
+#aniosModal #aniosMensaje {font-size: 12px; min-height: 17px; color: #198754;}
+#aniosModal .audit-years-footer {display: flex; justify-content: flex-end; gap: 8px;
+  padding-top: 17px; border-top: 1px solid #ddd;}
+#aniosModal .audit-years-cancel {background: #737373;}
+@media (max-width: 576px) {
+  #papeles-integracion-v3 > .folder-structure {padding: 15px 8px;}
+  #papeles-integracion-v3 .folder-structure .folder-item > div > ul {padding-left: 12px;}
+  #aniosModal .audit-years-panel {padding: 28px 22px;}
+}
+</style>
+<script>
+/* Funciona aunque el manifiesto estático sirva todavía un JS/CSS anterior.
+ * Se coloca tras los scripts normales y SOLO redefine años y referencias. */
+(function () {
+  'use strict';
+  window.PAPELES_INTEGRACION_VERSION = 'v3-20261001';
+  const ctx = window.AUDIT_CTX || {};
+  const byId = id => document.getElementById(id);
+  const msg = () => byId('aniosMensaje');
+  const csrf = () => {
+    const field = document.querySelector('#aniosModal [name="csrfmiddlewaretoken"]') ||
+                  document.querySelector('[name="csrfmiddlewaretoken"]');
+    if (field && field.value) return field.value;
+    const match = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+  };
+  async function jsonOrError(response) {
+    const contentType = response.headers && response.headers.get('content-type') || '';
+    let payload = null;
+    if (contentType.includes('json') || !response.headers) {
+      try { payload = await response.json(); } catch (_) { /* no es JSON */ }
+    }
+    if (!response.ok || !payload || payload.success !== true) {
+      const explanation = payload && (payload.message || payload.error);
+      if (response.status === 403 || response.status === 404) {
+        throw new Error(explanation || 'Acceso denegado o recurso no encontrado (HTTP ' + response.status + '). Comprueba permisos de Papeles de Trabajo.');
+      }
+      throw new Error(explanation || 'No se pudo completar la operación (HTTP ' + response.status + ').');
+    }
+    return payload;
+  }
+  window.openAniosModal = async function () {
+    const dialog = byId('aniosModal');
+    if (!dialog || !msg()) { alert('No se encontró el diálogo de años.'); return; }
+    dialog.style.display = 'block';
+    dialog.setAttribute('aria-hidden', 'false');
+    if (!ctx.anios_url) { msg().textContent = 'Falta la ruta del servicio de años.'; return; }
+    msg().textContent = 'Consultando años de la auditoría…';
+    try {
+      const data = await jsonOrError(await fetch(ctx.anios_url, {
+        credentials: 'same-origin', headers: {Accept: 'application/json'}
+      }));
+      byId('anioActual').value = data.anio_actual ?? '';
+      byId('anioAnterior').value = data.anio_anterior ?? '';
+      msg().textContent = data.manuales ? 'Años establecidos manualmente.' :
+        'Años tomados del Excel Financiero, si está importado.';
+    } catch (error) { msg().textContent = error.message || 'Error consultando años.'; }
+  };
+  window.closeAniosModal = function () {
+    const dialog = byId('aniosModal');
+    if (dialog) { dialog.style.display = 'none'; dialog.setAttribute('aria-hidden', 'true'); }
+  };
+  window.guardarAnios = async function (event) {
+    if (event) event.preventDefault();
+    if (!ctx.anios_url) { msg().textContent = 'Falta la ruta del servicio de años.'; return; }
+    msg().textContent = 'Guardando…';
+    try {
+      const data = await jsonOrError(await fetch(ctx.anios_url, {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRFToken': csrf()},
+        body: JSON.stringify({anio_actual: byId('anioActual').value, anio_anterior: byId('anioAnterior').value})
+      }));
+      byId('anioActual').value = data.anio_actual ?? '';
+      byId('anioAnterior').value = data.anio_anterior ?? '';
+      msg().textContent = data.message || 'Años guardados correctamente.';
+      setTimeout(window.closeAniosModal, 1100);
+    } catch (error) { msg().textContent = error.message || 'Error guardando años.'; }
+  };
+  window.editarReferencia = async function (pill) {
+    if (!ctx.referencia_url) { alert('Falta la ruta para editar referencias.'); return; }
+    const original = pill.dataset.ref || '';
+    const updated = window.prompt('Referencia para:\n' + (pill.dataset.archivo || '') +
+      '\n\nEscriba la referencia deseada. Déjela vacía para volver a la automática.', original);
+    if (updated === null) return;
+    try {
+      const data = await jsonOrError(await fetch(ctx.referencia_url, {
+        method: 'POST', credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRFToken': csrf()},
+        body: JSON.stringify({carpeta: pill.dataset.carpeta || '',
+          archivo: pill.dataset.archivo || '', referencia: updated})
+      }));
+      pill.dataset.ref = data.referencia || '';
+      pill.dataset.manual = data.manual ? '1' : '0';
+      pill.textContent = 'Ref. ' + (data.referencia || '');
+      pill.classList.toggle('ref-pill-manual', Boolean(data.manual));
+      pill.title = data.manual ? 'Referencia fijada por el auditor. Clic para editar.' :
+        'Referencia automática. Clic para fijar una referencia propia.';
+    } catch (error) { alert('No se pudo guardar la referencia: ' + (error.message || 'error desconocido')); }
+  };
+  // Captura para evitar un segundo prompt si el JS anterior ya registró teclado.
+  document.addEventListener('keydown', function (event) {
+    const el = event.target;
+    if (el && el.classList && el.classList.contains('ref-pill') &&
+        (event.key === 'Enter' || event.key === ' ')) {
+      event.preventDefault(); event.stopImmediatePropagation(); window.editarReferencia(el);
+    }
+    if (event.key === 'Escape' && byId('aniosModal') &&
+        byId('aniosModal').style.display === 'block') window.closeAniosModal();
+  }, true);
+  const backdrop = byId('aniosModal');
+  if (backdrop) backdrop.addEventListener('click', event => {
+    if (event.target === backdrop) window.closeAniosModal();
+  });
+})();
+</script>

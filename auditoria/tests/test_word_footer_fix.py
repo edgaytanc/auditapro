@@ -78,9 +78,8 @@ class WordFooterLastPageTestCase(TestCase):
         processor = AuditMarkProcessor(self.audit.id, 'TEST DOCUMENTO.docx')
 
         # Llamar directamente al método que agrega marcas
-        # Actualizado árbol 2026: método renombrado a _add_marks_to_word
         matched_marks = [mark1, mark2]
-        processor._add_marks_to_word(doc, matched_marks)
+        processor._add_marks_to_footer(doc, matched_marks)
 
         # ═══════════════════════════════════════════════════════════
         # VERIFICACIÓN CRÍTICA: Marcas agregadas al final del documento
@@ -135,9 +134,8 @@ class WordFooterLastPageTestCase(TestCase):
         doc.add_paragraph("Contenido de la única página")
 
         # Procesar documento
-        # Actualizado árbol 2026: método renombrado a _add_marks_to_word
         processor = AuditMarkProcessor(self.audit.id, 'SINGLE PAGE.docx')
-        processor._add_marks_to_word(doc, [mark])
+        processor._add_marks_to_footer(doc, [mark])
 
         # Verificar que las marcas están en el documento
         full_text = '\n'.join([p.text for p in doc.paragraphs])
@@ -159,8 +157,7 @@ class WordFooterLastPageTestCase(TestCase):
         processor = AuditMarkProcessor(self.audit.id, 'EMPTY.docx')
 
         try:
-            # Actualizado árbol 2026: método renombrado a _add_marks_to_word
-            processor._add_marks_to_word(doc, [])
+            processor._add_marks_to_footer(doc, [])
             # Si llegamos aquí, no hubo error
             self.assertTrue(True)
         except Exception as e:

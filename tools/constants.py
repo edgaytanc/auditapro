@@ -47,7 +47,12 @@ from .errors import (
 
 from common.constants import ERROR_INSTANCES
 from audits.errors import AuditDoNotExits
-from users.errors import UserUnauthorized
+from users.errors import (
+    AuditorInvalidError,
+    AuditorNullError,
+    UserDoNotExits,
+    UserUnauthorized,
+)
 from audits.errors import NullAuditError
 
 REPORT_ERROR_INSTANCES = (
@@ -83,6 +88,9 @@ REPORT_ERROR_INSTANCES = (
     AuditDoNotExits,
     NullAuditError,
     UserUnauthorized,
+    AuditorInvalidError,
+    AuditorNullError,
+    UserDoNotExits,
     InvalidEndDateError,
     InvalidStartDateError,
     # REMOVED: 6 unused AuditMark exceptions here too

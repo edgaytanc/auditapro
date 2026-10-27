@@ -1,28 +1,123 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
 
-{% block title %}
-Auditoría Interna
-{% endblock title %}
+{% block title %}Auditoría Interna{% endblock title %}
 
-{% block page_title %}
-Auditoría Interna
-{% endblock page_title %}
+{% block page_title %}Auditoría Interna{% endblock page_title %}
 
-{% block main_content %}
-<div class="container">
-    <h1>Selecciona una Auditoría Interna</h1>
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="audit_select" class="form-label">Auditorías</label>
-            <select id="audit_select" name="audit_id" class="form-select" required>
-                <option value="">Seleccione una auditoría</option>
-                {% for audit in auditorias %}
-                    <option value="{{ audit.id }}">{{ audit.title }}</option>
-                {% endfor %}
-            </select>
+{% block page_subtitle %}
+Selecciona el proyecto de auditoría interna con el que deseas continuar.
+{% endblock page_subtitle %}
+
+{% block v2_styles %}
+  {% include "auditoria/_auditorias_v2_styles.html" %}
+{% endblock v2_styles %}
+
+{% block v2_content %}
+<div class="ap-audit-v2 is-internal">
+  <div class="ap-audit-selector-layout">
+
+    <section class="ap-audit-selector-card">
+      <div class="ap-audit-selector-accent"></div>
+
+      <div class="ap-audit-selector-body">
+        <div class="ap-audit-selector-heading">
+          <span class="ap-audit-selector-icon" aria-hidden="true">
+            <i class="bi bi-clipboard2-check"></i>
+          </span>
+
+          <div class="ap-audit-selector-copy">
+            <h2>Selecciona una Auditoría Interna</h2>
+            <p>Elige una auditoría interna asignada para ingresar a su expediente y continuar con los papeles de trabajo.</p>
+          </div>
         </div>
-        <button type="submit" class="btn btn-primary">Seleccionar Auditoría</button>
-    </form>
+
+        <form method="post" class="ap-audit-form">
+          {% csrf_token %}
+
+          <label for="audit_select" class="ap-audit-form-label">
+            <span>Auditorías disponibles</span>
+            <small>{{ auditorias|length }} disponible{% if auditorias|length != 1 %}s{% endif %}</small>
+          </label>
+
+          <div class="ap-audit-select-wrap">
+            <i class="bi bi-folder2-open" aria-hidden="true"></i>
+
+            <select
+              id="audit_select"
+              name="audit_id"
+              class="form-select ap-audit-select"
+              required
+            >
+              <option value="">Seleccione una auditoría</option>
+
+              {% for audit in auditorias %}
+                <option value="{{ audit.id }}">
+                  {{ audit.title }}{% if audit.periodo_auditado %} — {{ audit.periodo_auditado }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {% if not auditorias %}
+            <div class="ap-audit-empty-note">
+              <i class="bi bi-info-circle"></i>
+              <span>No hay auditorías de este tipo disponibles para tu usuario.</span>
+            </div>
+          {% endif %}
+
+          <div class="ap-audit-selector-actions">
+            <button type="submit" class="ap-audit-primary-button">
+              <i class="bi bi-arrow-right-circle"></i>
+              Seleccionar auditoría
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <aside class="ap-audit-info-card">
+      <a href="{% url 'audita_analisis' %}" class="ap-audita-ia-shortcut">
+        <i class="bi bi-stars" aria-hidden="true"></i>
+        <span><strong>Probar Audita Análisis</strong><small>Accede a Audita Análisis</small></span>
+        <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+      </a>
+      <span class="ap-audit-info-kicker">AuditaPro</span>
+      <h3>Entorno de Auditoría Interna</h3>
+      <p>La nueva presentación mantiene intacta la estructura, permisos y acciones existentes del proceso de auditoría interna.</p>
+
+      <div class="ap-audit-info-list">
+        <div class="ap-audit-info-item">
+          <span class="ap-audit-info-item-icon">
+            <i class="bi bi-folder-check"></i>
+          </span>
+          <div>
+            <strong>Papeles de trabajo</strong>
+            <span>Accede al expediente y a la estructura documental de la auditoría.</span>
+          </div>
+        </div>
+
+        <div class="ap-audit-info-item">
+          <span class="ap-audit-info-item-icon">
+            <i class="bi bi-shield-check"></i>
+          </span>
+          <div>
+            <strong>Acceso controlado</strong>
+            <span>Solo se muestran las auditorías permitidas para tu usuario y equipo.</span>
+          </div>
+        </div>
+
+        <div class="ap-audit-info-item">
+          <span class="ap-audit-info-item-icon">
+            <i class="bi bi-lightning-charge"></i>
+          </span>
+          <div>
+            <strong>Herramientas integradas</strong>
+            <span>Importación, exportación, referencias, muestreo y marcas siguen disponibles al ingresar.</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
 </div>
-{% endblock main_content %}
+{% endblock v2_content %}

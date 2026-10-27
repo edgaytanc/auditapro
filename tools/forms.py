@@ -3,6 +3,10 @@ from django import forms
 from common.templatetags.filters import format_duration_only_number
 from common.utils import convert_date_str_to_datetime
 from tools.models import AuditTimeSummary, WorkingPapersStatus
+from .models import (
+    AuditTimeSummary,
+    SummaryHoursWorked,
+)
 
 
 class AuditTimeSummaryForm(forms.ModelForm):
@@ -35,7 +39,7 @@ class SummaryHoursWorkedForm(forms.ModelForm):
     )
 
     class Meta:
-        model = AuditTimeSummary
+        model = SummaryHoursWorked
         fields = "__all__"
 
     def __init__(self, *args, **kwargs):

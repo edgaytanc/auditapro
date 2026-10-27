@@ -1,61 +1,678 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
-    Auditorias Asignadas
+  Ficha del Auditor
 {% endblock title %}
+
+{% block v2_styles %}
+  {{ block.super }}
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/manage-auditor-detail-v2.css' %}?v=5"
+  >
+{% endblock v2_styles %}
+
 {% block page_title %}
-    Auditorías del Auditor
+  {{ full_name }}
 {% endblock page_title %}
+
 {% block page_subtitle %}
-    {{ user_to_manage.get_full_name }}
+  Administra las asignaciones, disponibilidad y desempeño del auditor.
 {% endblock page_subtitle %}
-{% block main_content %}
-    <section class="container-fluid">
-        <header class="row mt-4">
-            <div class="col-12 col-md-6">
-                <div class="d-flex flex-column p-4">
-                    <h3 class="display-6">Auditorías</h3>
-                    <p class="text-muted">Auditorías asignadas al auditor.</p>
-                </div>
-            </div>
-        </header>
-        <article class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover">
-                                <thead>
-                                    <tr>
-                                        <th scope="col" style="width: 32px;">#</th>
-                                        <th scope="col">Título</th>
-                                        <th scope="col">Identidad</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for audit in audits %}
-                                        <tr>
-                                            <td>{{ forloop.counter }}</td>
-                                            <td class="font-medium">{{ audit.title }}</td>
-                                            <td>{{ audit.identidad }}</td>
-                                        </tr>
-                                    {% empty %}
-                                        <tr>
-                                            <td colspan="3" class="text-center">No hay auditorías asignadas a este auditor</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="w-100 text-end d-flex flex-column flex-md-row gap-3 justify-content-between align-items-center">
-                            <div class="text-start">
-                                <strong>Auditor:</strong> {{ user_to_manage.get_full_name }} - {{ user_to_manage.role }}
-                            </div>
-                            <a href="{% url 'manage_auditors' %}" class="btn btn-secondary">Volver</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
+{% block page_actions %}
+
+  <a
+    href="{% url 'manage_auditors' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Volver al equipo
+  </a>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <div class="auditor-detail-layout">
+
+    <!-- Perfil -->
+    <aside class="auditor-detail-profile">
+
+      <section class="auditor-detail-profile-card">
+
+        <div class="auditor-detail-avatar">
+
+          {% if user_to_manage.first_name or user_to_manage.last_name %}
+
+            {{ user_to_manage.first_name|first|upper }}
+            {{ user_to_manage.last_name|first|upper }}
+
+          {% else %}
+
+            {{ user_to_manage.username|first|upper }}
+
+          {% endif %}
+
+        </div>
+
+        <h2>
+          {{ full_name }}
+        </h2>
+
+        <p class="auditor-detail-role">
+          {% if user_to_manage.role %}
+            {{ user_to_manage.role.verbose_name }}
+          {% else %}
+            Auditor
+          {% endif %}
+        </p>
+
+        <span class="auditor-detail-status">
+          <span></span>
+          Usuario activo
+        </span>
+
+        <div class="auditor-detail-contact">
+
+          <div>
+            <i class="bi bi-envelope"></i>
+
+            <span>
+              {{ user_to_manage.email|default:"Correo no registrado" }}
+            </span>
+          </div>
+
+          <div>
+            <i class="bi bi-person"></i>
+
+            <span>
+              {{ user_to_manage.username }}
+            </span>
+          </div>
+
+        </div>
+
+        <div class="auditor-detail-profile-section">
+
+          <span class="auditor-detail-label">
+            Especialidades
+          </span>
+
+          <span class="auditor-detail-placeholder">
+            Pendiente de configurar
+          </span>
+
+        </div>
+
+        <div class="auditor-detail-profile-section">
+
+          <span class="auditor-detail-label">
+            Certificaciones
+          </span>
+
+          <span class="auditor-detail-placeholder">
+            Sin certificaciones registradas
+          </span>
+
+        </div>
+
+      </section>
+
+    </aside>
+
+    <!-- Contenido -->
+    <div class="auditor-detail-content">
+        <section class="auditor-user-management-panel">
+
+  <div class="auditor-user-management-header">
+
+    <div class="auditor-user-management-heading">
+
+      <span class="auditor-user-management-label">
+        Administración del usuario
+      </span>
+
+      <h2>
+        Rol y acceso
+      </h2>
+
+      <p>
+        Define el nivel de acceso del integrante o retíralo
+        del equipo manteniendo su historial.
+      </p>
+
+    </div>
+
+    <span class="auditor-current-role">
+
+      <i class="bi bi-shield-check"></i>
+
+      {% if user_to_manage.role %}
+        {{ user_to_manage.role.verbose_name }}
+      {% else %}
+        Sin rol
+      {% endif %}
+
+    </span>
+
+  </div>
+
+  <div class="auditor-user-management-body">
+
+    <form
+      method="post"
+      action="{% url 'update_auditor_role' user_to_manage.id %}"
+      class="auditor-role-update-form"
+    >
+      {% csrf_token %}
+
+      <div class="auditor-role-field">
+
+        <label for="auditorRoleSelect">
+          Rol del sistema
+        </label>
+
+        <select
+          id="auditorRoleSelect"
+          name="system_role"
+          required
+        >
+
+          <option
+            value="auditor"
+            {% if user_to_manage.role and user_to_manage.role.name == "auditor" %}
+              selected
+            {% endif %}
+          >
+            Auditor
+          </option>
+
+          <option
+            value="supervisor"
+            {% if user_to_manage.role and user_to_manage.role.name == "supervisor" %}
+              selected
+            {% endif %}
+          >
+            Supervisor
+          </option>
+
+          <option
+            value="readonly"
+            {% if user_to_manage.role and user_to_manage.role.name == "readonly" %}
+              selected
+            {% endif %}
+          >
+            Solo Lectura
+          </option>
+
+        </select>
+
+        <span class="auditor-role-help">
+          El usuario recibirá los permisos configurados para este rol.
+        </span>
+
+      </div>
+
+      <button
+        type="submit"
+        class="auditor-role-save-button"
+      >
+        <i class="bi bi-floppy"></i>
+        Guardar rol
+      </button>
+
+    </form>
+
+    <div class="auditor-danger-zone">
+
+      <div class="auditor-danger-zone-copy">
+
+        <strong>
+          Retirar del equipo
+        </strong>
+
+        <span>
+          Deshabilita el acceso y libera el cupo del equipo.
+        </span>
+
+      </div>
+
+      <form
+        method="post"
+        action="{% url 'delete_auditor' user_to_manage.id %}"
+        onsubmit="
+          return confirm(
+            '¿Confirmas que deseas retirar a este usuario? Su historial se conservará.'
+          );
+        "
+      >
+        {% csrf_token %}
+
+        {% if can_delete_auditor %}
+
+          <button
+            type="submit"
+            class="auditor-delete-button"
+          >
+            <i class="bi bi-person-x"></i>
+            Retirar del equipo
+          </button>
+
+        {% else %}
+
+          <button
+            type="button"
+            class="auditor-delete-button"
+            disabled
+          >
+            <i class="bi bi-lock"></i>
+            No se puede retirar
+          </button>
+
+        {% endif %}
+
+        {% if can_hard_delete_auditor %}
+
+        <form
+            method="post"
+            action="{% url 'hard_delete_auditor' user_to_manage.id %}"
+            class="auditor-hard-delete-form"
+            onsubmit="
+            return confirm(
+                'Esta acción eliminará permanentemente al usuario de la base de datos. ¿Deseas continuar?'
+            );
+            "
+        >
+            {% csrf_token %}
+
+            <button
+            type="submit"
+            class="auditor-hard-delete-button"
+            >
+            <i class="bi bi-trash3"></i>
+            Eliminar permanentemente
+            </button>
+
+        </form>
+
+        {% endif %}
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  
+
+  {% if not can_delete_auditor %}
+
+    <div class="auditor-management-warning">
+
+      <i class="bi bi-exclamation-triangle"></i>
+
+      <span>
+        Este integrante tiene
+        {{ active_assignments }}
+        auditoría{{ active_assignments|pluralize }}
+        activa{{ active_assignments|pluralize }}.
+        Debes retirarlo primero de esos encargos.
+      </span>
+
+    </div>
+
+  {% endif %}
+
+</section>
+
+      <!-- Indicadores -->
+      <section class="auditor-detail-kpis">
+
+        <article class="auditor-detail-kpi">
+
+          <div class="auditor-detail-kpi-header">
+            <span>
+              Auditorías asignadas
+            </span>
+
+            <i class="bi bi-folder-check"></i>
+          </div>
+
+          <strong>
+            {{ total_assignments }}
+          </strong>
+
+          <p>
+            Históricas y actuales
+          </p>
+
         </article>
-    </section>
-{% endblock main_content %}
+
+        <article class="auditor-detail-kpi">
+
+          <div class="auditor-detail-kpi-header">
+            <span>
+              Asignaciones activas
+            </span>
+
+            <i class="bi bi-activity"></i>
+          </div>
+
+          <strong>
+            {{ active_assignments }}
+          </strong>
+
+          <p>
+            Encargos aún vigentes
+          </p>
+
+        </article>
+
+        <article class="auditor-detail-kpi">
+
+          <div class="auditor-detail-kpi-header">
+            <span>
+              Horas del mes
+            </span>
+
+            <i class="bi bi-clock-history"></i>
+          </div>
+
+          <strong>
+            {{ worked_hours }}
+          </strong>
+
+          <p>
+            De {{ scheduled_hours }} programadas
+          </p>
+
+        </article>
+
+        <article class="auditor-detail-kpi">
+
+          <div class="auditor-detail-kpi-header">
+            <span>
+              Desempeño
+            </span>
+
+            <i class="bi bi-graph-up-arrow"></i>
+          </div>
+
+          <strong>
+            {{ performance_display }}
+          </strong>
+
+          <div class="auditor-detail-progress">
+            <span style="width: {{ performance }}%;"></span>
+          </div>
+
+        </article>
+
+      </section>
+
+      <!-- Asignar nuevas auditorías -->
+      <section class="auditor-detail-panel">
+
+        <header class="auditor-detail-panel-header">
+
+          <div>
+            <h2>
+              Asignar auditorías
+            </h2>
+
+            <p>
+              Selecciona uno o varios encargos disponibles para este auditor.
+            </p>
+          </div>
+
+          <span class="auditor-detail-counter">
+            {{ available_assignments }} disponibles
+          </span>
+
+        </header>
+
+        {% if available_audits %}
+
+          <form
+            method="post"
+            action="{% url 'assign_audit' user_to_manage.id %}"
+            class="auditor-assignment-form"
+          >
+            {% csrf_token %}
+
+            <div class="auditor-available-audits">
+
+              {% for audit in available_audits %}
+
+                <label
+                  class="auditor-available-card"
+                  for="available-audit-{{ audit.id }}"
+                >
+
+                  <input
+                    type="checkbox"
+                    name="audits_ids"
+                    value="{{ audit.id }}"
+                    id="available-audit-{{ audit.id }}"
+                  >
+
+                  <span class="auditor-available-check">
+                    <i class="bi bi-check-lg"></i>
+                  </span>
+
+                  <span class="auditor-available-content">
+
+                    <span class="auditor-available-header">
+
+                      <strong>
+                        {{ audit.title }}
+                      </strong>
+
+                      <span class="auditor-audit-type">
+
+                        {% if audit.tipoAuditoria == "F" %}
+                          Financiera
+                        {% elif audit.tipoAuditoria == "R" %}
+                          Revisoría Fiscal
+                        {% elif audit.tipoAuditoria == "I" %}
+                          Interna
+                        {% else %}
+                          {{ audit.tipoAuditoria }}
+                        {% endif %}
+
+                      </span>
+
+                    </span>
+
+                    <span class="auditor-available-client">
+                      <i class="bi bi-building"></i>
+                      {{ audit.identidad }}
+                    </span>
+
+                    <span class="auditor-available-dates">
+                      <i class="bi bi-calendar3"></i>
+
+                      {{ audit.fechaInit|date:"d/m/Y" }}
+                      —
+                      {{ audit.fechaEnd|date:"d/m/Y" }}
+                    </span>
+
+                  </span>
+
+                </label>
+
+              {% endfor %}
+
+            </div>
+
+            <div class="auditor-assignment-actions">
+
+              <p>
+                Las auditorías seleccionadas se añadirán a las asignaciones
+                actuales del auditor.
+              </p>
+
+              <button
+                type="submit"
+                class="auditor-detail-primary-button"
+              >
+                <i class="bi bi-person-check"></i>
+                Asignar seleccionadas
+              </button>
+
+            </div>
+
+          </form>
+
+        {% else %}
+
+          <div class="auditor-detail-empty">
+
+            <i class="bi bi-check2-circle"></i>
+
+            <strong>
+              No hay auditorías disponibles
+            </strong>
+
+            <p>
+              Este auditor ya está asignado a todos los encargos administrados
+              por tu usuario.
+            </p>
+
+          </div>
+
+        {% endif %}
+
+      </section>
+
+      <!-- Auditorías asignadas -->
+      <section class="auditor-detail-panel">
+
+        <header class="auditor-detail-panel-header">
+
+          <div>
+            <h2>
+              Auditorías asignadas
+            </h2>
+
+            <p>
+              Encargos en los que participa actualmente o participó
+              anteriormente.
+            </p>
+          </div>
+
+          <span class="auditor-detail-counter">
+            {{ total_assignments }} registradas
+          </span>
+
+        </header>
+
+        {% if assigned_audits %}
+
+          <div class="auditor-assigned-table-wrapper">
+
+            <table class="auditor-assigned-table">
+
+              <thead>
+                <tr>
+                  <th>Auditoría</th>
+                  <th>Cliente</th>
+                  <th>Tipo</th>
+                  <th>Fecha inicial</th>
+                  <th>Fecha final</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+
+              <tbody>
+
+                {% for audit in assigned_audits %}
+
+                  <tr>
+
+                    <td>
+                      <strong>
+                        {{ audit.title }}
+                      </strong>
+
+                      <span>
+                        ID #{{ audit.id }}
+                      </span>
+                    </td>
+
+                    <td>
+                      {{ audit.identidad }}
+                    </td>
+
+                    <td>
+
+                      <span class="auditor-table-type">
+
+                        {% if audit.tipoAuditoria == "F" %}
+                          Financiera
+                        {% elif audit.tipoAuditoria == "R" %}
+                          Revisoría Fiscal
+                        {% elif audit.tipoAuditoria == "I" %}
+                          Interna
+                        {% else %}
+                          {{ audit.tipoAuditoria }}
+                        {% endif %}
+
+                      </span>
+
+                    </td>
+
+                    <td>
+                      {{ audit.fechaInit|date:"d/m/Y" }}
+                    </td>
+
+                    <td>
+                      {{ audit.fechaEnd|date:"d/m/Y" }}
+                    </td>
+
+                    <td>
+                      <span class="auditor-assigned-status">
+                        <span></span>
+                        Asignada
+                      </span>
+                    </td>
+
+                  </tr>
+
+                {% endfor %}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        {% else %}
+
+          <div class="auditor-detail-empty">
+
+            <i class="bi bi-folder-x"></i>
+
+            <strong>
+              Sin auditorías asignadas
+            </strong>
+
+            <p>
+              Selecciona una auditoría disponible en la sección anterior.
+            </p>
+
+          </div>
+
+        {% endif %}
+
+      </section>
+
+    </div>
+
+  </div>
+
+{% endblock v2_content %}

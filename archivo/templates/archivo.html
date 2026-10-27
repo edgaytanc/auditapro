@@ -1,58 +1,494 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
   Archivo Permanente
 {% endblock title %}
+
+{% block v2_styles %}
+  <link
+    rel="stylesheet"
+    href="{% static 'css/permanent-file-v2.css' %}?v=2"
+  >
+{% endblock v2_styles %}
+
 {% block page_title %}
   Archivo Permanente
 {% endblock page_title %}
+
 {% block page_subtitle %}
+  Información general, legal, administrativa y financiera
+  de la auditoría seleccionada.
 {% endblock page_subtitle %}
-{% block main_header_content %}
-  <p class="w-100">
-    <b>Instrucción:</b> Haz clic en el botón "Descargar" para obtener el documento correspondiente.
-    Los archivos se descargarán en formato DOCX y podrás editarlos en tu aplicación de procesamiento de texto preferida.
-  </p>
-{% endblock main_header_content %}
 
-{% load static %}
+{% block page_actions %}
 
-{% block main_content %}
-  <div class="row g-3">
-    {% for documento in documentos %}
-    <div class="col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h5 class="card-title">{{ documento.nombre }}</h5>
-          <div class="mt-auto">
-            <a href="{% url 'descargar_archivo' documento.archivo %}" class="btn btn-primary w-100">
-              <i class="bi bi-download me-2"></i>Descargar
-            </a>
+  <a
+    href="{% url 'archivo_permanente' %}?reload_audit=true"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-repeat"></i>
+    Cambiar Auditoría
+  </a>
+
+  <button
+    type="button"
+    class="ap-secondary-button"
+    data-bs-toggle="modal"
+    data-bs-target="#baseDocumentsModal"
+  >
+    <i class="bi bi-file-earmark-arrow-down"></i>
+    Plantillas DOCX
+  </button>
+
+  <a
+    href="{% url 'exportar_archivo_permanente' 'word' 'all' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-file-earmark-word"></i>
+    Word completo
+  </a>
+
+  <a
+    href="{% url 'exportar_archivo_permanente' 'pdf' 'all' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-file-earmark-pdf"></i>
+    PDF completo
+  </a>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <div
+    class="modal fade"
+    id="baseDocumentsModal"
+    tabindex="-1"
+    aria-labelledby="baseDocumentsModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h2
+              class="modal-title fs-5"
+              id="baseDocumentsModalLabel"
+            >
+              Plantillas base del Archivo Permanente
+            </h2>
+            <p class="mb-0 text-muted">
+              Descarga los documentos editables incluidos en producción.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Cerrar"
+          ></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="list-group">
+            {% for documento in documentos %}
+              <a
+                href="{% url 'descargar_archivo' documento.archivo %}"
+                class="list-group-item list-group-item-action d-flex align-items-center justify-content-between gap-3"
+              >
+                <span>
+                  <i class="bi bi-file-earmark-word me-2"></i>
+                  {{ documento.nombre }}
+                </span>
+
+                <span class="badge text-bg-primary">
+                  Descargar
+                </span>
+              </a>
+            {% endfor %}
           </div>
         </div>
       </div>
     </div>
-    {% endfor %}
   </div>
-{% endblock main_content %}
-{% block extra_scripts %}
+
+  <section class="ap-file-audit-banner">
+
+    <div class="ap-file-audit-icon">
+      <i class="bi bi-archive"></i>
+    </div>
+
+    <div class="ap-file-audit-information">
+      <span>AUDITORÍA SELECCIONADA</span>
+
+      <h2>
+        {{ selected_audit.title }}
+      </h2>
+
+      <p>
+        {{ selected_audit.identidad }}
+      </p>
+    </div>
+
+    <div class="ap-file-audit-count">
+      <strong>{{ total_entries }}</strong>
+      <span>registros activos</span>
+    </div>
+
+  </section>
+
+  <section class="ap-file-legend">
+
+    <div>
+      <span class="ap-file-origin ap-file-origin-automatic">
+        Automático
+      </span>
+
+      <p>
+        Información tomada o preparada desde los datos
+        disponibles en la auditoría.
+      </p>
+    </div>
+
+    <div>
+      <span class="ap-file-origin ap-file-origin-manual">
+        Manual
+      </span>
+
+      <p>
+        Información que debe completar o validar el auditor.
+      </p>
+    </div>
+
+  </section>
+
+  <div class="ap-file-layout">
+
+    <aside class="ap-file-sidebar">
+
+      <header>
+        <span>SECCIONES</span>
+        <strong>{{ total_sections }}</strong>
+      </header>
+
+      <nav
+        class="ap-file-navigation"
+        aria-label="Secciones del Archivo Permanente"
+      >
+
+        {% for section in section_cards %}
+
+          <button
+            type="button"
+            class="ap-file-navigation-item {% if forloop.first %}is-active{% endif %}"
+            data-file-tab="{{ section.key }}"
+          >
+            <span class="ap-file-navigation-number">
+              {{ section.number }}
+            </span>
+
+            <span class="ap-file-navigation-text">
+              {{ section.label|slice:"3:" }}
+            </span>
+
+            <span class="ap-file-navigation-total">
+              {{ section.total }}
+            </span>
+          </button>
+
+        {% endfor %}
+
+      </nav>
+
+    </aside>
+
+    <div class="ap-file-content">
+
+      {% for section in section_cards %}
+
+        <section
+          class="ap-file-section {% if forloop.first %}is-active{% endif %}"
+          data-file-panel="{{ section.key }}"
+        >
+
+          <header class="ap-file-section-header">
+
+            <div>
+              <span>
+                SECCIÓN {{ section.number }}
+              </span>
+
+              <h2>
+                {{ section.label }}
+              </h2>
+
+              <p>
+                {{ section.total }} registros:
+                {{ section.automatic }} automáticos y
+                {{ section.manual }} manuales.
+              </p>
+            </div>
+
+            <div class="ap-file-section-downloads">
+
+              <a
+                href="{% url 'exportar_archivo_permanente' 'word' section.key %}"
+                class="ap-file-download-button"
+              >
+                <i class="bi bi-file-earmark-word"></i>
+                Word
+              </a>
+
+              <a
+                href="{% url 'exportar_archivo_permanente' 'pdf' section.key %}"
+                class="ap-file-download-button is-pdf"
+              >
+                <i class="bi bi-file-earmark-pdf"></i>
+                PDF
+              </a>
+
+            </div>
+
+          </header>
+
+          {% for group in section.groups %}
+
+            <article class="ap-file-group">
+
+              <header class="ap-file-group-header">
+                <div>
+                  <span>BLOQUE DE INFORMACIÓN</span>
+                  <h3>{{ group.label }}</h3>
+                </div>
+
+                <strong>
+                  {{ group.entries|length }}
+                </strong>
+              </header>
+
+              <div class="ap-file-entry-list">
+
+                {% for row in group.entries %}
+
+                  {% with entry=row.entry %}
+
+                    <form
+                      method="post"
+                      class="ap-file-entry"
+                    >
+                      {% csrf_token %}
+
+                      <input
+                        type="hidden"
+                        name="record_id"
+                        value="{{ entry.id }}"
+                      >
+
+                      <div class="ap-file-entry-heading">
+
+                        <div>
+                          <strong>{{ entry.title }}</strong>
+
+                          <span
+                            class="
+                              ap-file-origin
+                              {% if entry.origin == 'automatic' %}
+                                ap-file-origin-automatic
+                              {% else %}
+                                ap-file-origin-manual
+                              {% endif %}
+                            "
+                          >
+                            {{ entry.get_origin_display }}
+                          </span>
+                        </div>
+
+                        {% if entry.guide %}
+                          <p>
+                            <i class="bi bi-info-circle"></i>
+                            {{ entry.guide }}
+                          </p>
+                        {% endif %}
+
+                      </div>
+
+                      <div
+                        class="
+                          ap-file-fields
+                          ap-file-fields-{{ row.fields|length }}
+                        "
+                      >
+
+                        {% for field in row.fields %}
+
+                          <label class="ap-file-field">
+                            <span>{{ field.label }}</span>
+
+                            <input
+                              type="text"
+                              name="field_{{ field.key }}"
+                              value="{{ field.value }}"
+                              autocomplete="off"
+                              {% if not can_edit_entries %}
+                                disabled
+                              {% endif %}
+                            >
+                          </label>
+
+                        {% empty %}
+
+                          <p class="ap-file-no-fields">
+                            Este registro no contiene campos editables.
+                          </p>
+
+                        {% endfor %}
+
+                      </div>
+
+                      {% if can_edit_entries or can_delete_entries %}
+
+                        <div class="ap-file-entry-actions">
+
+                          {% if can_edit_entries %}
+                            <button
+                              type="submit"
+                              name="entry_action"
+                              value="update"
+                              class="ap-file-save-button"
+                            >
+                              <i class="bi bi-floppy"></i>
+                              Guardar
+                            </button>
+                          {% endif %}
+
+                          {% if can_delete_entries %}
+                            <button
+                              type="submit"
+                              name="entry_action"
+                              value="delete"
+                              class="ap-file-delete-button"
+                              onclick="return confirm('¿Eliminar el registro «{{ entry.title }}»?');"
+                            >
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          {% endif %}
+
+                        </div>
+
+                      {% endif %}
+
+                    </form>
+
+                  {% endwith %}
+
+                {% empty %}
+
+                  <div class="ap-file-empty">
+                    <i class="bi bi-inbox"></i>
+
+                    <strong>
+                      No hay registros activos en este bloque
+                    </strong>
+                  </div>
+
+                {% endfor %}
+
+              </div>
+
+            </article>
+
+          {% empty %}
+
+            <div class="ap-file-empty ap-file-empty-section">
+              <i class="bi bi-folder2-open"></i>
+
+              <strong>
+                No hay registros activos en esta sección
+              </strong>
+
+              <p>
+                Los registros eliminados permanecen fuera de la vista.
+              </p>
+            </div>
+
+          {% endfor %}
+
+        </section>
+
+      {% endfor %}
+
+    </div>
+
+  </div>
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+
   <script>
-  const buttons = document.querySelectorAll(".loadButton");
-  const iframeContainer = document.getElementById("spreadsheetContainer");
-  const iframe = document.getElementById("spreadsheetIframe");
-  const directLink = document.getElementById("directLink");
+    document.addEventListener("DOMContentLoaded", function () {
+      const tabButtons = document.querySelectorAll(
+        "[data-file-tab]"
+      );
 
-  const handleClickButton = (btn) => {
-    const url = btn.getAttribute("data-url");
+      const panels = document.querySelectorAll(
+        "[data-file-panel]"
+      );
 
-    if (url) {
-      iframe.src = url;
-      directLink.href = url;
-      iframeContainer.classList.remove("d-none");
-      iframeContainer.classList.add("d-flex");
-    }
-  }
+      function openSection(sectionKey) {
+        tabButtons.forEach(function (button) {
+          const isActive = (
+            button.dataset.fileTab === sectionKey
+          );
 
-  buttons.forEach((btn) => btn.addEventListener("click", () => handleClickButton(btn)))
+          button.classList.toggle(
+            "is-active",
+            isActive
+          );
+        });
+
+        panels.forEach(function (panel) {
+          const isActive = (
+            panel.dataset.filePanel === sectionKey
+          );
+
+          panel.classList.toggle(
+            "is-active",
+            isActive
+          );
+        });
+
+        window.location.hash = sectionKey;
+      }
+
+      tabButtons.forEach(function (button) {
+        button.addEventListener(
+          "click",
+          function () {
+            openSection(
+              button.dataset.fileTab
+            );
+          }
+        );
+      });
+
+      const initialSection = (
+        window.location.hash.replace("#", "")
+      );
+
+      if (
+        initialSection
+        && document.querySelector(
+          '[data-file-panel="' + initialSection + '"]'
+        )
+      ) {
+        openSection(
+          initialSection
+        );
+      }
+    });
   </script>
-{% endblock extra_scripts %}
+
+{% endblock v2_scripts %}

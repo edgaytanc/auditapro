@@ -1,0 +1,68 @@
+/* Clases aisladas: no modifican estilos de auditorías, dashboards ni sidebar. */
+.ap-planes-renew {
+  --blue:#2F6FED; --blue-dark:#1D4FBE; --blue-soft:#EAF1FE;
+  --purple:#7C5CFC; --navy-1:#182655; --navy-2:#0F1A3A;
+  --ink:#12172A; --ink-soft:#5B6472; --ink-faint:#9AA1AC;
+  --line:#E7E9EE; --bg:#FFFFFF; --card:#FFFFFF;
+  --green:#16A34A; --green-soft:#EAF9F1; --green-line:#CDEBDB;
+  --red:#DC2626; --red-soft:#FDEAEA;
+  width: 100%;
+  min-width: 0;
+  color: var(--ink);
+  font-family: Inter, 'Segoe UI', sans-serif;
+}
+.ap-planes-renew a { text-decoration: none; }
+.ap-planes-renew .renew-card { width:100%; max-width:640px;
+    background:var(--card);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 20px 50px -24px rgba(15,26,58,.35);
+    border:1px solid var(--line); }
+.ap-planes-renew .renew-head { background:#fff;
+    color:var(--ink);
+    padding:30px 34px 26px;
+    border-bottom:1px solid var(--line); }
+.ap-planes-renew .renew-badge { display:inline-flex; align-items:center; gap:7px;
+    background:var(--red); color:#fff;
+    font-size:11px; font-weight:800; letter-spacing:.05em;
+    padding:5px 11px; border-radius:999px; margin-bottom:16px; }
+.ap-planes-renew .renew-badge .dot { width:6px;height:6px;border-radius:50%;background:#fff;display:inline-block }
+.ap-planes-renew .renew-head h2 { font-size:25px;font-weight:800;margin:0 0 10px;line-height:1.25 }
+.ap-planes-renew .renew-head p { font-size:14px;line-height:1.55;color:var(--ink-soft);margin:0;max-width:46ch }
+.ap-planes-renew .renew-body { padding:26px 34px 30px }
+.ap-planes-renew .renew-quote { background:var(--green-soft); border:1px solid var(--green-line);
+    border-radius:12px; padding:14px 16px; font-size:13px; font-style:italic;
+    color:var(--ink); line-height:1.55; margin-bottom:22px; }
+.ap-planes-renew .renew-quote cite { display:block;margin-top:6px;font-style:normal;font-size:12px;color:var(--ink-soft) }
+.ap-planes-renew .renew-price { display:flex;align-items:baseline;gap:6px;margin-bottom:6px }
+.ap-planes-renew .renew-price .n { font-size:34px;font-weight:800;color:var(--ink) }
+.ap-planes-renew .renew-price .u { font-size:14px;color:var(--ink-soft) }
+.ap-planes-renew .renew-lock { display:inline-block; background:var(--green-soft); color:var(--green);
+    border:1px solid var(--green-line); font-size:12px; font-weight:700;
+    padding:6px 11px; border-radius:8px; margin-bottom:20px; }
+.ap-planes-renew .renew-list { list-style:none;margin:0 0 26px;padding:0;display:flex;flex-direction:column;gap:11px }
+.ap-planes-renew .renew-list li { display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--ink) }
+.ap-planes-renew .renew-list .check { width:18px;height:18px;border-radius:50%;background:var(--green);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px; }
+.ap-planes-renew .renew-cta { display:flex;align-items:center;justify-content:center;gap:8px;
+    width:100%;background:var(--green);color:#fff;border:none;border-radius:11px;
+    padding:15px 18px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;
+    transition:filter .15s ease, transform .15s ease; }
+.ap-planes-renew .renew-cta:hover { filter:brightness(1.06);transform:translateY(-1px) }
+.ap-planes-renew .renew-cta:focus-visible { outline:2px solid var(--green);outline-offset:3px }
+.ap-planes-renew .renew-foot { text-align:center;font-size:12px;color:var(--ink-faint);margin-top:14px }
+.ap-planes-renew .renew-auto { border-top:1px solid var(--line);padding-top:22px;margin-bottom:26px }
+.ap-planes-renew .renew-auto h3 { font-size:16px;font-weight:800;margin:0 0 14px;color:var(--ink) }
+.ap-planes-renew .renew-auto .renew-list { margin:0;gap:10px }
+.ap-planes-renew .renew-auto .renew-list li { line-height:1.45 }
+.ap-planes-renew .renew-auto .renew-list li.gift { background:var(--green-soft);border:1px solid var(--green-line);border-radius:10px;padding:10px 12px;margin:2px 0 }
+.ap-planes-renew .renew-auto .renew-list li.gift b { color:var(--green) }
+
+.ap-planes-renew { display: flex; justify-content:center; }
+.ap-planes-renew .renew-card { max-width: 640px; }
+.ap-planes-renew .renew-cta { text-decoration: none; }
+.ap-planes-renew .renew-cta:focus-visible { outline: 3px solid #16a34a; outline-offset:3px; }
+@media (max-width:640px) {
+ .ap-planes-renew .renew-head { padding: 25px 22px 20px; }
+ .ap-planes-renew .renew-body { padding: 22px 20px; }
+}

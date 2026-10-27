@@ -1,0 +1,95 @@
+{% extends "common/base.html" %}
+{% load static %}
+
+{% block late_styles %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/auditapro-v2.css' %}"
+  >
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/audita_ia_button.css' %}"
+  >
+
+  {% block v2_styles %}
+  {% endblock v2_styles %}
+{% endblock late_styles %}
+
+{% block content %}
+  <div class="ap-shell" id="apShell">
+
+    {% include "common/v2/_sidebar-v2.html" %}
+
+    <div class="ap-workspace">
+
+      {% include "common/v2/_topbar-v2.html" %}
+
+      <main class="ap-main">
+
+        {% include "common/_status-alert.html" %}
+
+        <header class="ap-page-header">
+          <div>
+            <p class="ap-page-eyebrow">
+              AuditaPro
+            </p>
+
+            <h1 class="ap-page-title">
+              {% block page_title %}
+              {% endblock page_title %}
+            </h1>
+
+            <p class="ap-page-subtitle">
+              {% block page_subtitle %}
+              {% endblock page_subtitle %}
+            </p>
+          </div>
+
+          <div class="ap-page-actions">
+            {% block page_actions %}
+            {% endblock page_actions %}
+          </div>
+        </header>
+
+        <section class="ap-page-content">
+          {% block v2_content %}
+          {% endblock v2_content %}
+        </section>
+
+      </main>
+    </div>
+
+    {# Modal en la raíz del shell para evitar recortes por la barra superior sticky. #}
+    {% include "users/partials/audita_ia_button.html" %}
+
+    <button
+      type="button"
+      class="ap-sidebar-backdrop"
+      id="apSidebarBackdrop"
+      aria-label="Cerrar menú"
+    ></button>
+
+  </div>
+{% endblock content %}
+
+{% block extra_scripts %}
+  <script src="{% static 'js/auditapro-v2.js' %}"></script>
+  <script src="{% static 'js/audita_ia_button.js' %}"></script>
+
+  {% block v2_scripts %}
+  {% endblock v2_scripts %}
+{% endblock extra_scripts %}

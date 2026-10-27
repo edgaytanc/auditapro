@@ -1,48 +1,403 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
-  Auditorias Asignadas
+  Estado de Papeles de Trabajo
 {% endblock title %}
+
+{% block v2_styles %}
+  <link
+    rel="stylesheet"
+    href="{% static 'css/workpapers-status-v2.css' %}?v=1"
+  >
+  <link rel="stylesheet" href="{% static 'css/herramientas-cliente-integrado.css' %}?v=1">
+{% endblock v2_styles %}
+
 {% block page_title %}
-  Estados de Papeles de Trabajo
+  Estado de Papeles de Trabajo
 {% endblock page_title %}
+
 {% block page_subtitle %}
+  Control de preparación, ejecución, revisión y aprobación
+  de los papeles del encargo.
 {% endblock page_subtitle %}
-{% block main_header_content %}
-  <form method="get"
-        action="{% url 'status_of_work_papers_table' %}"
-        class="position-relative col-6 me-auto">
-    <svg width="24"
-         height="24"
-         viewBox="0 0 24 24"
-         fill="none"
-         xmlns="http://www.w3.org/2000/svg"
-         style="position: absolute;
-                top: 20%;
-                left: 2%">
-      <path fill-rule="evenodd" clip-rule="evenodd" d="M18.319 14.4326C20.7628 11.2941 20.542 6.75347 17.6569 3.86829C14.5327 0.744098 9.46734 0.744098 6.34315 3.86829C3.21895 6.99249 3.21895 12.0578 6.34315 15.182C9.22833 18.0672 13.769 18.2879 16.9075 15.8442C16.921 15.8595 16.9351 15.8745 16.9497 15.8891L21.1924 20.1317C21.5829 20.5223 22.2161 20.5223 22.6066 20.1317C22.9971 19.7412 22.9971 19.1081 22.6066 18.7175L18.364 14.4749C18.3493 14.4603 18.3343 14.4462 18.319 14.4326ZM16.2426 5.28251C18.5858 7.62565 18.5858 11.4246 16.2426 13.7678C13.8995 16.1109 10.1005 16.1109 7.75736 13.7678C5.41421 11.4246 5.41421 7.62565 7.75736 5.28251C10.1005 2.93936 13.8995 2.93936 16.2426 5.28251Z" fill="currentColor" />
-    </svg>
-    <input type="search"
-           name="q"
-           id="search-input-table"
-           class="form-control text-truncate w-100"
-           style="padding-left: 3rem"
-           placeholder="Buscar por referencia, papeles de trabajo"
-           value="{{ request.GET.q }}" />
-  </form>
-  <div>
-    {% if user.role.name == 'auditor' %}
-      <a class="btn btn-primary"
-         href="{% url 'create_status_of_work_papers' %}">Crear Registro</a>
-    {% endif %}
-    <a href="{% url 'status_of_work_papers_table' %}?generate_pdf=true"
-       class="btn btn-secondary">Exportar Informe</a>
+
+{% block page_actions %}
+  <div class="hc-downloads" aria-label="Descargar resultados del encargo">
+    <span class="hc-download-label">Descargar:</span>
+    <a class="hc-download excel" href="{% url 'tools_export_cliente' 'papeles' 'xlsx' %}"><i class="bi bi-file-earmark-excel"></i> Excel</a>
+    <a class="hc-download word" href="{% url 'tools_export_cliente' 'papeles' 'docx' %}"><i class="bi bi-file-earmark-word"></i> Word</a>
+    <a class="hc-download pdf" href="{% url 'tools_export_cliente' 'papeles' 'pdf' %}"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
   </div>
-{% endblock main_header_content %}
 
-{% load filters %}
-{% load render_table from django_tables2 %}
 
-{% block main_content %}
-  {% render_table table %}
-{% endblock main_content %}
+  <a
+    href="{% url 'status_of_work_papers_table' %}?reload_audit=true"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-repeat"></i>
+    Cambiar Auditoría
+  </a>
+
+  <a
+    href="{% url 'status_of_work_papers_table' %}?generate_pdf=true"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-file-earmark-pdf"></i>
+    Exportar PDF
+  </a>
+
+  <a
+    href="{% url 'tools' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Herramientas
+  </a>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+<div class="hc-layout" data-herramientas="papers">
+  {% include 'tools/partials/_herramientas_cliente_nav.html' with herr_section='papers' %}
+  <div class="hc-main">
+    <div class="hc-page-message">Vista conectada a la auditoría seleccionada. Los cambios se guardan en el sistema mediante las acciones habituales.</div>
+
+
+  <section class="ap-wp-audit-banner">
+
+    <div class="ap-wp-audit-icon">
+      <i class="bi bi-files"></i>
+    </div>
+
+    <div>
+      <span>AUDITORÍA SELECCIONADA</span>
+
+      <h2>
+        {{ selected_audit.title }}
+      </h2>
+
+      <p>
+        {{ selected_audit.identidad }}
+      </p>
+    </div>
+
+    <strong>
+      {{ total_records }}
+      papeles
+    </strong>
+
+  </section>
+
+  <section class="ap-wp-info-banner">
+
+    <i class="bi bi-info-circle"></i>
+
+    <div>
+      <strong>
+        22 áreas × 5 papeles
+      </strong>
+
+      <p>
+        Cambia el estado o responsable directamente en cada
+        fila y guarda el registro.
+      </p>
+    </div>
+
+  </section>
+
+  <section class="ap-wp-kpi-grid">
+
+    <article>
+      <span>Total</span>
+      <strong>{{ total_records }}</strong>
+      <p>Papeles del encargo</p>
+    </article>
+
+    <article>
+      <span>Pendientes</span>
+      <strong>{{ pending_records }}</strong>
+      <p>Sin iniciar</p>
+    </article>
+
+    <article>
+      <span>Preparados</span>
+      <strong>{{ prepared_records }}</strong>
+      <p>Documentación preparada</p>
+    </article>
+
+    <article>
+      <span>En proceso</span>
+      <strong>{{ in_progress_records }}</strong>
+      <p>Trabajo en ejecución</p>
+    </article>
+
+    <article>
+      <span>En revisión</span>
+      <strong>{{ in_review_records }}</strong>
+      <p>Pendientes de aprobación</p>
+    </article>
+
+    <article>
+      <span>Aprobados</span>
+      <strong>{{ approved_records }}</strong>
+      <p>{{ completion }}% completado</p>
+    </article>
+
+  </section>
+
+  <section class="ap-wp-progress-panel">
+
+    <header>
+      <div>
+        <h2>Avance de aprobación</h2>
+        <p>
+          Papeles aprobados frente al total registrado.
+        </p>
+      </div>
+
+      <strong>
+        {{ completion }}%
+      </strong>
+    </header>
+
+    <div>
+      <span style="width: {{ completion }}%;"></span>
+    </div>
+
+  </section>
+
+  <section class="ap-wp-table-panel">
+
+    <header class="ap-wp-table-header">
+
+      <div>
+        <span>CONTROL DOCUMENTAL</span>
+
+        <h2>
+          Papeles de trabajo por estado
+        </h2>
+
+        <p>
+          Se muestran {{ filtered_count }} de
+          {{ total_records }} registros.
+        </p>
+      </div>
+
+      <form
+        method="get"
+        class="ap-wp-filters"
+      >
+
+        <label>
+          <i class="bi bi-search"></i>
+
+          <input
+            type="search"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Buscar referencia, papel o auditor..."
+          >
+        </label>
+
+        <select name="status">
+          <option value="">
+            Todos los estados
+          </option>
+
+          {% for status in status_options %}
+            <option
+              value="{{ status.name }}"
+              {% if status_filter == status.name %}
+                selected
+              {% endif %}
+            >
+              {{ status.verbose_name }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <button type="submit">
+          Filtrar
+        </button>
+
+        {% if search_query or status_filter %}
+          <a href="{% url 'status_of_work_papers_table' %}">
+            Limpiar
+          </a>
+        {% endif %}
+
+      </form>
+
+    </header>
+
+    <div class="ap-wp-table-wrapper">
+
+      <table class="ap-wp-table">
+
+        <thead>
+          <tr>
+            <th>Referencia</th>
+            <th>Papel de trabajo</th>
+            <th>Fase</th>
+            <th>Estado</th>
+            <th>Auditor responsable</th>
+            <th>Observaciones</th>
+            {% if can_edit_papers or can_delete_papers %}
+              <th>Acciones</th>
+            {% endif %}
+          </tr>
+        </thead>
+
+        <tbody>
+
+          {% for row in paper_rows %}
+
+            {% with record=row.record %}
+
+              <tr>
+
+                <td>
+                  <strong class="ap-wp-reference">
+                    {{ record.reference }}
+                  </strong>
+                </td>
+
+                <td class="ap-wp-name">
+                  {{ record.working_papers }}
+                </td>
+
+                <td>
+                  <span class="ap-wp-phase">
+                    {{ row.phase }}
+                  </span>
+                </td>
+
+                <td>
+                  <select
+                    name="current_status"
+                    form="paper-form-{{ record.id }}"
+                    {% if not can_edit_papers %}
+                      disabled
+                    {% endif %}
+                  >
+                    {% for status in status_options %}
+                      <option
+                        value="{{ status.id }}"
+                        {% if status.id == record.current_status_id %}
+                          selected
+                        {% endif %}
+                      >
+                        {{ status.verbose_name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </td>
+
+                <td>
+                  <select
+                    name="auditor_id"
+                    form="paper-form-{{ record.id }}"
+                    {% if not can_edit_papers %}
+                      disabled
+                    {% endif %}
+                  >
+                    {% for auditor in auditor_options %}
+                      <option
+                        value="{{ auditor.id }}"
+                        {% if auditor.id == record.auditor_id %}
+                          selected
+                        {% endif %}
+                      >
+                        {% firstof auditor.get_full_name auditor.username %}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </td>
+
+                <td>
+                  <input
+                    type="text"
+                    name="observations"
+                    value="{{ record.observations|default_if_none:'' }}"
+                    form="paper-form-{{ record.id }}"
+                    placeholder="Sin observaciones"
+                    {% if not can_edit_papers %}
+                      disabled
+                    {% endif %}
+                  >
+                </td>
+
+                {% if can_edit_papers or can_delete_papers %}
+                  <td class="ap-wp-actions">
+
+                    <form
+                      id="paper-form-{{ record.id }}"
+                      method="post"
+                    >
+                      {% csrf_token %}
+
+                      <input
+                        type="hidden"
+                        name="record_id"
+                        value="{{ record.id }}"
+                      >
+
+                      {% if can_edit_papers %}
+                        <button
+                          type="submit"
+                          name="paper_action"
+                          value="update"
+                          class="ap-wp-save"
+                          title="Guardar cambios"
+                        >
+                          <i class="bi bi-floppy"></i>
+                        </button>
+                      {% endif %}
+
+                      {% if can_delete_papers %}
+                        <button
+                          type="submit"
+                          name="paper_action"
+                          value="delete"
+                          class="ap-wp-delete"
+                          title="Eliminar registro"
+                          onclick="return confirm('¿Eliminar {{ record.reference }}?');"
+                        >
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      {% endif %}
+
+                    </form>
+
+                  </td>
+                {% endif %}
+
+              </tr>
+
+            {% endwith %}
+
+          {% empty %}
+
+            <tr>
+              <td
+                colspan="7"
+                class="ap-wp-empty"
+              >
+                No se encontraron papeles de trabajo.
+              </td>
+            </tr>
+
+          {% endfor %}
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </section>
+
+  </div>
+</div>
+{% endblock v2_content %}

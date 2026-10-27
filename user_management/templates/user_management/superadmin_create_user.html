@@ -132,13 +132,22 @@ Crear Usuario
                 </div>
                 
                 <div class="mt-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    {% if request.user.role.name == "superadmin" %}
+                    {% if request.user.role.name == "superadmin" or request.user.is_superuser %}
                     <div class="d-flex flex-column flex-md-row gap-3 align-items-start align-items-md-center m-0">
                         <div class="form-check m-0 d-flex align-items-center gap-2">
                             <input type="checkbox" class="form-check-input" id="socio" name="socio">
                             <label class="form-check-label fw-normal text-muted" for="socio">
                                 ¿Marcar como socio?<br>
                                 <small>Con privilegios de creación de usuarios</small>
+                            </label>
+                        </div>
+
+                        <div class="form-check m-0 d-flex align-items-center gap-2">
+                            <input type="checkbox" class="form-check-input" id="auditoria_interna" name="auditoria_interna"
+                                   {% if form.data.auditoria_interna %}checked{% endif %}>
+                            <label class="form-check-label fw-normal text-muted" for="auditoria_interna">
+                                ¿Habilitar Auditoría Interna?<br>
+                                <small>Acceso a los proyectos que tengan habilitado el módulo interno</small>
                             </label>
                         </div>
 

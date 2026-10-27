@@ -1,0 +1,871 @@
+<style>
+/* ==========================================================================
+   Auditorías V2
+   Capa EXCLUSIVAMENTE visual. No redefine endpoints, nombres de campos,
+   IDs funcionales ni handlers JavaScript.
+   ========================================================================== */
+
+.ap-audit-v2 {
+  --audit-accent: #2563eb;
+  --audit-accent-dark: #1d4ed8;
+  --audit-accent-soft: #eff6ff;
+  --audit-accent-border: #bfdbfe;
+  --audit-icon-bg: #eff6ff;
+  --audit-icon-color: #2563eb;
+}
+
+.ap-audit-v2.is-financial {
+  --audit-accent: #059669;
+  --audit-accent-dark: #047857;
+  --audit-accent-soft: #ecfdf5;
+  --audit-accent-border: #a7f3d0;
+  --audit-icon-bg: #ecfdf5;
+  --audit-icon-color: #059669;
+}
+
+.ap-audit-v2.is-internal {
+  --audit-accent: #2563eb;
+  --audit-accent-dark: #1d4ed8;
+  --audit-accent-soft: #eff6ff;
+  --audit-accent-border: #bfdbfe;
+  --audit-icon-bg: #eff6ff;
+  --audit-icon-color: #2563eb;
+}
+
+.ap-audit-v2.is-review {
+  --audit-accent: #7c3aed;
+  --audit-accent-dark: #6d28d9;
+  --audit-accent-soft: #f5f3ff;
+  --audit-accent-border: #ddd6fe;
+  --audit-icon-bg: #f5f3ff;
+  --audit-icon-color: #7c3aed;
+}
+
+/* ---------- Selector de auditoría ---------- */
+
+.ap-audit-selector-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(290px, .65fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.ap-audit-selector-card,
+.ap-audit-info-card,
+.ap-audit-summary-card,
+.ap-workpapers-panel {
+  border: 1px solid var(--ap-border);
+  border-radius: 18px;
+  background: var(--ap-surface);
+  box-shadow: 0 8px 28px rgba(15, 23, 42, .045);
+}
+
+.ap-audit-selector-card {
+  overflow: hidden;
+}
+
+.ap-audit-selector-accent {
+  height: 4px;
+  background: linear-gradient(90deg, var(--audit-accent), color-mix(in srgb, var(--audit-accent) 58%, #ffffff));
+}
+
+.ap-audit-selector-body {
+  padding: 28px;
+}
+
+.ap-audit-selector-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ap-audit-selector-icon {
+  display: inline-flex;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--audit-accent-border);
+  border-radius: 15px;
+  background: var(--audit-icon-bg);
+  color: var(--audit-icon-color);
+  font-size: 22px;
+}
+
+.ap-audit-selector-copy h2 {
+  margin: 0;
+  color: var(--ap-text);
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+}
+
+.ap-audit-selector-copy p {
+  max-width: 680px;
+  margin: 6px 0 0;
+  color: var(--ap-text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.ap-audit-form {
+  padding: 20px;
+  border: 1px solid var(--ap-border);
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.ap-audit-form-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+  color: var(--ap-text);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ap-audit-form-label small {
+  color: var(--ap-text-light);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.ap-audit-select-wrap {
+  position: relative;
+}
+
+.ap-audit-select-wrap i {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  z-index: 1;
+  color: var(--audit-accent);
+  font-size: 14px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.ap-audit-select {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 42px 10px 40px;
+  border: 1px solid #dbe2ea;
+  border-radius: 11px;
+  background-color: #fff;
+  color: var(--ap-text);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.ap-audit-select:focus {
+  border-color: var(--audit-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--audit-accent) 12%, transparent);
+}
+
+.ap-audit-selector-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.ap-audit-primary-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--audit-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--audit-accent) 18%, transparent);
+  transition: transform .14s ease, background .14s ease, box-shadow .14s ease;
+}
+
+.ap-audit-primary-button:hover {
+  background: var(--audit-accent-dark);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--audit-accent) 23%, transparent);
+}
+
+.ap-audit-info-card {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--audit-accent) 10%, transparent), transparent 38%),
+    #fff;
+}
+
+.ap-audit-info-kicker {
+  color: var(--audit-accent);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.ap-audit-info-card h3 {
+  margin: 7px 0 8px;
+  color: var(--ap-text);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.ap-audit-info-card > p {
+  margin: 0;
+  color: var(--ap-text-secondary);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.ap-audit-info-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.ap-audit-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ap-audit-info-item-icon {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: var(--audit-accent-soft);
+  color: var(--audit-accent);
+  font-size: 12px;
+}
+
+.ap-audit-info-item strong,
+.ap-audit-info-item span {
+  display: block;
+}
+
+.ap-audit-info-item strong {
+  color: var(--ap-text);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.ap-audit-info-item span {
+  margin-top: 2px;
+  color: var(--ap-text-light);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.ap-audit-empty-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+/* ---------- Papeles de trabajo ---------- */
+
+.ap-audit-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ap-audit-summary-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  overflow: hidden;
+  padding: 20px 22px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--audit-accent) 6%, #fff) 0%, #fff 55%);
+}
+
+.ap-audit-summary-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--audit-accent);
+}
+
+.ap-audit-summary-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 14px;
+}
+
+.ap-audit-summary-icon {
+  display: inline-flex;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--audit-accent-border);
+  border-radius: 13px;
+  background: var(--audit-accent-soft);
+  color: var(--audit-accent);
+  font-size: 19px;
+}
+
+.ap-audit-summary-type {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--audit-accent);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.ap-audit-summary-copy {
+  min-width: 0;
+}
+
+.ap-audit-summary-copy h2 {
+  overflow: hidden;
+  margin: 0;
+  color: var(--ap-text);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -.015em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ap-audit-summary-copy p {
+  margin: 4px 0 0;
+  color: var(--ap-text-secondary);
+  font-size: 10px;
+}
+
+.ap-audit-summary-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ap-audit-meta-pill {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 9px;
+  border: 1px solid var(--ap-border);
+  border-radius: 999px;
+  background: rgba(255,255,255,.82);
+  color: var(--ap-text-secondary);
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ap-audit-meta-pill i {
+  color: var(--audit-accent);
+}
+
+/*
+ * El ID y las clases originales se mantienen porque el JS/productivo
+ * las usa. Estas reglas solo cambian presentación.
+ */
+#papeles-integracion-v3.ap-workpapers-v2 {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 > h4 {
+  display: none;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 > .toolbar {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  align-items: stretch;
+  gap: 8px;
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--ap-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, .035);
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 > .toolbar .download-button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 40px;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 0;
+  padding: 8px 11px;
+  border: 1px solid #dbeafe;
+  border-radius: 9px;
+  background: #fff;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: none;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background .14s ease, border-color .14s ease, transform .14s ease;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 > .toolbar .download-button:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 > .toolbar .download-button:last-child {
+  border-color: #2563eb !important;
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 > .toolbar .download-button:last-child:hover {
+  border-color: #1d4ed8 !important;
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 > .toolbar .icon-img {
+  width: 13px;
+  height: 13px;
+  margin-right: 0;
+}
+
+.ap-workpapers-panel {
+  overflow: hidden;
+}
+
+.ap-workpapers-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 17px 20px;
+  border-bottom: 1px solid var(--ap-border);
+}
+
+.ap-workpapers-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.ap-workpapers-panel-icon {
+  display: inline-flex;
+  width: 35px;
+  height: 35px;
+  flex: 0 0 35px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--audit-accent-soft);
+  color: var(--audit-accent);
+  font-size: 15px;
+}
+
+.ap-workpapers-panel-title h3 {
+  margin: 0;
+  color: var(--ap-text);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ap-workpapers-panel-title p {
+  margin: 3px 0 0;
+  color: var(--ap-text-light);
+  font-size: 9px;
+}
+
+.ap-workpapers-count-note {
+  color: var(--ap-text-light);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 > .ap-workpapers-panel > .folder-structure {
+  width: 100%;
+  min-height: 260px;
+  margin: 0;
+  padding: 15px 20px 20px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+}
+
+/* Tamaño flexible sin alterar IDs ni manejadores de los papeles de trabajo. */
+.ap-audit-detail-page,
+.ap-audit-detail-page .ap-workpapers-v2,
+.ap-audit-detail-page .ap-workpapers-panel,
+.ap-audit-detail-page .ap-workpapers-panel-header,
+.ap-audit-detail-page .folder-structure {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ap-audit-detail-page .folder-structure {
+  overflow-wrap: anywhere;
+}
+
+.ap-audit-detail-page .ap-workpapers-panel-title,
+.ap-audit-detail-page .ap-workpapers-panel-title > div {
+  min-width: 0;
+}
+
+/* Carpetas generadas por el backend: solo aspecto. */
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .folder-item {
+  margin: 2px 0;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .folder-item > div > ul {
+  margin: 3px 0 7px;
+  padding-left: 27px;
+  padding-right: 4px;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .folder-button {
+  display: inline-flex;
+  min-height: 31px;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ap-text);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .folder-button:hover {
+  background: var(--audit-accent-soft);
+  color: var(--audit-accent-dark);
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .file-item {
+  display: flex;
+  width: 100%;
+  min-height: 34px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 3px 0;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: #f8fafc;
+  box-sizing: border-box;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .file-item:hover {
+  border-color: #e2e8f0;
+  background: #f1f5f9;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .file-item > .file-link {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.45;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .file-item > .file-link:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Se conserva la semántica visual REF ya recuperada. */
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .ref-pill {
+  display: inline-flex !important;
+  align-items: center;
+  margin-left: 7px;
+  padding: 2px 8px;
+  border: 1px solid #cdeedd !important;
+  border-radius: 999px !important;
+  background: #e9f9f0 !important;
+  color: #178249 !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  line-height: 1.6;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+#papeles-integracion-v3.ap-workpapers-v2 .folder-structure .ref-pill.ref-pill-manual {
+  border-color: #f5d6af !important;
+  background: #fff1df !important;
+  color: #9a5a12 !important;
+}
+
+/* ---------- Modales funcionales existentes: solo rediseño ---------- */
+
+.ap-audit-detail-page #importModal,
+.ap-audit-detail-page #exportModal,
+.ap-audit-detail-page #uploadAuditMarksModal {
+  background: rgba(15, 23, 42, .48);
+  backdrop-filter: blur(2px);
+}
+
+.ap-audit-detail-page #importModal .modal-content,
+.ap-audit-detail-page #exportModal .modal-content,
+.ap-audit-detail-page #uploadAuditMarksModal .modal-content {
+  width: min(calc(100% - 30px), 540px);
+  min-height: 0;
+  padding: 24px;
+  border: 1px solid var(--ap-border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .22);
+}
+
+.ap-audit-detail-page #importModal .modal-header,
+.ap-audit-detail-page #exportModal .modal-header,
+.ap-audit-detail-page #uploadAuditMarksModal .modal-header {
+  margin-bottom: 14px;
+  color: var(--ap-text);
+  font-size: 15px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.ap-audit-detail-page #importModal .modal-body,
+.ap-audit-detail-page #exportModal .modal-body,
+.ap-audit-detail-page #uploadAuditMarksModal .modal-body {
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ap-audit-detail-page #importModal .modal-footer,
+.ap-audit-detail-page #exportModal .modal-footer,
+.ap-audit-detail-page #uploadAuditMarksModal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--ap-border);
+}
+
+.ap-audit-detail-page #importModal .download-button,
+.ap-audit-detail-page #exportModal .download-button,
+.ap-audit-detail-page #uploadAuditMarksModal .download-button {
+  display: inline-flex;
+  min-height: 39px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 9px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.ap-audit-detail-page #importModal input[type="file"].form-control,
+.ap-audit-detail-page #uploadAuditMarksModal input[type="file"].form-control,
+.ap-audit-detail-page #aniosModal .form-control {
+  min-height: 42px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.ap-audit-detail-page #importModal .close,
+.ap-audit-detail-page #exportModal .close,
+.ap-audit-detail-page #uploadAuditMarksModal .close {
+  color: #94a3b8;
+}
+
+/* El modal de años conserva el componente aislado que ya funciona. */
+.ap-audit-detail-page #aniosModal .audit-years-panel {
+  border: 1px solid var(--ap-border);
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .22);
+}
+
+.ap-audit-detail-page #aniosModal .audit-years-title {
+  color: var(--ap-text);
+  font-size: 16px;
+}
+
+.ap-audit-detail-page #aniosModal .audit-years-help {
+  color: var(--ap-text-secondary);
+  font-size: 11px;
+}
+
+.ap-audit-detail-page #aniosModal .audit-years-fields label {
+  color: var(--ap-text-secondary);
+  font-size: 10px;
+}
+
+.ap-audit-detail-page #aniosModal .download-button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* La vista detalle debe conservar su ancho dentro del workspace del sidebar. */
+.ap-audit-detail-page .ap-audit-summary-copy p,
+.ap-audit-detail-page .ap-workpapers-panel-title p {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 980px) {
+  .ap-audit-selector-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .ap-audit-summary-card {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .ap-audit-summary-meta {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 680px) {
+  .ap-audit-selector-body,
+  .ap-audit-info-card {
+    padding: 19px;
+  }
+
+  .ap-audit-selector-heading {
+    align-items: flex-start;
+  }
+
+  .ap-audit-selector-icon {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+    font-size: 18px;
+  }
+
+  .ap-audit-selector-copy h2 {
+    font-size: 16px;
+  }
+
+  .ap-audit-selector-actions {
+    justify-content: stretch;
+  }
+
+  .ap-audit-primary-button {
+    width: 100%;
+  }
+
+  .ap-audit-summary-card {
+    padding: 18px;
+  }
+
+  .ap-audit-summary-copy h2 {
+    white-space: normal;
+  }
+
+  #papeles-integracion-v3.ap-workpapers-v2 > .toolbar {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  #papeles-integracion-v3.ap-workpapers-v2 > .toolbar .download-button {
+    width: 100%;
+  }
+
+  .ap-workpapers-panel-header {
+    align-items: flex-start;
+  }
+
+  .ap-workpapers-count-note {
+    display: none;
+  }
+
+  #papeles-integracion-v3.ap-workpapers-v2 > .ap-workpapers-panel > .folder-structure {
+    padding: 12px 10px 16px;
+  }
+
+  #papeles-integracion-v3.ap-workpapers-v2 .folder-structure .folder-item > div > ul {
+    padding-left: 13px;
+  }
+}
+/* Acceso a Audita Análisis (mantiene clases existentes por compatibilidad). */
+.ap-audita-ia-shortcut {
+  display: flex; align-items: center; gap: 12px; padding: 15px;
+  border-radius: 13px; margin-bottom: 20px;
+  background: linear-gradient(115deg, #1e40af, #2563eb);
+  color: white; text-decoration: none;
+}
+.ap-audita-ia-shortcut:hover { color: white; filter: brightness(1.08); }
+.ap-audita-ia-shortcut > span { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.ap-audita-ia-shortcut small { color: #dbeafe; font-size: 0.78rem; }
+.ap-audita-ia-action { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px;
+  border-radius: 10px; background: #1d4ed8; color: white; font-weight: 650; text-decoration: none; }
+.ap-audita-ia-action:hover { color: white; background: #1e40af; }
+</style>
+
+<style>
+/* Corrección visual sin cambiar IDs, handlers o rutas de descarga */
+.ap-audit-detail-page .toolbar .download-button{background:#2459da!important;color:#fff!important;border-color:#2459da!important;}
+.ap-audit-detail-page .toolbar .download-button :is(i,svg){color:#fff!important;fill:currentColor;}
+.ap-audit-v2.is-review .ap-audit-summary-card{border-left:4px solid #dc2626!important;}
+.ap-audit-v2.is-review .ap-audit-summary-type,.ap-audit-v2.is-review .ap-audit-summary-icon{color:#b91c1c!important;}
+.ap-audit-v2.is-review .ap-audit-summary-icon{background:#fef2f2!important;}
+</style>

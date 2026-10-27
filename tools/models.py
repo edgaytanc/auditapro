@@ -135,6 +135,252 @@ class SummaryHoursWorked(models.Model):
         self.updated_at = timezone.now()
         super().save(*args, **kwargs)
 
+class AuditTimeDistribution(models.Model):
+    """
+    Distribución de horas planificadas y reales
+    por etapa o componente de una auditoría.
+    """
+
+    TYPE_CHOICES = [
+        (
+            "stage",
+            "Etapa de Auditoría",
+        ),
+        (
+            "component",
+            "Componente Financiero",
+        ),
+    ]
+
+    STATUS_CHOICES = [
+        (
+            "pending",
+            "Pendiente",
+        ),
+        (
+            "in_progress",
+            "En proceso",
+        ),
+        (
+            "review",
+            "En revisión",
+        ),
+        (
+            "completed",
+            "Completado",
+        ),
+    ]
+
+    MATERIALITY_CHOICES = [
+        (
+            "",
+            "Sin definir",
+        ),
+        (
+            "low",
+            "Baja",
+        ),
+        (
+            "medium",
+            "Media",
+        ),
+        (
+            "high",
+            "Alta",
+        ),
+    ]
+
+    RISK_CHOICES = [
+        (
+            "",
+            "Sin definir",
+        ),
+        (
+            "low",
+            "Bajo",
+        ),
+        (
+            "medium",
+            "Medio",
+        ),
+        (
+            "high",
+            "Alto",
+        ),
+    ]
+
+    audit = models.ForeignKey(
+        Audit,
+        related_name="time_distributions",
+        on_delete=models.CASCADE,
+    )
+
+    created_by = models.ForeignKey(
+        User,
+        related_name="created_time_distributions",
+        on_delete=models.CASCADE,
+    )
+
+    assigned_auditor = models.ForeignKey(
+        User,
+        related_name="assigned_time_distributions",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+
+    distribution_type = models.CharField(
+        max_length=20,
+        choices=TYPE_CHOICES,
+    )
+
+    name = models.CharField(
+        max_length=255,
+    )
+
+    planned_hours = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[
+            MinValueValidator(0),
+        ],
+    )
+
+    actual_hours = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[
+            MinValueValidator(0),
+        ],
+    )
+
+    materiality = models.CharField(
+        max_length=20,
+        choices=MATERIALITY_CHOICES,
+        blank=True,
+        default="",
+    )
+
+    risk_level = models.CharField(
+        max_length=20,
+        choices=RISK_CHOICES,
+        blank=True,
+        default="",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="pending",
+    )
+
+    observations = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    created_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    updated_at = models.DateTimeField(
+        default=timezone.now,
+    )
+
+    class Meta:
+        ordering = [
+            "distribution_type",
+            "name",
+            "id",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "audit",
+                    "distribution_type",
+                    "name",
+                ],
+                name=(
+                    "unique_time_distribution_"
+                    "per_audit"
+                ),
+            ),
+        ]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "audit",
+                    "distribution_type",
+                ],
+                name="time_dist_audit_type_idx",
+            ),
+            models.Index(
+                fields=[
+                    "audit",
+                    "status",
+                ],
+                name="time_dist_audit_status_idx",
+            ),
+        ]
+
+    def save(
+        self,
+        *args,
+        **kwargs,
+    ):
+        self.updated_at = timezone.now()
+
+        super().save(
+            *args,
+            **kwargs,
+        )
+
+    @property
+    def difference(self):
+        """
+        Resultado positivo cuando se consumieron
+        más horas de las planificadas.
+        """
+
+        return (
+            self.actual_hours
+            - self.planned_hours
+        )
+
+    @property
+    def completion_percentage(self):
+        """
+        Porcentaje de ejecución con máximo visual
+        del 100 %.
+        """
+
+        if not self.planned_hours:
+            return 0
+
+        percentage = round(
+            self.actual_hours
+            / self.planned_hours
+            * 100
+        )
+
+        return max(
+            0,
+            min(
+                percentage,
+                100,
+            ),
+        )
+
+    def __str__(self):
+        return (
+            f"{self.get_distribution_type_display()} "
+            f"- {self.name} - {self.audit}"
+        )
+
 
 class AuditTimeSummary(models.Model):
     auditor = models.ForeignKey(

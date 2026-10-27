@@ -1,138 +1,1484 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
-    Auditorias Asignadas
+  Proyectos de Auditoría
 {% endblock title %}
+
+{% block v2_styles %}
+  {{ block.super }}
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/audits-list-v2.css' %}?v=5"
+  >
+{% endblock v2_styles %}
+
 {% block page_title %}
-    Auditorías
+  Proyectos de Auditoría
 {% endblock page_title %}
+
 {% block page_subtitle %}
+  Crea, asigna y realiza seguimiento a los proyectos
+  y encargos del equipo de auditoría.
 {% endblock page_subtitle %}
-{% block main_header_content %}
-    {% if user.role.name == "audit_manager" %}
-        <div class="px-5 d-flex justify-content-end">
-            <a href="{% url 'create_audit' %}">
-                <button type="button" class="btn btn-secondary">Crear Auditoria</button>
-            </a>
-        </div>
-    {% endif %}
-{% endblock main_header_content %}
 
-{% load filters %}
+{% block page_actions %}
 
-{% block main_content %}
-    {% if user.role.name == "supervisor" or user.role.name == "auditor" %}
-        {% if assigned_audits %}
-            <h2 class="mb-4 display-6">Auditorias Asignadas</h2>
-            <ul class="list-unstyled gap-5 d-flex flex-column w-100 px-3">
-                {% for audit in assigned_audits %}
-                    <li class="card card-custom bg-card shadow-md col-md-6 col-12 my-4 mx-auto"
-                        id="audit-card-{{ audit.id }}">
-                        <header class="card-body p-4">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h4 class="mb-1 fw-semibold">{{ audit.title }}</h4>
-                                    <p class="mb-1 text-secondary">{{ audit.company }}.</p>
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <svg width="24"
-                                         height="24"
-                                         viewBox="0 0 24 24"
-                                         fill="none"
-                                         xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M15 17C16.1046 17 17 16.1046 17 15C17 13.8954 16.1046 13 15 13C13.8954 13 13 13.8954 13 15C13 16.1046 13.8954 17 15 17Z" fill="currentColor" />
-                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M6 3C4.34315 3 3 4.34315 3 6V18C3 19.6569 4.34315 21 6 21H18C19.6569 21 21 19.6569 21 18V6C21 4.34315 19.6569 3 18 3H6ZM5 18V7H19V18C19 18.5523 18.5523 19 18 19H6C5.44772 19 5 18.5523 5 18Z" fill="currentColor" />
-                                    </svg>
-                                    <span>fecha</span>
-                                </div>
-                            </div>
-                        </header>
-                        <main class="card-body p-4">
-                            <p class="text-secondary">{{ audit.description }}</p>
-                            <div class="d-flex justify-content-between mt-4">
-                                <div class="d-flex align-items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         width="24"
-                                         height="24"
-                                         viewBox="0 0 24 24"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         stroke-width="2"
-                                         stroke-linecap="round"
-                                         stroke-linejoin="round"
-                                         class="text-muted-foreground">
-                                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
-                                    </svg>
-                                    <span class="text-secondary">{{ audit.audit_manager.get_full_name }}</span>
-                                </div>
-                                <div class="d-flex align-items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                         width="24"
-                                         height="24"
-                                         viewBox="0 0 24 24"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         stroke-width="2"
-                                         stroke-linecap="round"
-                                         stroke-linejoin="round"
-                                         class="text-muted-foreground">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <polyline points="12 6 12 12 16 14"></polyline>
-                                    </svg>
-                                    <span class="text-secondary">{{ audit.created_at|format_date }}</span>
-                                </div>
-                            </div>
-                        </main>
-                        <footer class="card-body d-flex justify-content-between">
-                            <button type="button"
-                                    class="btn btn-secondary hover-bg-accent text-white"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#audit-details-modal{{ audit.id }}">Detalles</button>
-                            <button class="btn btn-primary">Realizar</button>
-                        </footer>
-                    </li>
-                    {% with audit=audit %}
+  <button
+    type="button"
+    class="ap-secondary-button"
+    id="exportAuditsButton"
+      data-export-url="{% url 'exportar_auditorias_excel' %}"
+  >
+    <i class="bi bi-download"></i>
+    Exportar
+  </button>
 
-                        {% include "audits/_audit-details-modal.html" with audit=audit %}
+  {% if can_configure_permissions %}
 
-                    {% endwith %}
-                {% endfor %}
-            </ul>
-        {% else %}
-            <h4 class="mb-4 display-6">No tiene auditorias asignadas por el momento.</h4>
-        {% endif %}
-    {% elif user.role.name == "audit_manager" %}
-        {% if audits_to_manage %}
-            <h2 class="mb-4 display-6">Auditorias Para Gestionar</h2>
-            <div class="overflow-hidden p-0">
-                <ul class="row list-unstyled gx-5 gy-5 w-100 px-md-3 justify-content-center mx-auto">
-                    {% for audit in audits_to_manage %}
-                        <li id="audit-card-{{ audit.id }}" class="p-0">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title fw-semibold">{{ audit.title }}</h5>
-                                    <h6 class="card-subtitle mb-2 text-secondary">{{ audit.company }}</h6>
-                                    <p class="card-text">
-                                        <div class="d-flex flex-column justify-content-between">
-                                            <p>
-                                                <strong>Estado:</strong>En progreso
-                                            </p>
-                                            <p>
-                                                <strong>Creada en:</strong>{{ audit.created_at|format_date }}
-                                            </p>
-                                        </div>
-                                    </p>
-                                    <a href="{% url 'manage_audit' audit.id %}"
-                                       class="btn btn-outline-primary w-100">Gestionar Detalles</a>
-                                </div>
-                            </div>
-                        </li>
+    <a
+      href="{% url 'role_permissions_matrix' %}"
+      class="ap-secondary-button"
+    >
+      <i class="bi bi-shield-lock"></i>
+      Matriz de Permisos
+    </a>
+
+  {% endif %}
+
+  {% if can_create_audit %}
+
+    <button
+      type="button"
+      class="ap-new-audit-button"
+      data-open-new-audit
+    >
+      <i class="bi bi-plus-lg"></i>
+      Nueva Auditoría
+    </button>
+
+  {% endif %}
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <section class="ap-audits-information">
+
+    <div class="ap-audits-information-icon">
+      <i class="bi bi-info-circle"></i>
+    </div>
+
+    <div class="ap-audits-information-grid">
+
+      <div>
+        <strong>
+          Datos automáticos
+        </strong>
+
+        <p>
+          Cliente, tipo, período, encargado y equipo se toman
+          directamente de la creación de la auditoría.
+        </p>
+      </div>
+
+      <div>
+        <strong>
+          Datos actualizables
+        </strong>
+
+        <p>
+          Avance, riesgo y estado se actualizan directamente
+          desde cada fila cuando el rol tiene permiso de edición.
+        </p>
+      </div>
+
+      <div>
+        <strong>
+          Hallazgos
+        </strong>
+
+        <p>
+          El total se calcula automáticamente desde los
+          hallazgos activos asociados a cada auditoría.
+        </p>
+      </div>
+
+    </div>
+
+  </section>
+
+  {% if can_edit_audits %}
+
+    <section class="ap-audits-visual-notice">
+
+      <i class="bi bi-pencil-square"></i>
+
+      <span>
+        Tu rol permite modificar Avance, Riesgo y Estado.
+        Pulsa el ícono de guardar para conservar los cambios.
+      </span>
+
+    </section>
+
+  {% else %}
+
+    <section class="ap-audits-visual-notice">
+
+      <i class="bi bi-eye"></i>
+
+      <span>
+        Estás consultando las auditorías en modo lectura.
+        Tu rol no tiene permiso para modificar Avance,
+        Riesgo o Estado.
+      </span>
+
+    </section>
+
+  {% endif %}
+
+  <section class="ap-audits-kpi-grid">
+
+    <article class="ap-audit-kpi-card">
+
+      <div>
+
+        <span class="ap-audit-kpi-label">
+          Total Auditorías
+        </span>
+
+        <strong>
+          {{ total_audits }}
+        </strong>
+
+        <p>
+          Histórico disponible
+        </p>
+
+      </div>
+
+      <span class="ap-audit-kpi-icon ap-audit-kpi-blue">
+        <i class="bi bi-clipboard2-check"></i>
+      </span>
+
+    </article>
+
+    <article class="ap-audit-kpi-card">
+
+      <div>
+
+        <span class="ap-audit-kpi-label">
+          Activas
+        </span>
+
+        <strong>
+          {{ active_audits }}
+        </strong>
+
+        <p>
+          Encargos en curso
+        </p>
+
+      </div>
+
+      <span class="ap-audit-kpi-icon ap-audit-kpi-orange">
+        <i class="bi bi-arrow-repeat"></i>
+      </span>
+
+    </article>
+
+    <article class="ap-audit-kpi-card">
+
+      <div>
+
+        <span class="ap-audit-kpi-label">
+          Finalizadas
+        </span>
+
+        <strong>
+          {{ completed_audits }}
+        </strong>
+
+        <p>
+          Encargos completados
+        </p>
+
+      </div>
+
+      <span class="ap-audit-kpi-icon ap-audit-kpi-green">
+        <i class="bi bi-check2-circle"></i>
+      </span>
+
+    </article>
+
+    <article class="ap-audit-kpi-card">
+
+      <div>
+
+        <span class="ap-audit-kpi-label">
+          Hallazgos Totales
+        </span>
+
+        <strong>
+          {{ total_findings }}
+        </strong>
+
+        <p>
+          Hallazgos activos registrados
+        </p>
+
+      </div>
+
+      <span class="ap-audit-kpi-icon ap-audit-kpi-red">
+        <i class="bi bi-flag"></i>
+      </span>
+
+    </article>
+
+  </section>
+
+  <section class="ap-audits-toolbar">
+
+    <div class="ap-audits-search">
+
+      <i class="bi bi-search"></i>
+
+      <input
+        type="search"
+        id="auditSearch"
+        placeholder="Buscar por ID, cliente, título o encargado..."
+        autocomplete="off"
+      >
+
+    </div>
+
+    <div class="ap-audits-filter">
+
+      <i class="bi bi-funnel"></i>
+
+      <select id="auditTypeFilter">
+
+        <option value="all">
+          Todos los tipos
+        </option>
+
+        <option value="financial">
+          Financiera
+        </option>
+
+        <option value="fiscal">
+          Revisoría Fiscal
+        </option>
+
+        <option value="internal">
+          Auditoría Interna
+        </option>
+
+      </select>
+
+    </div>
+
+    <div class="ap-audits-filter">
+
+      <i class="bi bi-activity"></i>
+
+      <select id="auditStatusFilter">
+
+        <option value="all">
+          Todos los estados
+        </option>
+
+        <option value="planning">
+          Planificación
+        </option>
+
+        <option value="progress">
+          En Proceso
+        </option>
+
+        <option value="review">
+          En Revisión
+        </option>
+
+        <option value="completed">
+          Finalizada
+        </option>
+
+      </select>
+
+    </div>
+
+    <div class="ap-audits-result-count">
+
+      <strong id="auditResultsCount">
+        {{ total_audits }}
+      </strong>
+
+      <span>
+        resultados
+      </span>
+
+    </div>
+
+  </section>
+
+  {% if audit_rows %}
+
+    <section class="ap-audits-table-panel">
+
+      <div class="ap-audits-table-scroll">
+
+        <table class="ap-audits-table">
+
+          <thead>
+
+            <tr>
+              <th>ID</th>
+              <th>Cliente / Encargo</th>
+              <th>Tipo</th>
+              <th>Período</th>
+              <th>Encargado</th>
+              <th>Equipo</th>
+              <th>Avance</th>
+              <th>Riesgo</th>
+              <th>Estado</th>
+              <th>Hallazgos</th>
+              <th>Acciones</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="auditsTableBody">
+
+            {% for row in audit_rows %}
+
+              <tr
+                data-audit-row
+                data-audit-id="{{ row.audit.id }}"
+                data-type="{{ row.type_slug }}"
+                data-status="{{ row.status_slug }}"
+                data-update-url="{% url 'update_audit_row' row.audit.id %}"
+                data-search="
+                  {{ row.code|lower }}
+                  {{ row.client|lower }}
+                  {{ row.title|lower }}
+                  {{ row.manager_name|lower }}
+                  {{ row.type_label|lower }}
+                "
+              >
+
+                <td>
+
+                  <strong class="ap-audit-code">
+                    {{ row.code }}
+                  </strong>
+
+                </td>
+
+                <td>
+
+                  <div class="ap-audit-client">
+
+                    <strong>
+                      {{ row.client }}
+                    </strong>
+
+                    <span>
+                      {{ row.title }}
+                    </span>
+
+                  </div>
+
+                </td>
+
+                <td>
+
+                  <div class="ap-audit-types">
+
+                    {% for audit_type in row.types %}
+
+                      <span
+                        class="
+                          ap-audit-type
+                          ap-audit-type-{{ audit_type.slug }}
+                        "
+                      >
+                        {{ audit_type.label }}
+                      </span>
+
                     {% endfor %}
-                </ul>
+
+                  </div>
+
+                </td>
+
+                <td>
+
+                  <span class="ap-audit-period">
+                    {{ row.period }}
+                  </span>
+
+                </td>
+
+                <td>
+
+                  <span class="ap-audit-manager">
+                    {{ row.manager_name }}
+                  </span>
+
+                </td>
+
+                <td>
+
+                  {% if row.team %}
+
+                    <div class="ap-audit-team">
+
+                      {% for member in row.team|slice:":3" %}
+
+                        <span
+                          class="ap-audit-team-avatar"
+                          title="{{ member.name }}"
+                        >
+                          {{ member.initials }}
+                        </span>
+
+                      {% endfor %}
+
+                      {% if row.team|length > 3 %}
+
+                        <span class="ap-audit-team-more">
+                          +{{ row.team|length|add:"-3" }}
+                        </span>
+
+                      {% endif %}
+
+                    </div>
+
+                  {% else %}
+
+                    <span class="ap-audit-no-team">
+                      Sin equipo
+                    </span>
+
+                  {% endif %}
+
+                </td>
+
+                <td>
+
+                  <div class="ap-audit-select-group">
+
+                    <select
+                      class="ap-audit-inline-select"
+                      data-audit-progress
+                      {% if not can_edit_audits %}
+                        disabled
+                      {% endif %}
+                    >
+
+                      <option
+                        value="0"
+                        {% if row.progress == 0 %}
+                          selected
+                        {% endif %}
+                      >
+                        0%
+                      </option>
+
+                      <option
+                        value="10"
+                        {% if row.progress == 10 %}
+                          selected
+                        {% endif %}
+                      >
+                        10%
+                      </option>
+
+                      <option
+                        value="25"
+                        {% if row.progress == 25 %}
+                          selected
+                        {% endif %}
+                      >
+                        25%
+                      </option>
+
+                      <option
+                        value="50"
+                        {% if row.progress == 50 %}
+                          selected
+                        {% endif %}
+                      >
+                        50%
+                      </option>
+
+                      <option
+                        value="65"
+                        {% if row.progress == 65 %}
+                          selected
+                        {% endif %}
+                      >
+                        65%
+                      </option>
+
+                      <option
+                        value="75"
+                        {% if row.progress == 75 %}
+                          selected
+                        {% endif %}
+                      >
+                        75%
+                      </option>
+
+                      <option
+                        value="88"
+                        {% if row.progress == 88 %}
+                          selected
+                        {% endif %}
+                      >
+                        88%
+                      </option>
+
+                      <option
+                        value="100"
+                        {% if row.progress == 100 %}
+                          selected
+                        {% endif %}
+                      >
+                        100%
+                      </option>
+
+                    </select>
+
+                    <div class="ap-audit-progress-track">
+
+                      <span
+                        data-progress-bar
+                        style="width: {{ row.progress }}%;"
+                      ></span>
+
+                    </div>
+
+                  </div>
+
+                </td>
+
+                <td>
+
+                  <select
+                    class="
+                      ap-audit-inline-select
+                      ap-audit-risk-select
+                    "
+                    data-audit-risk
+                    {% if not can_edit_audits %}
+                      disabled
+                    {% endif %}
+                  >
+
+                    <option
+                      value="undefined"
+                      {% if row.risk_slug == "undefined" %}
+                        selected
+                      {% endif %}
+                    >
+                      Sin definir
+                    </option>
+
+                    <option
+                      value="low"
+                      {% if row.risk_slug == "low" %}
+                        selected
+                      {% endif %}
+                    >
+                      Bajo
+                    </option>
+
+                    <option
+                      value="medium"
+                      {% if row.risk_slug == "medium" %}
+                        selected
+                      {% endif %}
+                    >
+                      Medio
+                    </option>
+
+                    <option
+                      value="high"
+                      {% if row.risk_slug == "high" %}
+                        selected
+                      {% endif %}
+                    >
+                      Alto
+                    </option>
+
+                  </select>
+
+                </td>
+
+                <td>
+
+                  <select
+                    class="
+                      ap-audit-inline-select
+                      ap-audit-status-select
+                    "
+                    data-audit-status
+                    {% if not can_edit_audits %}
+                      disabled
+                    {% endif %}
+                  >
+
+                    <option
+                      value="planning"
+                      {% if row.status_slug == "planning" %}
+                        selected
+                      {% endif %}
+                    >
+                      Planificación
+                    </option>
+
+                    <option
+                      value="progress"
+                      {% if row.status_slug == "progress" %}
+                        selected
+                      {% endif %}
+                    >
+                      En Proceso
+                    </option>
+
+                    <option
+                      value="review"
+                      {% if row.status_slug == "review" %}
+                        selected
+                      {% endif %}
+                    >
+                      En Revisión
+                    </option>
+
+                    <option
+                      value="completed"
+                      {% if row.status_slug == "completed" %}
+                        selected
+                      {% endif %}
+                    >
+                      Finalizada
+                    </option>
+
+                  </select>
+
+                </td>
+
+                <td>
+
+                  {% if can_edit_audits %}
+                  <input class="ap-audit-findings" data-audit-findings type="number" min="0" max="100000" value="{{ row.findings }}" aria-label="Número de hallazgos del encargo" style="width:82px;max-width:100%;padding:6px;border:1px solid #cbd5e1;border-radius:6px;">
+                  {% else %}
+                  <span class="ap-audit-findings">{{ row.findings }}</span>
+                  {% endif %}
+
+                </td>
+
+                <td>
+
+                  <div class="ap-audit-actions">
+
+                    {% if can_edit_audits %}
+
+                      <button
+                        type="button"
+                        class="ap-audit-save-button"
+                        data-save-audit-row
+                        title="Guardar cambios"
+                        disabled
+                      >
+                        <i class="bi bi-floppy"></i>
+                      </button>
+
+                    {% endif %}
+
+                    {% if can_manage_audits %}
+
+                      <a
+                        href="{% url 'manage_audit' row.audit.id %}"
+                        class="ap-audit-view-button"
+                        title="Gestionar auditoría"
+                      >
+                        Ver
+                      </a>
+
+                    {% else %}
+
+                      <a
+                        href="{% url 'auditoria_detalle' row.audit.id %}"
+                        class="ap-audit-view-button"
+                        title="Abrir auditoría"
+                      >
+                        Abrir
+                      </a>
+
+                    {% endif %}
+
+                    {% if can_delete_audits %}
+
+                      <form
+                        method="post"
+                        action="{% url 'delete_audit' row.audit.id %}"
+                        class="ap-audit-delete-form"
+                        data-audit-name="{{ row.client }}"
+                      >
+                        {% csrf_token %}
+
+                        <button
+                          type="submit"
+                          class="ap-audit-delete-button"
+                          title="Eliminar auditoría"
+                        >
+                          <i class="bi bi-trash3"></i>
+                        </button>
+
+                      </form>
+
+                    {% endif %}
+
+                  </div>
+
+                  {% if can_edit_audits %}
+
+                    <span
+                      class="ap-audit-row-saved"
+                      data-row-saved-message
+                      hidden
+                    >
+                      Cambios guardados
+                    </span>
+
+                  {% endif %}
+
+                </td>
+
+              </tr>
+
+            {% endfor %}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+    <section
+      class="ap-audits-no-results"
+      id="auditsNoResults"
+      hidden
+    >
+
+      <i class="bi bi-search"></i>
+
+      <h2>
+        No se encontraron auditorías
+      </h2>
+
+      <p>
+        Cambia los filtros o el término de búsqueda.
+      </p>
+
+    </section>
+
+  {% else %}
+
+    <section class="ap-audits-empty">
+
+      <div class="ap-audits-empty-icon">
+        <i class="bi bi-clipboard2-plus"></i>
+      </div>
+
+      <h2>
+        No hay auditorías registradas
+      </h2>
+
+      {% if can_create_audit %}
+
+        <p>
+          Crea el primer encargo para comenzar a gestionar
+          el trabajo del equipo.
+        </p>
+
+        <button
+          type="button"
+          class="ap-audit-create-button"
+          data-open-new-audit
+        >
+          <i class="bi bi-plus-lg"></i>
+          Crear primera auditoría
+        </button>
+
+      {% else %}
+
+        <p>
+          No tienes auditorías asignadas actualmente.
+        </p>
+
+      {% endif %}
+
+    </section>
+
+  {% endif %}
+
+  {% if can_create_audit %}
+
+    <div
+      class="ap-new-audit-modal"
+      id="newAuditModal"
+      hidden
+    >
+
+      <button
+        type="button"
+        class="ap-new-audit-backdrop"
+        data-close-new-audit
+        aria-label="Cerrar formulario"
+      ></button>
+
+      <section
+        class="ap-new-audit-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="newAuditModalTitle"
+      >
+
+        <header class="ap-new-audit-header">
+
+          <div>
+
+            <span class="ap-new-audit-eyebrow">
+              Nuevo encargo
+            </span>
+
+            <h2 id="newAuditModalTitle">
+              Nueva Auditoría
+            </h2>
+
+            <p>
+              Registra la entidad, período, equipo y datos
+              iniciales del encargo.
+            </p>
+
+          </div>
+
+          <button
+            type="button"
+            class="ap-new-audit-close"
+            data-close-new-audit
+            aria-label="Cerrar"
+            title="Cerrar"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+
+        </header>
+
+        <form
+          method="post"
+          action="{% url 'create_audit' %}"
+          class="ap-new-audit-form"
+          id="newAuditForm"
+          novalidate
+        >
+          {% csrf_token %}
+
+          <input
+            type="hidden"
+            name="return_to"
+            value="assigned_audits"
+          >
+
+          <div class="ap-new-audit-body">
+
+            <section class="ap-new-audit-section">
+
+              <div class="ap-new-audit-section-header">
+
+                <span>
+                  1
+                </span>
+
+                <div>
+
+                  <h3>
+                    Información del encargo
+                  </h3>
+
+                  <p>
+                    Identifica la entidad y el trabajo que se realizará.
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div class="ap-new-audit-grid ap-new-audit-grid-two">
+
+                <div class="ap-new-audit-field">
+
+                  <label for="newAuditIdentity">
+                    Cliente / Entidad
+                    <strong>*</strong>
+                  </label>
+
+                  <div class="ap-new-audit-input-wrapper">
+
+                    <i class="bi bi-buildings"></i>
+
+                    <input
+                      type="text"
+                      name="audit_identidad"
+                      id="newAuditIdentity"
+                      placeholder="Nombre de la empresa"
+                      maxlength="255"
+                      required
+                    >
+
+                  </div>
+
+                </div>
+
+                <div class="ap-new-audit-field">
+
+                  <label for="newAuditTitle">
+                    Nombre del encargo
+                    <strong>*</strong>
+                  </label>
+
+                  <div class="ap-new-audit-input-wrapper">
+
+                    <i class="bi bi-clipboard2-check"></i>
+
+                    <input
+                      type="text"
+                      name="audit_title"
+                      id="newAuditTitle"
+                      placeholder="Ej. Auditoría financiera 2026"
+                      maxlength="255"
+                      required
+                    >
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div class="ap-new-audit-field">
+
+                <label>
+                  Tipo de Auditoría
+                  <strong>*</strong>
+                </label>
+
+                <div class="ap-new-audit-type-grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">
+
+                  <label class="ap-new-audit-type-option">
+
+                    <input
+                      type="radio"
+                      name="selected_audit_type"
+                      value="F"
+                      required
+                      data-new-audit-type
+                    >
+
+                    <span>
+
+                      <i class="bi bi-graph-up-arrow"></i>
+
+                      <strong>
+                        Auditoría Financiera
+                      </strong>
+
+                      <small>
+                        Evaluación de estados financieros
+                      </small>
+
+                    </span>
+
+                  </label>
+                  {% if can_create_revisoria %}
+
+                  <label class="ap-new-audit-type-option">
+
+                    <input
+                      type="radio"
+                      name="selected_audit_type"
+                      value="R"
+                      data-new-audit-type
+                    >
+
+                    <span>
+
+                      <i class="bi bi-bank"></i>
+
+                      <strong>
+                        Revisoría Fiscal
+                      </strong>
+
+                      <small>
+                        Cumplimiento fiscal y estatutario
+                      </small>
+
+                    </span>
+
+                  </label>
+                  {% endif %}
+                  {% if can_create_interna %}
+
+                  <label class="ap-new-audit-type-option">
+
+                    <input
+                      type="radio"
+                      name="selected_audit_type"
+                      value="I"
+                      data-new-audit-type
+                    >
+
+                    <span>
+
+                      <i class="bi bi-shield-check"></i>
+
+                      <strong>
+                        Auditoría Interna
+                      </strong>
+
+                      <small>
+                        Evaluación de procesos y controles
+                      </small>
+
+                    </span>
+
+                  </label>
+                  {% endif %}
+
+                </div>
+
+                <p
+                  class="ap-new-audit-error"
+                  id="newAuditTypeError"
+                  hidden
+                >
+                  <i class="bi bi-exclamation-circle"></i>
+                  Selecciona exactamente un tipo de auditoría.
+                </p>
+
+                <div class="ap-new-audit-temporary-notice">
+
+                  <i class="bi bi-info-circle"></i>
+
+                  <span>
+                    Selecciona únicamente un tipo de auditoría
+                    para este encargo.
+                  </span>
+
+                </div>
+
+              </div>
+
+            </section>
+
+            <section class="ap-new-audit-section">
+
+              <div class="ap-new-audit-section-header">
+
+                <span>
+                  2
+                </span>
+
+                <div>
+
+                  <h3>
+                    Período y planificación inicial
+                  </h3>
+
+                  <p>
+                    Define las fechas, el período auditado y el
+                    nivel de riesgo inicial.
+                  </p>
+
+                </div>
+
+              </div>
+
+              <div class="ap-new-audit-grid ap-new-audit-grid-two">
+
+                <div class="ap-new-audit-field">
+
+                  <label for="newAuditPeriod">
+                    Período Auditado
+                    <strong>*</strong>
+                  </label>
+
+                  <div class="ap-new-audit-input-wrapper">
+
+                    <i class="bi bi-calendar-range"></i>
+
+                    <input
+                      type="text"
+                      name="audit_period"
+                      id="newAuditPeriod"
+                      placeholder="Ej. Ene–Dic 2026"
+                      maxlength="100"
+                      required
+                    >
+
+                  </div>
+
+                  <small>
+                    Este período se guardará y aparecerá
+                    en el listado de auditorías.
+                  </small>
+
+                </div>
+
+                <div class="ap-new-audit-field">
+
+                  <label for="newAuditManager">
+                    Auditor Encargado
+                  </label>
+
+                  <div class="ap-new-audit-input-wrapper">
+
+                    <i class="bi bi-person-badge"></i>
+
+                    <input
+                      type="text"
+                      id="newAuditManager"
+                      value="{{ manager_name }}"
+                      readonly
+                    >
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              <div class="ap-new-audit-grid ap-new-audit-grid-two">
+
+                <div class="ap-new-audit-field">
+
+                  <label for="newAuditStartDate">
+                    Fecha de Inicio
+                    <strong>*</strong>
+                  </label>
+
+                  <div class="ap-new-audit-input-wrapper">
+
+                    <i class="bi bi-calendar-plus"></i>
+
+                    <input
+                      type="date"
+                      name="audit_fechaInit"
+                      id="newAuditStartDate"
+                      required
+                    >
+
+                  </div>
+
+                </div>
+
+                <div class="ap-new-audit-field">
+
+                  <label for="newAuditEndDate">
+                    Fecha Final
+                    <strong>*</strong>
+                  </label>
+
+                  <div class="ap-new-audit-input-wrapper">
+
+                    <i class="bi bi-calendar-check"></i>
+
+                    <input
+                      type="date"
+                      name="audit_fechaEnd"
+                      id="newAuditEndDate"
+                      required
+                    >
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              <p
+                class="ap-new-audit-error"
+                id="newAuditDateError"
+                hidden
+              >
+                <i class="bi bi-exclamation-circle"></i>
+                La fecha final debe ser posterior a la fecha inicial.
+              </p>
+
+              <div class="ap-new-audit-grid ap-new-audit-grid-two">
+
+                <div class="ap-new-audit-field">
+
+                  <label for="newAuditRisk">
+                    Nivel de Riesgo Inicial
+                  </label>
+
+                  <div class="ap-new-audit-input-wrapper">
+
+                    <i class="bi bi-exclamation-triangle"></i>
+
+                    <select
+                      name="audit_initial_risk"
+                      id="newAuditRisk"
+                    >
+
+                      <option value="low">
+                        Bajo
+                      </option>
+
+                      <option
+                        value="medium"
+                        selected
+                      >
+                        Medio
+                      </option>
+
+                      <option value="high">
+                        Alto
+                      </option>
+
+                    </select>
+
+                  </div>
+
+                  <small>
+                    El riesgo seleccionado será el valor inicial
+                    del encargo.
+                  </small>
+
+                </div>
+
+                <div class="ap-new-audit-field">
+
+                  <label for="newAuditCurrency">
+                    Moneda
+                    <strong>*</strong>
+                  </label>
+
+                  <div class="ap-new-audit-input-wrapper">
+
+                    <i class="bi bi-cash-coin"></i>
+
+                    <select
+                      name="audit_moneda"
+                      id="newAuditCurrency"
+                      required
+                    >
+                      {% include "audits/_monedas_productivo.html" with selected_moneda="GTQ" %}
+                    </select>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </section>
+
+            <section class="ap-new-audit-section">
+
+              <div class="ap-new-audit-section-header">
+
+                <span>
+                  3
+                </span>
+
+                <div>
+
+                  <h3>
+                    Equipo de auditoría
+                  </h3>
+
+                  <p>
+                    Selecciona los integrantes que participarán
+                    en el encargo.
+                  </p>
+
+                </div>
+
+              </div>
+
+              {% if show_team_assignment %}
+
+                {% if has_assignable_auditors %}
+
+                  <div class="ap-new-audit-team-grid">
+
+                    {% for auditor in assignable_auditors %}
+
+                      <label class="ap-new-audit-team-option">
+
+                        <input
+                          type="checkbox"
+                          name="audit_assigned_users_ids"
+                          value="{{ auditor.id }}"
+                          data-new-audit-team-member
+                        >
+
+                        <span class="ap-new-audit-team-card">
+
+                          <span class="ap-new-audit-team-avatar">
+                            {{ auditor.first_name|first|default:"A" }}
+                            {{ auditor.last_name|first }}
+                          </span>
+
+                          <span class="ap-new-audit-team-information">
+
+                            <strong>
+                              {{ auditor.get_full_name|default:auditor.username }}
+                            </strong>
+
+                            <small>
+                              {{ auditor.role|default:"Auditor" }}
+                            </small>
+
+                          </span>
+
+                          <i class="bi bi-check-circle-fill"></i>
+
+                        </span>
+
+                      </label>
+
+                    {% endfor %}
+
+                  </div>
+
+                  <p
+                    class="ap-new-audit-error"
+                    id="newAuditTeamError"
+                    hidden
+                  >
+                    <i class="bi bi-exclamation-circle"></i>
+                    Selecciona por lo menos un integrante del equipo.
+                  </p>
+
+                {% else %}
+
+                  <div class="ap-new-audit-empty-team">
+
+                    <div>
+                      <i class="bi bi-people"></i>
+                    </div>
+
+                    <h4>
+                      No tienes auditores disponibles
+                    </h4>
+
+                    <p>
+                      Primero debes registrar un auditor asociado
+                      a tu equipo para crear un nuevo encargo.
+                    </p>
+
+                    <a
+                      href="{% url 'add_auditor' %}"
+                      class="ap-new-audit-add-member"
+                    >
+                      <i class="bi bi-person-plus"></i>
+                      Agregar auditor
+                    </a>
+
+                  </div>
+
+                {% endif %}
+
+              {% else %}
+
+                <div class="ap-new-audit-self-assignment">
+
+                  <i class="bi bi-person-check"></i>
+
+                  <div>
+
+                    <strong>
+                      Asignación automática
+                    </strong>
+
+                    <p>
+                      La auditoría quedará bajo el Jefe de tu equipo
+                      y será asignada automáticamente a tu usuario.
+                    </p>
+
+                  </div>
+
+                </div>
+
+              {% endif %}
+
+            </section>
+
+          </div>
+
+          <footer class="ap-new-audit-footer">
+
+            <div class="ap-new-audit-footer-note">
+
+              <i class="bi bi-shield-check"></i>
+
+              <span>
+                Cliente, tipo, fechas, moneda y equipo se guardarán
+                con la estructura actual del sistema.
+              </span>
+
             </div>
-        {% else %}
-            <h4 class="mb-4 display-6">No tiene auditorias para gestionar por el momento.</h4>
-        {% endif %}
-    {% endif %}
-{% endblock main_content %}
+
+            <div class="ap-new-audit-footer-actions">
+
+              <button
+                type="button"
+                class="ap-new-audit-cancel"
+                data-close-new-audit
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                class="ap-new-audit-submit"
+                id="newAuditSubmitButton"
+                {% if show_team_assignment and not has_assignable_auditors %}
+                  disabled
+                {% endif %}
+              >
+                <i class="bi bi-check2"></i>
+                Crear Auditoría
+              </button>
+
+            </div>
+
+          </footer>
+
+        </form>
+
+      </section>
+
+    </div>
+
+  {% endif %}
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+  {{ block.super }}
+
+  <script
+    src="{% static 'js/audits-list-v2.js' %}?v=7"
+  ></script>
+{% endblock v2_scripts %}

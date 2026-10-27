@@ -1,14 +1,117 @@
 from datetime import datetime
-import django_tables2 as tables
-from django.http import HttpRequest
-from audits.types import Audit as AuditType
-from django.db import models
-from typing import Type, Tuple
-from django.db.models import Q
-from django_tables2 import RequestConfig
-from django.db.models import ForeignKey
 from functools import reduce
+from typing import Tuple, Type
+
+import django_tables2 as tables
 from dateutil.relativedelta import relativedelta
+from django.db import models
+from django.db.models import ForeignKey, Q
+from django.http import HttpRequest
+from django_tables2 import RequestConfig
+
+from audits.types import Audit as AuditType
+
+
+def _get_selected_audit_id(
+    selected_audit: AuditType | dict | None,
+) -> int | None:
+    """
+    Obtiene de forma segura el ID de la auditoría seleccionada.
+    """
+
+    if not selected_audit:
+        return None
+
+    if isinstance(selected_audit, dict):
+        audit_id = selected_audit.get("id")
+    else:
+        audit_id = getattr(
+            selected_audit,
+            "id",
+            None,
+        )
+
+    try:
+        normalized_id = int(audit_id)
+    except (TypeError, ValueError):
+        return None
+
+    if normalized_id <= 0:
+        return None
+
+    return normalized_id
+
+
+def _filter_by_selected_audit(
+    queryset,
+    Model: Type[models.Model],
+    selected_audit: AuditType | dict | None,
+):
+    """
+    Aísla un queryset por la auditoría seleccionada.
+
+    No filtra por el usuario creador porque el acceso a la
+    auditoría ya fue validado por selected_audit_required.
+    Esto permite que el Jefe y los integrantes autorizados
+    consulten el trabajo completo del equipo.
+    """
+
+    audit_id = _get_selected_audit_id(
+        selected_audit
+    )
+
+    if audit_id is None:
+        return queryset.none()
+
+    model_field_names = {
+        field.name
+        for field in Model._meta.get_fields()
+    }
+
+    if "audit" not in model_field_names:
+        return queryset.none()
+
+    return queryset.filter(
+        audit_id=audit_id
+    )
+
+
+def _build_search_query(
+    search_query: str,
+    filters: Tuple[str],
+):
+    """
+    Construye una consulta OR para los campos permitidos.
+    """
+
+    queries = []
+
+    for field in filters:
+        if isinstance(field, tuple):
+            lookup = (
+                f"{field[0]}__"
+                f"{field[1]}__icontains"
+            )
+        else:
+            lookup = (
+                f"{field}__icontains"
+            )
+
+        queries.append(
+            Q(**{
+                lookup: search_query,
+            })
+        )
+
+    if not queries:
+        return Q()
+
+    return reduce(
+        lambda current, following: (
+            current | following
+        ),
+        queries,
+    )
 
 
 def search_query_table(
@@ -20,23 +123,37 @@ def search_query_table(
     second_field: str | None = None,
     owner_field: str | None = None,
 ):
-    # Obtiene el campo del modelo Verifica si es un ForeignKey Accede al segundo campo si modelo relacionado
-    queries = []
+    """
+    Busca registros y, cuando aplica, los limita a la
+    auditoría seleccionada.
+    """
 
-    for field in filters:
-        if isinstance(field, tuple):
-            queries.append(Q(**{f"{field[0]}__{field[1]}__icontains": search_query}))
-        else:
-            queries.append(Q(**{f"{field}__icontains": search_query}))
+    del second_field
 
-    # Combina las consultas Q usando reduce
-    query = reduce(lambda x, y: x | y, queries)
-    if owner_field:
-        query &= Q(**{f"{owner_field}": req.user})
+    queryset = Model.objects.all()
+
     if selected_audit:
-        query &= Q(**{"audit__id": selected_audit["id"]})
+        queryset = _filter_by_selected_audit(
+            queryset,
+            Model,
+            selected_audit,
+        )
 
-    return Model.objects.filter(query)
+    if owner_field:
+        queryset = queryset.filter(
+            **{
+                owner_field: req.user,
+            }
+        )
+
+    query = _build_search_query(
+        search_query,
+        filters,
+    )
+
+    return queryset.filter(
+        query
+    )
 
 
 def get_table(
@@ -50,39 +167,66 @@ def get_table(
     confirmation_field: str | None = None,
     selected_audit: AuditType | None = None,
 ):
-    # Aquí lo que hace es primero, obtener los campos que sean relaciones del modelo pasado, luego, va a obtener los valores, los cuales serán distintos si hay un campo de filtrado, luego, filtrará los campos usando la auditoría seleccionada y también si el dueño es el usuario que hizo la petición.
-    relation_fields = get_related_fields(Model)
+    """
+    Construye una tabla segura y aislada por auditoría.
 
-    values = (
-        (
-            search_query_table(
-                req, search_query, Model, filters, selected_audit=selected_audit
-            )
-            if search_query
-            else Model.objects.filter(
-                auditor=req.user, audit__id=selected_audit["id"]
-            ).select_related(*relation_fields)
-        )
-        if selected_audit
-        else (
-            search_query_table(req, search_query, Model, filters)
-            if search_query
-            else Model.objects.select_related(*relation_fields)
-        )
+    Funciona tanto para modelos cuyo propietario se llama
+    `auditor` como para Activity, cuyo creador se llama
+    `created_by`.
+    """
+
+    relation_fields = get_related_fields(
+        Model
     )
 
-    if edit_url and delete_url and confirmation_field:
+    queryset = Model.objects.all()
+
+    if selected_audit:
+        queryset = _filter_by_selected_audit(
+            queryset,
+            Model,
+            selected_audit,
+        )
+
+    if search_query:
+        queryset = queryset.filter(
+            _build_search_query(
+                search_query,
+                filters,
+            )
+        )
+
+    values = queryset.select_related(
+        *relation_fields
+    )
+
+    if (
+        edit_url
+        and delete_url
+        and confirmation_field
+    ):
         table = TableClass(
             values,
             edit_url=edit_url,
             delete_url=delete_url,
-            confirmation_field=confirmation_field,
+            confirmation_field=(
+                confirmation_field
+            ),
         )
     else:
         table = TableClass(
-            values,
+            values
         )
-    RequestConfig(req, paginate={"per_page": 15}).configure(table)
+
+    RequestConfig(
+        req,
+        paginate={
+            "per_page": 15,
+        },
+    ).configure(
+        table
+    )
+
     return table
 
 
@@ -92,25 +236,47 @@ def get_table_to_pdf(
     TableClass: Type[tables.Table],
     selected_audit: AuditType | None = None,
 ):
-    relation_fields = get_related_fields(Model)
-    values = (
-        Model.objects.filter(
-            auditor=req.user, audit__id=selected_audit["id"]
-        ).select_related(*relation_fields)
-        if selected_audit
-        else Model.objects.filter().select_related(*relation_fields)
+    """
+    Construye la tabla destinada al PDF usando únicamente
+    registros de la auditoría seleccionada.
+    """
+
+    del req
+
+    relation_fields = get_related_fields(
+        Model
     )
 
-    table = TableClass(values)
-    return table
+    queryset = Model.objects.all()
+
+    if selected_audit:
+        queryset = _filter_by_selected_audit(
+            queryset,
+            Model,
+            selected_audit,
+        )
+
+    values = queryset.select_related(
+        *relation_fields
+    )
+
+    return TableClass(
+        values
+    )
 
 
-# Devuelve los campos que sean relaciones
 def get_related_fields(model):
+    """
+    Devuelve únicamente las relaciones ForeignKey directas.
+    """
+
     return [
         field.name
         for field in model._meta.get_fields()
-        if isinstance(field, ForeignKey)
+        if isinstance(
+            field,
+            ForeignKey,
+        )
     ]
 
 

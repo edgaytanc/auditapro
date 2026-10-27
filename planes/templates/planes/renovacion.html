@@ -1,0 +1,55 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+
+{% block title %}Renovación{% endblock title %}
+{% block v2_styles %}
+  <link rel="stylesheet" href="{% static 'planes/renovacion.css' %}">
+{% endblock v2_styles %}
+{% block page_title %}Renovación{% endblock page_title %}
+{% block page_subtitle %}{% endblock page_subtitle %}
+{% block v2_content %}
+<section class="ap-planes ap-planes-renew" aria-label="Renovación">
+<div class="renew-card">
+      <div class="renew-head">
+        <span class="renew-badge"><span class="dot"></span>RENUEVA TU PLAN</span>
+        <h2>No dejes tu auditoría a medias</h2>
+        <p>Cientos de auditores en Latinoamérica ya confían en AuditaPro para organizar sus proyectos, papeles de trabajo y hallazgos en un solo lugar.</p>
+      </div>
+
+      <div class="renew-body">
+
+        <div class="renew-price"><span class="n">$169</span><span class="u">/ año</span></div>
+        <span class="renew-lock">Renovación anual al precio indicado</span>
+
+        <ul class="renew-list">
+          <li><span class="check">✓</span>Acceso ilimitado a tus proyectos y archivo permanente</li>
+          <li><span class="check">✓</span>Todas tus herramientas de auditoría sin interrupciones</li>
+          <li><span class="check">✓</span>Soporte directo y actualizaciones incluidas</li>
+        </ul>
+
+        <div class="renew-auto">
+          <h3>Lo que automatizas con AuditaPro:</h3>
+          <ul class="renew-list">
+          <li><span class="check">✓</span><span>Importación de EEFF con generación automática de cédulas centralizadoras y sumarias</span></li>
+          <li><span class="check">✓</span><span>Creación ilimitada de auditorías, con encabezados trasladados automáticamente a los PT</span></li>
+          <li><span class="check">✓</span><span>Análisis financiero automatizado en cada auditoría</span></li>
+          <li><span class="check">✓</span><span>Muestreo automatizado, pruebas sustantivas listas para ejecutar</span></li>
+          <li><span class="check">✓</span><span>Sistema de marcas y referencias de papeles de trabajo (PT)</span></li>
+          <li><span class="check">✓</span><span>Control por auditor o grupo: jefe de equipo, fechas de elaboración y revisión</span></li>
+          <li><span class="check">✓</span><span>Notificaciones del equipo al correo y solicitudes al cliente</span></li>
+          <li><span class="check">✓</span><span>Certificado digital + soporte prioritario</span></li>
+          <li class="gift"><span class="check">✓</span><span><b>Regalo:</b> 1 mes de Audita Análisis — pruébalo sin costo</span></li>
+          <li><span class="check">✓</span><span>Libro de Auditoría Práctica de Estados Financieros</span></li>
+          <li><span class="check">✓</span><span>Capacitación online — coordinada por WhatsApp</span></li>
+          </ul>
+        </div>
+
+        <a class="renew-cta" href="{% url 'planes:comprar' 'renovacion-anual' %}" target="_blank" rel="noopener noreferrer">
+          Renovar ahora por $169/año →
+        </a>
+        <div class="renew-foot">Renovación segura · Cancela cuando quieras</div>
+      </div>
+    </div>
+</section>
+{% endblock v2_content %}
+

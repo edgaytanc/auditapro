@@ -17,24 +17,26 @@
     "4.1.1 OTRAS CEDULAS SUMARIAS.xlsx": [],
     "4.2 PATRIMONIO.xlsx": [],
     "4.2.1 OTRAS CEDULAS SUMARIAS.xlsx": [],
-    "5 CENTRALIZADORA DEL ESTADO DE RESULTADOS.xlsx": [],
+    "5 CENTRALIZADORA  DEL ESTADO DE RESULTADOS.xlsx": [],
     "5.1 INGRESOS.xlsx": [],
     "5.2 COSTOS_Y_GASTOS.xlsx": [],
     "5.3 AREA_TRIBUTARIA.xlsx": [],
     "5.4 OTRAS CEDULAS SUMARIAS.xlsx": []
   },
-    "3 PRUEBAS DETECCIÓN DE FRAUDES": {
-      "1 Deteccion_Fraudes_Efectivo.xlsx": [],
-      "2 Deteccion_Fraudes_Cuentas por Cobrar.xlsx": [],
-      "3 Deteccion_Fraudes_Inventarios.xlsx": [],
-      "4 Deteccion_Propiedad, Planta y Equipo.xlsx": [],
-      "5 Deteccion_Cuentas por Pagar.xlsx": [],
-      "6 Deteccion_Fraudes_Obligaciones Financieras.xlsx": [],
-      "7 Deteccion_Ingresos.xlsx": [],
-      "8 Deteccion_Costos_Gastos.xlsx": [],
-      "9 Deteccion_Nomina_Beneficios_Empleados.xlsx": [],
-      "10 Deteccion_Cuentas por Cobrar_Empleados.xlsx": []
-    },
+  "3 PRUEBAS DETECCIÓN DE FRAUDES": {
+    "1 Deteccion_Fraudes_Efectivo.xlsx": [],
+    "2 Deteccion Fraudes Cuentas por Cobrar.xlsx": [],
+    "2 Deteccion_Fraudes_Cuentas por Cobrar.xlsx": [],
+    "3 Deteccion_Fraudes_Inventarios.xlsx": [],
+    "4 Deteccion_Propiedad, Planta y Equipo.xlsx": [],
+    "5 Deteccion_Cuentas por Pagar.xlsx": [],
+    "6 Deteccion_Fraudes_Obligaciones Financieras.xlsx": [],
+    "7 Deteccion_Ingresos.xlsx": [],
+    "8 Deteccion_Costos_Gastos.xlsx": [],
+    "9 Deteccion_Nomina_Beneficios_Empleados.xlsx": [],
+    "10 Deteccion_Cuentas por Cobrar_Empleados.xlsx": [],
+    "10 Deteccion_Nomina_Beneficios_Empleados.xlsx": []
+  },
   "4 COMUNICACION": {
     "3_COMUNICACION.xlsx": []
   },

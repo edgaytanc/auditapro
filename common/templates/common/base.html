@@ -23,6 +23,9 @@
 
     <link rel="stylesheet" href="{% static 'users/toggleTheme/styles.css' %}" />
     <link rel="stylesheet" href="{% static 'users/styles.css' %}" />
+
+    {% block late_styles %}
+    {% endblock late_styles %}
   </head>
   <body class="d-flex flex-row min-vh-100 w-100">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

@@ -9,15 +9,19 @@ urlpatterns = [
         views.mark_notification_as_read,
         name="mark_notification_as_read",
     ),
-
-    # 🔹 Vista de detalle
-    path("<int:pk>/", views.notification_detail, name="notification_detail"),
-
-    # 🔹 Revisión (usada por el fetch del modal)
-    path("<int:pk>/review/", views.review_notification, name="notification_review"),
-    
-    path("eliminar/", views.delete_notifications, name="delete_notifications"),
-    path("status/<int:ns_id>/delete/", views.delete_notification_status, name="notification_delete_one"),
-    
-
+    path(
+        "<int:pk>/review/",
+        views.review_notification,
+        name="notification_review",
+    ),
+    path(
+        "eliminar/",
+        views.delete_notifications,
+        name="delete_notifications",
+    ),
+    path(
+        "status/<int:ns_id>/delete/",
+        views.delete_notification_status,
+        name="notification_delete_one",
+    ),
 ]

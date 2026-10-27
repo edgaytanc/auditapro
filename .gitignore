@@ -1,51 +1,38 @@
-# Configuración privada - nunca publicar
+﻿.env
+.venv/
+__pycache__/
+*.pyc
+staticfiles/
+db.sqlite3
+*.sqlite3
+~$*
+~WRL*.tmp
+
+# Credenciales
 .env
 .env.*
 !.env.example
-*.pem
-*.p12
-*.pfx
-*.key
 
-# Bases de datos y respaldos (no publicar datos de clientes)
+# Bases de datos
 db.sqlite3
-*.sqlite
 *.sqlite3
+*.sqlite
 *.db
 *.sql
-*.sql.gz
 *.dump
 *.bak
-*.backup
-backups/
-_respaldos*/
 
-# Archivos generados / usuarios
-media/
+# Archivos generados
 staticfiles/
+media/
 __pycache__/
-*.py[cod]
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
-.coverage
-htmlcov/
+*.pyc
 .venv/
 venv/
-env/
-ENV/
-node_modules/
 
-# Editores / OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-~$*
-~WRL*.tmp
+# Temporales
 *.tmp
 *.log
-
-# Archivos temporales por despliegue
-*.swp
-*.swo
+.vscode/
+.idea/
+~$*

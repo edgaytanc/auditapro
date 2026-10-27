@@ -1,0 +1,64 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+
+{% block title %}Archivo Permanente | AuditaPro{% endblock title %}
+{% block page_title %}Archivo Permanente{% endblock page_title %}
+{% block page_subtitle %}Expediente editable por secciones, con descargas Word y PDF.{% endblock page_subtitle %}
+
+{% block v2_styles %}
+<link rel="stylesheet" href="{% static 'css/archivo-permanente-manual.css' %}?v=20261022-1">
+{% endblock v2_styles %}
+
+{% block v2_content %}
+<div class="apm" id="apmRoot" data-user-id="{{ request.user.pk }}">
+  <div class="apm-info-bar">
+    <div class="apm-info-text">
+      <i class="bi bi-file-earmark-check"></i>
+      <span><strong>Expediente manual:</strong> completa sus seis apartados y descarga una sección o el documento completo.</span>
+    </div>
+    <span class="apm-neutral-pill">6 secciones</span>
+  </div>
+
+  <div class="apm-identity">
+    <div class="apm-field">
+      <label for="apmCompany">Nombre de la empresa</label>
+      <input id="apmCompany" type="text" maxlength="180" placeholder="Razón social / empresa" autocomplete="off">
+    </div>
+    <div class="apm-field apm-year">
+      <label for="apmPeriod">Período</label>
+      <input id="apmPeriod" type="text" maxlength="50" placeholder="Año o período" autocomplete="off">
+    </div>
+    <div class="apm-identity-actions">
+      <button type="button" class="apm-btn apm-btn-primary" id="apmSave"><i class="bi bi-floppy"></i> Guardar cambios</button>
+      <button type="button" class="apm-btn apm-btn-quiet" id="apmRestore"><i class="bi bi-arrow-counterclockwise"></i> Restaurar ejemplos</button>
+      <span id="apmSaveStatus" class="apm-save-status" role="status" aria-live="polite"></span>
+    </div>
+  </div>
+
+  <div class="apm-export-head">
+    <div>
+      <strong>Descargar expediente completo</strong>
+      <p>Información general, estructura, normativa, operaciones, administración y finanzas.</p>
+    </div>
+    <div class="apm-btn-group">
+      <button type="button" class="apm-btn apm-btn-word" data-export="word" data-scope="all"><i class="bi bi-file-earmark-word"></i> Word completo</button>
+      <button type="button" class="apm-btn apm-btn-pdf" data-export="pdf" data-scope="all"><i class="bi bi-file-earmark-pdf"></i> PDF completo</button>
+    </div>
+  </div>
+
+  <div class="apm-layout">
+    <aside class="apm-side" aria-label="Secciones del Archivo Permanente">
+      <div class="apm-side-title">SECCIONES DEL EXPEDIENTE</div>
+      <nav class="apm-sections" id="apmNav"></nav>
+      <p class="apm-side-hint"><i class="bi bi-shield-check"></i> Los datos se guardan en este navegador, no en los registros de auditoría.</p>
+    </aside>
+    <section class="apm-main" id="apmPanel" aria-live="polite"></section>
+  </div>
+  <div class="apm-toast" id="apmToast" role="status" aria-live="polite"></div>
+</div>
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+<script src="{% static 'js/archivo-permanente-seed.js' %}?v=20261022-1"></script>
+<script src="{% static 'js/archivo-permanente-manual.js' %}?v=20261022-1"></script>
+{% endblock v2_scripts %}

@@ -1,10 +1,12 @@
 from django.urls import path
 from . import views
+from . import exports_cliente
 
 urlpatterns = [
+    path("exportar/<str:seccion>/<str:formato>/", exports_cliente.exportar_herramientas, name="tools_export_cliente"),
     path(
         "",
-        views.tools_page,
+        exports_cliente.herramientas_inicio,
         name="tools",
     ),
     path(

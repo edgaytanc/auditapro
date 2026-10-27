@@ -2,21 +2,15 @@
   "entidad": {
     "placeholders": [
       "[IDENTIDAD]",
-      "[NOMBRE_CLIENTE]",
-      "[Nombre de la Entidad]"
+      "[NOMBRE_CLIENTE]"
     ],
     "default": "Sin identidad",
     "formatos": {
       "con_espacio": {
         "placeholders": [
-          "ENTIDAD XXXXXXXXXXXXXXXXXXXXX",
-          "Entidad XXXXXXXXXXXXXXXX",
-          "Entidad XXXXXXXXX",
-          "Entidad XXXXXXXX",
           "Entidad XXXXXXX",
-          "Entidad XXXXX",
-          "Entidad Walmart",
-          "Entidad tesla"
+          "Entidad tesla",
+          "ENTIDAD XXXXXXXXXXXXXXXXXXXXX"
         ],
         "template": "Entidad {}"
       },
@@ -30,7 +24,6 @@
   },
   "fecha_rango": {
     "placeholders": [
-      "Del 01 de Enero al 31 de Diciembre de 2025",
       "Del 01 de Enero al 31 de Diciembre de 2024",
       "Del 01 de Enero de 2023 al 31 de Diciembre de 2023",
       "Del 01 de Enero al 31 de Diciembre de 2023",
@@ -64,8 +57,7 @@
     "placeholder": "[TIPO_AUDITORIA]",
     "values": {
       "F": "Financiera",
-      "I": "Interna",
-      "R": "Revisoría Fiscal"
+      "I": "Interna"
     }
   },
   "auditor": {
@@ -78,8 +70,6 @@
       "Cifras expresadas en Quetzales",
       "CIFRAS EXPRESADAS EN QUETZALES",
       "cifras expresadas en quetzales",
-      "Cifras expresadas en lempiras",
-      "Cifras expresadas en Lempiras",
       "Expresado en quetzales",
       "Expresado en Quetzales",
       "EXPRESADO EN QUETZALES",
@@ -120,20 +110,6 @@
     }
   },
   "patrones_regex": [
-    {
-      "_comentario": "Encabezado 'Entidad <hueco>' de las plantillas 2026. El hueco se escribe con distintas letras repetidas segun la plantilla ('Entidad XXXXXXXX', 'Entidad SSSSSSSS'), por eso se detecta cualquier letra repetida 3 o mas veces y no solo la X.",
-      "pattern": "Entidad\\s+([A-Za-z])\\1{2,}",
-      "reemplazar_por": "[ENTIDAD_ETIQUETA]"
-    },
-    {
-      "_comentario": "Periodo del encabezado. Tolera que falte el 'al' y que el primer mes traiga o no su anio, porque las plantillas oficiales mezclan las tres formas (p. ej. 'Del 01 de Enero 31 de Diciembre de 2025').",
-      "pattern": "Del\\s+\\d{1,2}\\s+de\\s+[A-Za-z\u00c1\u00c9\u00cd\u00d3\u00da\u00e1\u00e9\u00ed\u00f3\u00fa]+(?:\\s+de\\s+\\d{4})?\\s+(?:al\\s+)?\\d{1,2}\\s+de\\s+[A-Za-z\u00c1\u00c9\u00cd\u00d3\u00da\u00e1\u00e9\u00ed\u00f3\u00fa]+\\s+de\\s+\\d{4}",
-      "reemplazar_por": "[FECHA_RANGO]"
-    },
-    {
-      "pattern": "Cifras expresadas en [A-Za-z\u00e1\u00e9\u00ed\u00f3\u00fa\u00fc ]+",
-      "reemplazar_por": "[MONEDA_EXPRESION]"
-    },
     {
       "pattern": "Entidad:\\s*",
       "reemplazar_por": "[ENTIDAD_COMPLETA]"

@@ -1,13 +1,40 @@
-{% extends "common/system-base.html" %}
-
-{% block title %}
-Auditoría
-{% endblock title %}
-
-{% block page_title %}
-Auditoría
-{% endblock page_title %}
-
-{% block main_content %}
-
-{% endblock main_content %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+{% block title %}Módulos de auditoría{% endblock title %}
+{% block v2_styles %}
+  <link rel="stylesheet" href="{% static 'css/dashboard-picker-v2.css' %}">
+{% endblock v2_styles %}
+{% block page_title %}Módulos de auditoría{% endblock page_title %}
+{% block page_subtitle %}Elige el tipo de proyecto o consulta tus proyectos asignados.{% endblock page_subtitle %}
+{% block page_actions %}
+  <a class="ap-secondary-button" href="{% url 'assigned_audits' %}"><i class="bi bi-folder2-open"></i> Proyectos de auditoría</a>
+{% endblock page_actions %}
+{% block v2_content %}
+  <div class="ap-picker-grid">
+    <a href="{% url 'auditoria_financiera' %}" class="ap-picker-card">
+      <span class="ap-picker-icon"><i class="bi bi-graph-up"></i></span>
+      <span class="ap-picker-label">AUDITAPRO</span>
+      <h2>Auditoría Financiera</h2>
+      <p>Selecciona tus auditorías financieras y continúa con sus papeles de trabajo.</p>
+      <span class="ap-picker-go">Seleccionar auditoría <i class="bi bi-arrow-right"></i></span>
+    </a>
+    {% if user.auditoria_interna or user.is_superuser or user.is_staff %}
+    <a href="{% url 'auditoria_interna' %}" class="ap-picker-card">
+      <span class="ap-picker-icon ap-picker-icon-green"><i class="bi bi-shield-check"></i></span>
+      <span class="ap-picker-label">AUDITAPRO</span>
+      <h2>Auditoría Interna</h2>
+      <p>Selecciona el encargo interno y consulta sus documentos y herramientas.</p>
+      <span class="ap-picker-go">Seleccionar auditoría <i class="bi bi-arrow-right"></i></span>
+    </a>
+    {% endif %}
+    {% if user.revisor_fiscal or user.is_superuser or user.is_staff %}
+    <a href="{% url 'auditoria_revisoria' %}" class="ap-picker-card">
+      <span class="ap-picker-icon"><i class="bi bi-journal-check"></i></span>
+      <span class="ap-picker-label">AUDITAPRO</span>
+      <h2>Revisoría Fiscal</h2>
+      <p>Accede a los encargos habilitados de Revisoría Fiscal.</p>
+      <span class="ap-picker-go">Seleccionar auditoría <i class="bi bi-arrow-right"></i></span>
+    </a>
+    {% endif %}
+  </div>
+{% endblock v2_content %}

@@ -191,7 +191,9 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
             # Codificar la ruta y el nombre del archivo para la URL
             folder_encoded = urllib.parse.quote(current_path.replace('\\', '/')) if current_path else ''
             filename_encoded = urllib.parse.quote(nombre)
-            download_url = f"/auditoria/download/{audit_id}/{folder_encoded}/{filename_encoded}"
+            download_url = f"/auditoria/download/{audit_id}/{folder_encoded}/{filename_encoded}/"
+            if tipo_auditoria in {"F", "R", "I"}:
+                download_url += f"?tipo={tipo_auditoria}"
 
             # Pastilla de referencia automática del papel de trabajo
             ref_pill = _generar_pill_referencia(tipo_auditoria, current_path, nombre, audit_id)

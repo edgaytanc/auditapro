@@ -1,140 +1,348 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
-  Dashboard {{ user.username }}
+  Dashboard — Auditoría Financiera
 {% endblock title %}
+
+{% block v2_styles %}
+  <link
+    rel="stylesheet"
+    href="{% static 'css/dashboard-financial-v2.css' %}"
+  >
+{% endblock v2_styles %}
+
 {% block page_title %}
-  Dashboard
+  Dashboard — Auditoría Financiera
 {% endblock page_title %}
+
 {% block page_subtitle %}
+  Resumen ejecutivo del portafolio de auditorías financieras,
+  clientes, equipo, hallazgos y próximos cierres.
 {% endblock page_subtitle %}
-{% block main_content %}
-  <div class="btn-toolbar mb-2 mb-md-0">
-    <div class="btn-group me-2">
-      <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
-      <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+
+{% block page_actions %}
+
+  <a
+    href="{% url 'matriz_riesgos_financiera' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-shield-exclamation"></i>
+    Matriz de Riesgos
+  </a>
+
+  <a
+    href="{% url 'dashboard' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-grid"></i>
+    Cambiar panel
+  </a>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <section class="ap-dashboard-auto-banner">
+    <div class="ap-dashboard-auto-icon">
+      <i class="bi bi-check2-circle"></i>
     </div>
-    <button type="button"
-            class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1">
-      <i class="bi bi-calendar3"></i>
-      This week
-    </button>
-  </div>
-  <canvas class="my-4 w-100" id="myChart" width="900" height="380"></canvas>
-  <h2>Section title</h2>
-  <div class="table-responsive small w-100">
-    <table class="table table-striped table-sm">
-      <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">Header</th>
-          <th scope="col">Header</th>
-          <th scope="col">Header</th>
-          <th scope="col">Header</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>1,010</td>
-          <td>data</td>
-          <td>rich</td>
-          <td>dashboard</td>
-          <td>tabular</td>
-        </tr>
-        <tr>
-          <td>1,011</td>
-          <td>information</td>
-          <td>placeholder</td>
-          <td>illustrative</td>
-          <td>data</td>
-        </tr>
-        <tr>
-          <td>1,012</td>
-          <td>text</td>
-          <td>placeholder</td>
-          <td>layout</td>
-          <td>dashboard</td>
-        </tr>
-        <tr>
-          <td>1,013</td>
-          <td>dashboard</td>
-          <td>irrelevant</td>
-          <td>text</td>
-          <td>visual</td>
-        </tr>
-        <tr>
-          <td>1,014</td>
-          <td>dashboard</td>
-          <td>illustrative</td>
-          <td>rich</td>
-          <td>data</td>
-        </tr>
-        <tr>
-          <td>1,015</td>
-          <td>random</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>text</td>
-        </tr>
-        <tr>
-          <td>1,015</td>
-          <td>random</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>text</td>
-        </tr>
-        <tr>
-          <td>1,015</td>
-          <td>random</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>text</td>
-        </tr>
-        <tr>
-          <td>1,015</td>
-          <td>random</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>text</td>
-        </tr>
-        <tr>
-          <td>1,015</td>
-          <td>random</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>text</td>
-        </tr>
-        <tr>
-          <td>1,015</td>
-          <td>random</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>text</td>
-        </tr>
-        <tr>
-          <td>1,015</td>
-          <td>random</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>text</td>
-        </tr>
-        <tr>
-          <td>1,015</td>
-          <td>random</td>
-          <td>tabular</td>
-          <td>information</td>
-          <td>text</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-{% endblock main_content %}
-{% block extra_scripts %}
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.2/dist/chart.umd.js"
-          integrity="sha384-eI7PSr3L1XLISH8JdDII5YN/njoSsxfbrkCTnJrzXt+ENP5MOVBxD+l6sEG4zoLp"
-          crossorigin="anonymous"></script>
 
-  {% load static %}
+    <div>
+      <strong>
+        Panel ejecutivo automático
+      </strong>
 
-  <script src="{% static 'users/dashboard/script.js' %}"></script>
-{% endblock extra_scripts %}
+      <p>
+        Ningún dato se captura directamente en esta pantalla.
+        La información será consolidada desde Auditorías,
+        Clientes, Gestionar Auditores, Hallazgos y Resumen de Tiempo.
+      </p>
+    </div>
+  </section>
+
+  <section class="ap-financial-kpi-grid">
+
+    {% for kpi in dashboard_kpis %}
+
+      <article class="ap-financial-kpi-card">
+
+        <div class="ap-financial-kpi-header">
+
+          <p>
+            {{ kpi.label }}
+          </p>
+
+          <span
+            class="
+              ap-financial-kpi-icon
+              ap-financial-kpi-icon-{{ kpi.tone }}
+            "
+          >
+            <i class="bi {{ kpi.icon }}"></i>
+          </span>
+
+        </div>
+
+        <strong
+          class="
+            ap-financial-kpi-value
+            ap-financial-kpi-value-{{ kpi.tone }}
+          "
+        >
+          {{ kpi.value }}
+        </strong>
+
+        <span class="ap-financial-kpi-note">
+          {{ kpi.note }}
+        </span>
+
+      </article>
+
+    {% endfor %}
+
+  </section>
+
+  <section class="ap-dashboard-top-grid">
+
+    <article class="ap-dashboard-panel ap-dashboard-trend-panel">
+
+      <header class="ap-dashboard-panel-header">
+        <div>
+          <h2>Tendencia mensual</h2>
+
+          <p>
+            Auditorías iniciadas y completadas por mes
+          </p>
+        </div>
+
+        <span class="ap-dashboard-panel-icon">
+          <i class="bi bi-graph-up-arrow"></i>
+        </span>
+      </header>
+
+      <div class="ap-dashboard-chart ap-dashboard-chart-line">
+        <canvas id="financialTrendChart"></canvas>
+      </div>
+
+    </article>
+
+    <article class="ap-dashboard-panel">
+
+      <header class="ap-dashboard-panel-header">
+        <div>
+          <h2>Estado de auditorías</h2>
+
+          <p>
+            Distribución de los encargos por etapa
+          </p>
+        </div>
+      </header>
+
+      <div class="ap-dashboard-chart ap-dashboard-chart-doughnut">
+        <canvas id="financialStatusChart"></canvas>
+      </div>
+
+      <div class="ap-dashboard-chart-legend">
+
+        {% for item in audit_status_legend %}
+
+          <div>
+            <span
+              class="ap-dashboard-legend-color"
+              style="background-color: {{ item.color }};"
+            ></span>
+
+            <span class="ap-dashboard-legend-name">
+              {{ item.label }}
+            </span>
+
+            <strong>
+              {{ item.value }}
+            </strong>
+          </div>
+
+        {% endfor %}
+
+      </div>
+
+    </article>
+
+    <article class="ap-dashboard-panel">
+
+      <header class="ap-dashboard-panel-header">
+        <div>
+          <h2>Tipo de auditoría</h2>
+
+          <p>
+            Distribución de los encargos por tipo
+          </p>
+        </div>
+      </header>
+
+      <div class="ap-dashboard-chart ap-dashboard-chart-doughnut">
+        <canvas id="financialTypeChart"></canvas>
+      </div>
+
+      <div class="ap-dashboard-chart-legend">
+
+        {% for item in audit_type_legend %}
+
+          <div>
+            <span
+              class="ap-dashboard-legend-color"
+              style="background-color: {{ item.color }};"
+            ></span>
+
+            <span class="ap-dashboard-legend-name">
+              {{ item.label }}
+            </span>
+
+            <strong>
+              {{ item.value }}
+            </strong>
+          </div>
+
+        {% endfor %}
+
+      </div>
+
+    </article>
+
+  </section>
+
+  <section class="ap-dashboard-bottom-grid">
+
+    <article class="ap-dashboard-panel">
+
+      <header class="ap-dashboard-panel-header">
+        <div>
+          <h2>Desempeño por auditor</h2>
+
+          <p>
+            Horas ejecutadas durante el período actual
+          </p>
+        </div>
+
+        <span class="ap-dashboard-panel-icon">
+          <i class="bi bi-bar-chart"></i>
+        </span>
+      </header>
+
+      <div class="ap-dashboard-chart ap-dashboard-chart-bar">
+        <canvas id="financialPerformanceChart"></canvas>
+      </div>
+
+    </article>
+
+    <article class="ap-dashboard-panel ap-dashboard-lists-panel">
+
+      <section class="ap-dashboard-list-section">
+
+        <header class="ap-dashboard-list-header">
+          <div>
+            <h2>Próximos cierres</h2>
+
+            <p>
+              Auditorías cercanas a su fecha de finalización
+            </p>
+          </div>
+
+          <i class="bi bi-calendar-event"></i>
+        </header>
+
+        <div class="ap-dashboard-list">
+
+          {% for closure in upcoming_closures %}
+
+            <div class="ap-dashboard-list-item">
+
+              <div class="ap-dashboard-list-information">
+                <strong>
+                  {{ closure.code }}
+                </strong>
+
+                <span>
+                  {{ closure.client }}
+                </span>
+              </div>
+
+              <span
+                class="
+                  ap-dashboard-list-badge
+                  ap-dashboard-list-badge-{{ closure.tone }}
+                "
+              >
+                {{ closure.tag }}
+              </span>
+
+            </div>
+
+          {% endfor %}
+
+        </div>
+
+      </section>
+
+      <section class="ap-dashboard-list-section">
+
+        <header class="ap-dashboard-list-header">
+          <div>
+            <h2>Hallazgos abiertos</h2>
+
+            <p>
+              Observaciones que requieren seguimiento
+            </p>
+          </div>
+
+          <i class="bi bi-exclamation-diamond"></i>
+        </header>
+
+        <div class="ap-dashboard-list">
+
+          {% for finding in open_findings %}
+
+            <div class="ap-dashboard-list-item">
+
+              <div class="ap-dashboard-list-information">
+                <strong>
+                  {{ finding.code }}
+                </strong>
+
+                <span>
+                  {{ finding.description }}
+                </span>
+              </div>
+
+              <span
+                class="
+                  ap-dashboard-list-badge
+                  ap-dashboard-list-badge-{{ finding.tone }}
+                "
+              >
+                {{ finding.tag }}
+              </span>
+
+            </div>
+
+          {% endfor %}
+
+        </div>
+
+      </section>
+
+    </article>
+
+  </section>
+
+  {{ dashboard_chart_data|json_script:"financialDashboardData" }}
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+  <script
+    src="{% static 'js/dashboard-financial-v2.js' %}"
+  ></script>
+{% endblock v2_scripts %}

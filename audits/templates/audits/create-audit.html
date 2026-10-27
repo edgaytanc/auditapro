@@ -6,11 +6,10 @@
 {% block page_title %}
   Crear Auditoría
 {% endblock page_title %}
-{% block page_subtitle %}
-{% endblock page_subtitle %}
+{% block page_subtitle %}Define el encargo, sus tipos de auditoría y responsables.{% endblock page_subtitle %}
 
 {% block main_content %}
-  <section class="card w-100 bg-body-tertiary shadow">
+  <section class="card w-100 bg-body-tertiary shadow ap-create-audit-v2">
     <header class="card-body p-4">
       <h3 class="card-title text-2xl font-semibold">Crear Auditoría</h3>
       <p class="text-muted">Llene los detalles de la auditoría para crearla.</p>
@@ -66,110 +65,39 @@
           </div>
         </div>
 
-            <div class="col-md-6">
-      <div class="mb-3">
-        <label class="form-label">Tipo de Auditoría</label>
-
-        <div class="form-check">
-          <input type="checkbox"
-                class="form-check-input"
-                id="audit_financial"
-                name="audit_financial"
-                onclick="toggleAuditType(this)" />
-          <label class="form-check-label" for="audit_financial">Auditoría Financiera</label>
+        <div class="col-md-6">
+          <div class="mb-3">
+            <label class="form-label">Tipo de Auditoría</label>
+            <div class="form-check">
+              <input type="radio" class="form-check-input"
+                     id="audit_financial" name="selected_audit_type" value="F" required>
+              <label class="form-check-label" for="audit_financial">Auditoría Financiera</label>
+            </div>
+            {% if can_create_revisoria %}
+            <div class="form-check mt-2">
+              <input type="radio" class="form-check-input"
+                     id="activa_revisoria" name="selected_audit_type" value="R">
+              <label class="form-check-label" for="activa_revisoria">Revisoría Fiscal</label>
+            </div>
+            {% endif %}
+            {% if can_create_interna %}
+            <div class="form-check mt-2">
+              <input type="radio" class="form-check-input"
+                     id="audit_internal" name="selected_audit_type" value="I">
+              <label class="form-check-label" for="audit_internal">Auditoría Interna</label>
+            </div>
+            {% endif %}
+            <div id="audit_type_error" class="text-danger mt-2" style="display:none;">
+              Selecciona exactamente un tipo de auditoría.
+            </div>
+          </div>
         </div>
-
-        <div class="form-check mt-2">
-          <input type="checkbox"
-                class="form-check-input"
-                id="activa_revisoria"
-                name="activa_revisoria"
-                onclick="toggleAuditType(this)" />
-          <label class="form-check-label" for="activa_revisoria">Revisoría Fiscal</label>
-        </div>
-
-        <div class="form-check mt-2">
-          <input type="checkbox"
-                class="form-check-input"
-                id="audit_internal"
-                name="audit_internal"
-                onclick="toggleAuditType(this)" />
-          <label class="form-check-label" for="audit_internal">Auditoría Interna</label>
-        </div>
-
-        <!-- Mensaje de validación -->
-        <div id="audit_type_error" class="text-danger mt-2" style="display:none;">
-          Por favor seleccione 1 tipo de auditoría.
-        </div>
-      </div>
-    </div>
-
 
         <div class="col-md-6">
           <div class="mb-3">
             <label for="audit_moneda" class="form-label">Moneda</label>
             <select class="form-select" id="audit_moneda" name="audit_moneda" required>
-              <option value="">--- Seleccionar Moneda ---</option>
-              <optgroup label="🌎 América del Norte">
-                <option value="USD">Estados Unidos - USD</option>
-                <option value="CAD">Canadá - CAD</option>
-              </optgroup>
-              <optgroup label="🌍 América Central y Caribe">
-                <option value="MXN">México - MXN</option>
-                <option value="GTQ" selected>Guatemala - GTQ</option>
-                <option value="BZD">Belice - BZD</option>
-                <option value="USD">El Salvador - USD</option>
-                <option value="HNL">Honduras - HNL</option>
-                <option value="NIO">Nicaragua - NIO</option>
-                <option value="CRC">Costa Rica - CRC</option>
-                <option value="PAB">Panamá - PAB</option>
-                <option value="USD">Panamá - USD</option>
-                <option value="CUP">Cuba - CUP</option>
-                <option value="JMD">Jamaica - JMD</option>
-                <option value="HTG">Haití - HTG</option>
-                <option value="DOP">República Dominicana - DOP</option>
-                <option value="USD">Puerto Rico - USD</option>
-                <option value="TTD">Trinidad y Tobago - TTD</option>
-                <option value="BBD">Barbados - BBD</option>
-                <option value="BSD">Bahamas - BSD</option>
-              </optgroup>
-              <optgroup label="🌎 América del Sur">
-                <option value="ARS">Argentina - ARS</option>
-                <option value="BOB">Bolivia - BOB</option>
-                <option value="BRL">Brasil - BRL</option>
-                <option value="CLP">Chile - CLP</option>
-                <option value="COP">Colombia - COP</option>
-                <option value="USD">Ecuador - USD</option>
-                <option value="GYD">Guyana - GYD</option>
-                <option value="PYG">Paraguay - PYG</option>
-                <option value="PEN">Perú - PEN</option>
-                <option value="SRD">Suriname - SRD</option>
-                <option value="UYU">Uruguay - UYU</option>
-                <option value="VES">Venezuela - VES</option>
-                <option value="EUR">Guyana Francesa - EUR</option>
-              </optgroup>
-              <optgroup label="🌎 Europa - Zona Euro">
-                <option value="EUR">Alemania - EUR</option>
-                <option value="EUR">Austria - EUR</option>
-                <option value="EUR">Bélgica - EUR</option>
-                <option value="EUR">Chipre - EUR</option>
-                <option value="EUR">Croacia - EUR</option>
-                <option value="EUR">Eslovaquia - EUR</option>
-                <option value="EUR">Eslovenia - EUR</option>
-                <option value="EUR">España - EUR</option>
-                <option value="EUR">Estonia - EUR</option>
-                <option value="EUR">Finlandia - EUR</option>
-                <option value="EUR">Francia - EUR</option>
-                <option value="EUR">Grecia - EUR</option>
-                <option value="EUR">Irlanda - EUR</option>
-                <option value="EUR">Italia - EUR</option>
-                <option value="EUR">Letonia - EUR</option>
-                <option value="EUR">Lituania - EUR</option>
-                <option value="EUR">Luxemburgo - EUR</option>
-                <option value="EUR">Malta - EUR</option>
-                <option value="EUR">Países Bajos - EUR</option>
-                <option value="EUR">Portugal - EUR</option>
-              </optgroup>
+              {% include "audits/_monedas_productivo.html" with selected_moneda="GTQ" %}
             </select>
           </div>
         </div>
@@ -193,40 +121,14 @@
   </section>
 
  <script>
-  function toggleAuditType(clicked) {
-    const checkboxes = document.querySelectorAll(
-      'input[name="audit_financial"], input[name="activa_revisoria"], input[name="audit_internal"]'
-    );
-
-    checkboxes.forEach(cb => {
-      if (cb !== clicked) cb.checked = false;
-    });
-
-    // Oculta el error si ya seleccionó una
-    const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
-    const errorBox = document.getElementById("audit_type_error");
-    if (anyChecked && errorBox) errorBox.style.display = "none";
-  }
-
-  // Validación al enviar
   document.addEventListener("DOMContentLoaded", function () {
-    const form = document.querySelector('form[action*="create_audit"]') || document.querySelector("form");
-
+    const form = document.querySelector('form[action*="create_audit"]');
     if (!form) return;
-
-    form.addEventListener("submit", function (e) {
-      const checkboxes = document.querySelectorAll(
-        'input[name="audit_financial"], input[name="activa_revisoria"], input[name="audit_internal"]'
-      );
-
-      const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
-      const errorBox = document.getElementById("audit_type_error");
-
-      if (!anyChecked) {
-        e.preventDefault();
-        if (errorBox) errorBox.style.display = "block";
-        return false;
-      }
+    form.addEventListener("submit", function (event) {
+      const choice = form.querySelector('input[name="selected_audit_type"]:checked');
+      const error = document.getElementById("audit_type_error");
+      if (error) error.style.display = choice ? "none" : "block";
+      if (!choice) event.preventDefault();
     });
   });
 </script>
@@ -235,4 +137,22 @@
 
 {% block extra_scripts %}
   {{ block.super }}
+
+<script id="auto-title-audit">
+(function(){
+ const title=document.getElementById("audit_title"), company=document.getElementById("audit_identidad"), date=document.getElementById("audit_fechaInit");
+ if(!title || !company)return;
+ let lastSuggested="";
+ function suggest(){
+   if(title.value.trim() && title.value.trim()!==lastSuggested)return;
+   const kind=document.querySelector('[name="selected_audit_type"]:checked')?.value||"F";
+   const year=date?.value?.slice(0,4)||new Date().getFullYear();
+   const full={F:"Auditoría Financiera",I:"Auditoría Interna",R:"Revisoría Fiscal"}[kind];
+   lastSuggested=company.value.trim()?`${full} - ${company.value.trim()} - ${year}`.slice(0,255):"";
+   title.value=lastSuggested;
+ }
+ company.addEventListener("input",suggest);date?.addEventListener("change",suggest);
+ document.querySelectorAll('[name="selected_audit_type"]').forEach(node=>node.addEventListener("change",suggest));
+})();
+</script>
 {% endblock extra_scripts %}

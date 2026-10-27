@@ -1,0 +1,5 @@
+.financial-company-inline {display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;}
+.financial-company-name{width:min(340px,72vw);max-width:100%;padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;font:inherit;}
+.financial-company-save{padding:8px 12px;border:0;border-radius:8px;color:#fff;background:#2563eb;font-weight:700;cursor:pointer;}
+#financialCompanyFeedback{font-size:12px;color:#166534;}
+@media(max-width:640px){.financial-company-inline{display:flex}.financial-company-name{width:100%;}}

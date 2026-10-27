@@ -34,7 +34,9 @@
                             name="assigned_auditor"
                             aria-describedby="selectedAssignedAuditorHelp"
                             required>
-                        <option selected>Seleccione el Auditor</option>
+                        <option value="" selected disabled>
+                            Seleccione el Auditor
+                        </option>
                         {% for auditor in auditors_to_select %}
                             <option value="{{ auditor.id }}">
                                 {{ auditor.first_name }} {{ auditor.last_name }} - {{ auditor.role.verbose_name }}

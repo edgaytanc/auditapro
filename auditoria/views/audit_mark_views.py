@@ -1,68 +1,274 @@
 """
-Vistas para el sistema de marcas de auditoría
+Vistas para el sistema de marcas de auditoría.
+
+Contiene:
+- Carga del archivo Excel de marcas.
+- Descarga de la plantilla modelo.
+
+Reglas:
+- Cargar marcas exige Papeles de Trabajo → Editar.
+- Descargar la plantilla exige Papeles de Trabajo → Ver.
+- La auditoría debe pertenecer al mismo equipo.
+- El integrante debe estar asignado a la auditoría.
 """
 
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404
-from django.http import JsonResponse, HttpResponse, Http404
-from django.conf import settings
-from audits.models import Audit
-from auditoria.services.audit_mark_import_service import AuditMarkImportService
+import logging
 import os
 
+from django.conf import settings
+from django.contrib.auth.decorators import (
+    login_required,
+)
+from django.http import (
+    Http404,
+    HttpResponse,
+    JsonResponse,
+)
+from django.views.decorators.http import (
+    require_GET,
+    require_POST,
+)
 
-def _user_has_audit_access(user, audit):
-    """Verifica si el usuario puede acceder a esta auditoría."""
-    if hasattr(user, 'role') and user.role and user.role.name == 'audit_manager':
-        return audit.audit_manager == user
-    return audit.assigned_users.filter(id=user.id).exists()
+from audits.access import (
+    get_audit_for_user_or_404,
+)
+from users.permissions import (
+    module_permission_required,
+)
+
+from auditoria.services.audit_mark_import_service import (
+    AuditMarkImportService,
+)
+
+
+logger = logging.getLogger(
+    __name__
+)
 
 
 @login_required
-def upload_audit_marks(request, audit_id):
-    """Maneja la carga de archivo Excel con marcas de auditoría."""
-    audit = get_object_or_404(Audit, id=audit_id)
+@require_POST
+def upload_audit_marks(
+    request,
+    audit_id,
+):
+    """
+    Carga un archivo Excel con marcas de auditoría.
 
-    if not _user_has_audit_access(request.user, audit):
-        return JsonResponse({'error': 'Acceso denegado'}, status=403)
-
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Método no permitido'}, status=405)
-
-    if 'excel_file' not in request.FILES:
-        return JsonResponse({'error': 'No se cargó ningún archivo'}, status=400)
+    Se requiere:
+    - Papeles de Trabajo → Editar.
+    - Auditoría del mismo equipo.
+    - Usuario asignado, salvo el Jefe.
+    """
 
     try:
-        excel_file = request.FILES['excel_file']
-        replace_existing = request.POST.get('replace_existing') == 'on'
+        audit = get_audit_for_user_or_404(
+            request.user,
+            audit_id,
+            action="edit",
+            module="workpapers",
+        )
 
-        service = AuditMarkImportService(audit_id, excel_file)
-        result = service.import_marks(replace_existing=replace_existing)
+    except Http404:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": (
+                    "La auditoría no existe "
+                    "o no tienes acceso."
+                ),
+            },
+            status=404,
+        )
 
-        return JsonResponse(result)
-
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-
-
-@login_required
-def download_audit_mark_template(request):
-    """Descarga la plantilla MODELO de marcas de auditoría."""
-    modelo_path = os.path.join(
-        settings.BASE_DIR,
-        'MODELO DE MARCAS_DE_AUDITORIA_VINCULADO.xlsx'
+    excel_file = request.FILES.get(
+        "excel_file"
     )
 
-    if not os.path.exists(modelo_path):
-        raise Http404("Plantilla de marcas no encontrada.")
+    if not excel_file:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": (
+                    "No se cargó ningún archivo."
+                ),
+            },
+            status=400,
+        )
+
+    filename = (
+        excel_file.name
+        or ""
+    ).lower()
+
+    valid_extensions = {
+        ".xlsx",
+        ".xlsm",
+    }
+
+    file_extension = os.path.splitext(
+        filename
+    )[1]
+
+    if file_extension not in valid_extensions:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": (
+                    "El archivo debe estar en formato "
+                    "Excel .xlsx o .xlsm."
+                ),
+            },
+            status=400,
+        )
+
+    replace_existing = (
+        request.POST.get(
+            "replace_existing"
+        )
+        == "on"
+    )
 
     try:
-        with open(modelo_path, 'rb') as excel_file:
-            response = HttpResponse(
-                excel_file.read(),
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        service = AuditMarkImportService(
+            audit.id,
+            excel_file,
+        )
+
+        result = service.import_marks(
+            replace_existing=(
+                replace_existing
             )
-            response['Content-Disposition'] = 'attachment; filename="MODELO_MARCAS_AUDITORIA.xlsx"'
-            return response
-    except Exception:
-        raise Http404("Error al descargar plantilla.")
+        )
+
+        if not isinstance(
+            result,
+            dict,
+        ):
+            result = {
+                "success": True,
+                "message": str(
+                    result
+                ),
+            }
+
+        result.setdefault(
+            "success",
+            True,
+        )
+
+        return JsonResponse(
+            result,
+            status=200,
+        )
+
+    except ValueError as error:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": str(
+                    error
+                ),
+            },
+            status=400,
+        )
+
+    except Exception as error:
+        logger.exception(
+            (
+                "Error cargando marcas para "
+                "la auditoría %s."
+            ),
+            audit.id,
+        )
+
+        return JsonResponse(
+            {
+                "success": False,
+                "error": (
+                    "No fue posible importar "
+                    "las marcas de auditoría: "
+                    f"{str(error)}"
+                ),
+            },
+            status=500,
+        )
+
+
+@login_required
+@module_permission_required(
+    "workpapers",
+    "view",
+)
+@require_GET
+def download_audit_mark_template(
+    request,
+):
+    """
+    Descarga la plantilla modelo de marcas.
+
+    Al ser una plantilla general, no requiere un
+    audit_id específico, pero sí permiso para
+    consultar Papeles de Trabajo.
+    """
+
+    filename = (
+        "MODELO DE MARCAS_DE_AUDITORIA_"
+        "VINCULADO.xlsx"
+    )
+
+    modelo_path = os.path.join(
+        settings.BASE_DIR,
+        filename,
+    )
+
+    if not os.path.exists(
+        modelo_path
+    ):
+        raise Http404(
+            "Plantilla de marcas no encontrada."
+        )
+
+    try:
+        with open(
+            modelo_path,
+            "rb",
+        ) as excel_file:
+            file_content = (
+                excel_file.read()
+            )
+
+    except OSError:
+        logger.exception(
+            (
+                "No fue posible leer la plantilla "
+                "de marcas de auditoría."
+            )
+        )
+
+        raise Http404(
+            "Error al descargar la plantilla."
+        )
+
+    response = HttpResponse(
+        file_content,
+        content_type=(
+            "application/vnd.openxmlformats-"
+            "officedocument.spreadsheetml.sheet"
+        ),
+    )
+
+    response[
+        "Content-Disposition"
+    ] = (
+        'attachment; filename="'
+        'MODELO_MARCAS_AUDITORIA.xlsx"'
+    )
+
+    response[
+        "Content-Length"
+    ] = len(
+        file_content
+    )
+
+    return response

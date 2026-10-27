@@ -1,0 +1,58 @@
+{% with current_page=request.resolver_match.url_name %}
+
+  <nav
+    class="financial-module-nav"
+    aria-label="Navegación del módulo de Auditoría Financiera"
+  >
+
+    <a
+      href="{% url 'matriz_riesgos_financiera' %}"
+      class="
+        financial-module-nav__link
+        {% if current_page == 'matriz_riesgos_financiera' %}
+          active
+        {% endif %}
+      "
+    >
+      <i class="bi bi-shield-exclamation"></i>
+
+      <span>
+        Matriz de Riesgos
+      </span>
+    </a>
+
+    <a
+      href="{% url 'hallazgos_financiera' %}"
+      class="
+        financial-module-nav__link
+        {% if current_page == 'hallazgos_financiera' %}
+          active
+        {% endif %}
+      "
+    >
+      <i class="bi bi-clipboard2-check"></i>
+
+      <span>
+        Hallazgos y Recomendaciones
+      </span>
+    </a>
+
+    <a
+      href="{% url 'informe_final_financiera' %}"
+      class="
+        financial-module-nav__link
+        {% if current_page == 'informe_final_financiera' %}
+          active
+        {% endif %}
+      "
+    >
+      <i class="bi bi-file-earmark-text"></i>
+
+      <span>
+        Informe Final
+      </span>
+    </a>
+
+  </nav>
+
+{% endwith %}

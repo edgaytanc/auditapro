@@ -1,26 +1,57 @@
 {
   "1 FASE INICIAL": {
+    "1 Inicio de Encargo.docx": [],
     "1 INICIO_ENCARGO_AUDITORIA.xlsx": [],
+    "1 INICIO_ENCARGO_AUDITORIA_1.xlsx": [],
     "2 MANIFESTACION_INDEPENDENCIA.xlsx": [],
+    "2 MANIFESTACION_INDEPENDENCIA_NIA.xlsx": [],
+    "2 MANIFESTACION_INDEPENDENCIA_NIA_MODIFICADO.xlsx": [],
     "3 RECOPILACION_INFO_CLIENTE.xlsx": [],
+    "3 RECOPILACION_INFO_CLIENTE_NIA.xlsx": [],
+    "3 RECOPILACION_INFO_CLIENTE_NIA_MODIFICADO.xlsx": [],
     "4 Investigacion_Clientes.xlsx": [],
+    "4 Investigacion_Clientes_NIA_Automatizado.xlsx": [],
+    "4 Investigacion_Clientes_NIA_Automatizado_MODIFICADO.xlsx": [],
     "5 Cuestionario_Aceptacion_Clientes.xlsx": [],
+    "5 Cuestionario_Aceptacion_Clientes_NIA.xlsx": [],
+    "5 Cuestionario_Aceptacion_Clientes_NIA_MODIFICADO.xlsx": [],
     "6 Cuestionario_Continuidad_Clientes.xlsx": [],
+    "6 Cuestionario_Continuidad_Clientes_NIA.xlsx": [],
+    "6 Cuestionario_Continuidad_Clientes_NIA_MODIFICADO.xlsx": [],
     "7 Compromiso_Auditores.xlsx": [],
+    "7 Compromiso_Auditores_NIA.xlsx": [],
+    "7 Compromiso_Auditores_NIA_MODIFICADO.xlsx": [],
     "8 Validacion_Equipo_Auditor.xlsx": [],
+    "8 Validacion_Equipo_Auditor_NIA.xlsx": [],
+    "8 Validacion_Equipo_Auditor_NIA_MODIFICADO.xlsx": [],
     "9 Manifestacion_Independencia_Encargo.xlsx": [],
+    "9 Manifestacion_Independencia_Encargo_NIA.xlsx": [],
+    "9 Manifestacion_Independencia_Encargo_NIA_MODIFICADO.xlsx": [],
     "10 Declaracion_Independencia_Equipo.xlsx": [],
+    "10 Declaracion_Independencia_Equipo_NIA.xlsx": [],
+    "10 Declaracion_Independencia_Equipo_NIA_MODIFICADO.xlsx": [],
     "11 Asignacion_Personal_Encargos.xlsx": [],
+    "11 Asignacion_Personal_Encargos_NIA.xlsx": [],
+    "11 Asignacion_Personal_Encargos_NIA_MODIFICADO.xlsx": [],
     "12 Carta_Convenio_Socio_Encargado.xlsx": [],
+    "12 Carta_Convenio_Socio_Encargado_NIA_1.xlsx": [],
+    "12 Carta_Convenio_Socio_Encargado_NIA_1_MODIFICADO.xlsx": [],
     "13 Contrato_Auditoria.xlsx": [],
+    "13 Contrato_Auditoria_NIA.xlsx": [],
+    "13 Contrato_Auditoria_NIA_MODIFICADO.xlsx": [],
     "14 Evaluacion_Calidad_Auditoria.xlsx": [],
+    "14 Evaluacion_Calidad_Auditoria_NIA.xlsx": [],
+    "14 Evaluacion_Calidad_Auditoria_NIA_MODIFICADO.xlsx": [],
     "15 Revision_Desempeno_Auditor.xlsx": [],
+    "15 Revision_Desempeno_Auditor_NIA.xlsx": [],
+    "15 Revision_Desempeno_Auditor_NIA_MODIFICADO.xlsx": [],
     "16 Manual de Calidad para Firmas.docx": []
   },
   "2 PLANEACION": {
     "1 Reunion Preliminar y Solicitud": {
       "1 Reunion_Preliminar_Auditoria.xlsx": [],
       "2 Solicitud Informacion.docx": [],
+      "2.1 Control Solicitud de Inforamacion.xlsx": [],
       "2.1 Control Solicitud de Informacion.xlsx": []
     },
     "2 Conocimiento Entidad y Entorno": {
@@ -47,9 +78,11 @@
         "1_Comparativo_Registros.xlsx": [],
         "2_Prueba_Saldos_Iniciales.xlsx": []
       },
-      "2 Análisis Financiero Preliminar": {
+      "2 Análisis Financiero Preliminar agregar": {
         "1_Analisis_Horizontal.xlsx": [],
+        "1_Analisis_Horizontal_1.xlsx": [],
         "2_Analisis_Vertical_.xlsx": [],
+        "2_Analisis_Vertical_1_1.xlsx": [],
         "3_Ratios_Financieros.xlsx": [],
         "4_Análisis_Presupuesto.xlsx": [],
         "5_Evaluación_KPI.xlsx": []
@@ -168,6 +201,7 @@
     },
     "2 CUENTAS POR COBRAR": {
       "1_PROGRAMA_DE_AUDITORIA_CUENTAS_POR_COBRAR.xlsx": [],
+      "2_CEDULA_SUMARIA_CUENTAS_POR_COBRAR.xlsx": [],
       "2_SUMARIA_CUENTAS_POR_COBRAR.xlsx": [],
       "3_INTEGRACION_DE_CLIENTES.xlsx": [],
       "4_INTEGRACION_DE_DEUDORES.xlsx": [],
@@ -189,6 +223,7 @@
     },
     "3 INVERSIONES": {
       "1_PROGRAMA_DE_AUDITORIA_INVERSIONES.xlsx": [],
+      "2_CEDULA_SUMARIA_INVERSIONES.xlsx": [],
       "2_SUMARIA_INVERSIONES.xlsx": [],
       "3_VARIACION_INVERSIONES.xlsx": [],
       "4_PRUEBA_FISICA_INVERSIONES.xlsx": [],
@@ -199,6 +234,7 @@
     },
     "4 INVENTARIOS": {
       "1_PROGRAMA_DE_AUDITORIA_INVENTARIOS.xlsx": [],
+      "2_CEDULA_SUMARIA_INVENTARIOS.xlsx": [],
       "2_SUMARIA_INVENTARIOS.xlsx": [],
       "3_INTEGRACION_DE_INVENTARIOS.xlsx": [],
       "4_INVENTARIOS_EN_TRANSITO.xlsx": [],
@@ -218,6 +254,7 @@
     },
     "5 CONSTRUCCIONES EN PROCESO": {
       "1_PROGRAMA_DE_AUDITORIA_CONSTRUCCIONES_EN_PROCESO.xlsx": [],
+      "2_CEDULA_SUMARIA_CONTRUCCIONES.xlsx": [],
       "2_SUMARIA_CONSTRUCCIONES_EN_PROCESO.xlsx": [],
       "3_INTEGRACION_DE_OBRAS.xlsx": [],
       "4_SOLICITUD_DE_CONFIRMACION_OBRAS_TERMINADAS.xlsx": [],
@@ -249,8 +286,25 @@
       "13_HALLAZGOS.xlsx": [],
       "14_EVIDENCIAS.xlsx": []
     },
+    "6 AUDITORIA PROPIEDAD, PLANTA Y EQUIPO": {
+      "1_PROGRAMA_DE_AUDITORIA_ACTIVOS_FIJOS.xlsx": [],
+      "2_CEDULA_SUMARIA_PROIEDAD_PLANTA_Y_EQUIPO.xlsx": [],
+      "3_INTEGRACION_DE_ACTIVOS_FIJOS.xlsx": [],
+      "4_REVISION_DE_TITULOS_FACTURAS_Y_DOCUMENTOS.xlsx": [],
+      "5_INSPECCION_FISICA.xlsx": [],
+      "6_PRUEBA_DE_ADICIONES.xlsx": [],
+      "7_PRUEBA_DE_BAJAS.xlsx": [],
+      "8_PRUEBA_DE_TRASLADOS.xlsx": [],
+      "9_METODOS_USADOS.xlsx": [],
+      "10_DEPRECIACION.xlsx": [],
+      "11_PARTIDAS_DE_AJUSTE.xlsx": [],
+      "12_PARTIDAS_DE_RECLASIFICACION.xlsx": [],
+      "13_HALLAZGOS.xlsx": [],
+      "14_EVIDENCIAS.xlsx": []
+    },
     "7 AUDITORIA ACTIVO INTANGIBLE": {
       "1_PROGRAMA_DE_ACTIVO_INTANGIBLE.xlsx": [],
+      "2_CEDULA_SUMARIA_ACTIVO_INTANGIBLE.xlsx": [],
       "2_SUMARIA_ACTIVO_INTANGIBLE.xlsx": [],
       "3_INTEGRACION.xlsx": [],
       "4_REVISION_DE_CONTRATOS.xlsx": [],
@@ -278,8 +332,21 @@
       "14 CEDULA_SUMARIA.xlsx": [],
       "15 CEDULA_SUMARIA.xlsx": []
     },
+    "8 OTRAS SUMARIAS": {
+      "1_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "2_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "3_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "4_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "5_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "6_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "7_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "8_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "9_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "10_OTRAS CEDULAS_SUMARIAS.xlsx": []
+    },
     "9 AUDITORIA CUENTAS POR PAGAR": {
       "1_PROGRAMA_DE_AUDITORIA_CUENTAS_POR_PAGAR.xlsx": [],
+      "2_CEDULA_SUMARIA_CUENTAS_POR_PAGAR.xlsx": [],
       "2_SUMARIA_CUENTAS_POR_PAGAR.xlsx": [],
       "3_INTEGRACION_CUENTAS_POR_PAGAR.xlsx": [],
       "4_INTEGRACION_ADICIONAL_CPP.xlsx": [],
@@ -304,6 +371,7 @@
     },
     "10 AUDITORIA PASIVO LARGO PLAZO": {
       "1_PROGRAMA_DE_AUDITORIA_PRESTAMOS_POR_PAGAR.xlsx": [],
+      "2_CEDULA_SUMARIA_PASIVO_LARGO_PLAZO.xlsx": [],
       "2_SUMARIA_PRESTAMOS_POR_PAGAR.xlsx": [],
       "3 ANALISIS_CLASIFICACION_CORRIENTE.xlsx": [],
       "3.1_ANALISIS_DE_PRESTAMOS.xlsx": [],
@@ -318,6 +386,34 @@
     "11  AUDITORIA PATRIMONIO": {
       "1_PROGRAMA_DE_AUDITORIA_PATRIMONIO.xlsx": [],
       "2_SUMARIA_PATRIMONIO.xlsx": [],
+      "3_INTEGRACION_DEL_PATRIMONIO.xlsx": [],
+      "4_INTEGRACION_DE_DIVIDENDOS.xlsx": [],
+      "5_REVISION_DE_DOCUMENTACION_DE_TRANSACCIONES.xlsx": [],
+      "6_PARTIDAS_DE_AJUSTE.xlsx": [],
+      "7_PARTIDAS_DE_RECLASIFICACION.xlsx": [],
+      "8_HALLAZGOS.xlsx": [],
+      "9_EVIDENCIAS.xlsx": []
+    },
+    "11 OTRAS SUMARIAS": {
+      "1_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "2_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "3_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "4_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "5_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "6_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "7_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "8_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "9_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "10_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "11_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "12_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "13_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "14_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "15_OTRAS CEDULAS_SUMARIAS.xlsx": []
+    },
+    "12 AUDITORIA PATRIMONIO": {
+      "1_PROGRAMA_DE_AUDITORIA_PATRIMONIO.xlsx": [],
+      "2_CEDULA_SUMARIA_PATRIMONIO.xlsx": [],
       "3_INTEGRACION_DEL_PATRIMONIO.xlsx": [],
       "4_INTEGRACION_DE_DIVIDENDOS.xlsx": [],
       "5_REVISION_DE_DOCUMENTACION_DE_TRANSACCIONES.xlsx": [],
@@ -358,6 +454,31 @@
       "13_HALLAZGOS.xlsx": [],
       "14_EVIDENCIAS.xlsx": []
     },
+    "13 OTRAS SUMARIAS": {
+      "1_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "2_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "3_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "4_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "5_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "6_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "7_OTRAS CEDULAS_SUMARIAS.xlsx": []
+    },
+    "14 AUDITORIA DE ESTADO RESULTADOS": {
+      "1_PROGRAMA_DE_AUDITORIA_ESTADO_DE_RESULTADOS.xlsx": [],
+      "2_CEDULA_SUMARIA_CONTRUCCIONES.xlsx": [],
+      "3_ANALISIS_TENDENCIAS_INGRESOS.xlsx": [],
+      "4_ANALISIS_TENDENCIAS_EGRESOS.xlsx": [],
+      "5_ANALISIS_COMPARATIVO_REGISTROS_INGRESOS.xlsx": [],
+      "6_ANALISIS_COMPARATIVO_REGISTROS_EGRESOS.xlsx": [],
+      "7_PRUEBA_GLOBAL_DE_NOMINAS.xlsx": [],
+      "8_PRUEBA_DE_PLANILLA.xlsx": [],
+      "9_VERIFICACION_DECLARACIONES_IMPUESTOS.xlsx": [],
+      "10_PRUEBA_GLOBAL_SEGURO_SOCIAL_IGSS.xlsx": [],
+      "11_PARTIDAS_DE_AJUSTE.xlsx": [],
+      "12_PARTIDAS_DE_RECLASIFICACION.xlsx": [],
+      "13_HALLAZGOS.xlsx": [],
+      "14_EVIDENCIAS.xlsx": []
+    },
     "14 OTRAS CEDULAS SUMARIAS": {
       "1 CEDULA_SUMARIA.xlsx": [],
       "2 CEDULA_SUMARIA.xlsx": [],
@@ -373,6 +494,28 @@
       "12 CEDULA_SUMARIA.xlsx": [],
       "14 CEDULA_SUMARIA.xlsx": [],
       "15 CEDULA_SUMARIA.xlsx": []
+    },
+    "14 OTRAS SUMARIAS": {
+      "1_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "2_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "3_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "4_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "5_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "6_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "7_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "8_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "9_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "10_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "11_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "12_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "13_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "14_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "15_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "16_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "17_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "18_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "19_OTRAS CEDULAS_SUMARIAS.xlsx": [],
+      "20_OTRAS CEDULAS_SUMARIAS.xlsx": []
     },
     "CENTRALIZADORA__DEL_ESTADO_DE_RESULTADOS.xlsx": [],
     "CENTRALIZADORA_BALANCE.xlsx": [],
@@ -393,6 +536,14 @@
       "Comunicaciones_Finalizacion.xlsx": []
     },
     "5 FINALIZACION": {
+      "1 Lectura_Actas.xlsx": [],
+      "1_Analisis_Evidencias.xlsx": [],
+      "3 Revision_Hallazgos.xlsx": [],
+      "4 Hallazgos_Finales.xlsx": [],
+      "5 Revelaciones_Finales.xlsx": [],
+      "6 Checklist_Cierre.xlsx": []
+    },
+    "5 FINALIZCION AUTOMATIZADA": {
       "1 Lectura_Actas.xlsx": [],
       "1_Analisis_Evidencias.xlsx": [],
       "3 Revision_Hallazgos.xlsx": [],

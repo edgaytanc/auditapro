@@ -1,0 +1,141 @@
+{% extends "common/v2/system-base-v2.html" %}
+
+{% block title %}Videos y Guías{% endblock title %}
+
+{% block v2_styles %}
+  {{ block.super }}
+  {% include "videos_guias/_styles.html" %}
+{% endblock v2_styles %}
+
+{% block page_title %}Videos y Guías{% endblock page_title %}
+
+{% block page_subtitle %}
+  Capacitación en video y material descargable para aprovechar al máximo AuditaPro y Audita IA.
+{% endblock page_subtitle %}
+
+{% block page_actions %}
+  <a
+    href="{{ youtube_channel }}"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="learning-channel-button"
+  >
+    <i class="bi bi-youtube" aria-hidden="true"></i>
+    Ver canal en YouTube
+  </a>
+{% endblock page_actions %}
+
+{% block v2_content %}
+<div class="ap-learning">
+  <section class="learning-intro" aria-label="Canal oficial">
+    <span class="learning-intro-icon" aria-hidden="true">
+      <i class="bi bi-play-btn"></i>
+    </span>
+    <div>
+      <strong>Canal oficial: Sistema Audita</strong>
+      <p>
+        Los videos de esta sección pertenecen al canal oficial de Sistema Audita.
+        Aquí están organizados por tema para que puedas encontrar capacitación y material de apoyo desde AuditaPro.
+      </p>
+    </div>
+  </section>
+
+  <section class="learning-section" aria-labelledby="videos-recientes-title">
+    <header class="learning-section-head">
+      <div>
+        <h2 id="videos-recientes-title">Videos más recientes</h2>
+        <p>Accesos directos a las principales funciones de Audita IA y AuditaPro.</p>
+      </div>
+      <a href="{{ youtube_videos }}" target="_blank" rel="noopener noreferrer" class="learning-section-link">
+        Ver todos en YouTube <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+      </a>
+    </header>
+
+    <div class="learning-video-grid">
+      {% for video in videos %}
+        <a class="learning-video-card" href="{{ video.url }}" target="_blank" rel="noopener noreferrer">
+          <div class="learning-video-cover">
+            <span class="learning-video-play" aria-hidden="true">
+              <i class="bi {{ video.icon }}"></i>
+            </span>
+            <span class="learning-video-topic">{{ video.eyebrow }}</span>
+            <span class="learning-video-duration">{{ video.duration }}</span>
+          </div>
+          <div class="learning-video-body">
+            <h3>{{ video.title }}</h3>
+            <div class="learning-video-meta">
+              <i class="bi bi-youtube" aria-hidden="true"></i>
+              Video oficial · Sistema Audita
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="learning-section" aria-labelledby="presentaciones-title">
+    <header class="learning-section-head">
+      <div>
+        <h2 id="presentaciones-title">Presentación del sistema</h2>
+        <p>Recorrido general por AuditaPro y sus principales herramientas.</p>
+      </div>
+    </header>
+
+    <div class="learning-video-grid">
+      {% for video in presentations %}
+        <a class="learning-video-card" href="{{ video.url }}" target="_blank" rel="noopener noreferrer">
+          <div class="learning-video-cover">
+            <span class="learning-video-play" aria-hidden="true">
+              <i class="bi {{ video.icon }}"></i>
+            </span>
+            <span class="learning-video-topic">{{ video.eyebrow }}</span>
+            <span class="learning-video-duration">{{ video.duration }}</span>
+          </div>
+          <div class="learning-video-body">
+            <h3>{{ video.title }}</h3>
+            <div class="learning-video-meta">
+              <i class="bi bi-youtube" aria-hidden="true"></i>
+              Video oficial · Sistema Audita
+            </div>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="learning-section" aria-labelledby="guias-title">
+    <header class="learning-section-head">
+      <div>
+        <h2 id="guias-title">Guías descargables</h2>
+        <p>Material de apoyo incluido en el módulo. Las guías se abren en una pestaña nueva.</p>
+      </div>
+    </header>
+
+    <div class="learning-guide-grid">
+      {% for guide in guides %}
+        <a
+          class="learning-guide-card"
+          href="{% url 'videos_guias:guia' guide.slug %}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="learning-guide-icon" aria-hidden="true">
+            <i class="bi {{ guide.icon }}"></i>
+          </span>
+          <span class="learning-guide-copy">
+            <h3>{{ guide.title }}</h3>
+            <p>{{ guide.description }}</p>
+            <span class="learning-guide-meta">
+              <i class="bi bi-filetype-pdf" aria-hidden="true"></i>
+              PDF · {{ guide.pages }} página{{ guide.pages|pluralize:"s" }}
+              <span>·</span>
+              Ver guía
+            </span>
+          </span>
+          <i class="bi bi-box-arrow-up-right learning-guide-arrow" aria-hidden="true"></i>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock v2_content %}

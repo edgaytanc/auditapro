@@ -1,28 +1,300 @@
-{% extends "common/system-base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 
 {% block title %}
   Seleccionar Auditoría
 {% endblock title %}
 
-{% load filters %}
+{% block v2_styles %}
+  <link
+    rel="stylesheet"
+    href="{% static 'css/select-audit-v2.css' %}"
+  >
+{% endblock v2_styles %}
 
 {% block page_title %}
-  Seleccione Una Auditoría
+  Seleccionar Auditoría
 {% endblock page_title %}
+
 {% block page_subtitle %}
+  Elige el proyecto sobre el cual deseas trabajar
+  antes de ingresar al módulo seleccionado.
 {% endblock page_subtitle %}
-{% block main_content %}
-  <article class="w-100">
-    <div class="card shadow-sm border rounded-lg p-4">
-      <h4 class="card-title fw-bold">Seleccione una Auditoría</h4>
-      <p class="text-secondary">Por favor, Seleccione una Auditoría para trabajar</p>
-      <form action="{{ request.path }}" class="mt-4" method="post">
-        {% csrf_token %}
-        <select name="audit" id="audit-select" class="form-select mb-3" required>
-          {% for audit in assigned_audits %}<option value="{{ audit.pk }}">{{ audit }}</option>{% endfor %}
-        </select>
-        <button class="btn btn-primary" type="submit">Procesar</button>
-      </form>
+
+{% block page_actions %}
+  <a
+    href="{% url 'tools' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Volver a Herramientas
+  </a>
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  <section class="ap-select-audit-information">
+
+    <div class="ap-select-audit-information-icon">
+      <i class="bi bi-info-circle"></i>
     </div>
-  </article>
-{% endblock main_content %}
+
+    <div>
+      <strong>
+        Contexto de trabajo
+      </strong>
+
+      <p>
+        La auditoría que selecciones quedará activa para los
+        reportes, registros y papeles de trabajo que abras
+        dentro de Herramientas.
+      </p>
+    </div>
+
+  </section>
+
+  {% if assigned_audits %}
+
+    <form
+      method="post"
+      action="{{ request.path }}"
+      class="ap-select-audit-form"
+      id="selectAuditForm"
+    >
+      {% csrf_token %}
+
+      <section class="ap-select-audit-panel">
+
+        <header class="ap-select-audit-panel-header">
+
+          <div>
+            <span>PROYECTOS DISPONIBLES</span>
+
+            <h2>
+              Selecciona un proyecto
+            </h2>
+
+            <p>
+              Se muestran únicamente las auditorías que
+              administras o tienes asignadas.
+            </p>
+          </div>
+
+          <div class="ap-select-audit-counter">
+            <strong>
+              {{ assigned_audits|length }}
+            </strong>
+
+            <span>
+              proyectos
+            </span>
+          </div>
+
+        </header>
+
+        <div class="ap-select-audit-search">
+
+          <i class="bi bi-search"></i>
+
+          <input
+            type="search"
+            id="selectAuditSearch"
+            placeholder="Buscar por cliente o nombre del encargo..."
+            autocomplete="off"
+          >
+
+        </div>
+
+        <div
+          class="ap-select-audit-grid"
+          id="selectAuditGrid"
+        >
+
+          {% for audit in assigned_audits %}
+
+            <label
+              class="ap-select-audit-option"
+              data-select-audit-option
+              data-search="
+                {{ audit.identidad|lower }}
+                {{ audit.title|lower }}
+                {{ audit.get_tipoAuditoria_display|lower }}
+              "
+            >
+
+              <input
+                type="radio"
+                name="audit"
+                value="{{ audit.pk }}"
+                required
+              >
+
+              <article class="ap-select-audit-card">
+
+                <header>
+
+                  <span class="ap-select-audit-type">
+
+                    {% if audit.tipoAuditoria == "F" %}
+                      <i class="bi bi-graph-up-arrow"></i>
+                      Financiera
+
+                    {% elif audit.tipoAuditoria == "R" %}
+                      <i class="bi bi-bank"></i>
+                      Revisoría Fiscal
+
+                    {% elif audit.tipoAuditoria == "I" %}
+                      <i class="bi bi-shield-check"></i>
+                      Auditoría Interna
+
+                    {% else %}
+                      <i class="bi bi-clipboard2-check"></i>
+                      Auditoría
+                    {% endif %}
+
+                  </span>
+
+                  <i class="bi bi-check-circle-fill ap-select-audit-check"></i>
+
+                </header>
+
+                <div class="ap-select-audit-card-body">
+
+                  <span class="ap-select-audit-client">
+                    {{ audit.identidad }}
+                  </span>
+
+                  <h3>
+                    {{ audit.title }}
+                  </h3>
+
+                  <div class="ap-select-audit-metadata">
+
+                    <div>
+                      <i class="bi bi-calendar3"></i>
+
+                      <span>
+                        {{ audit.fechaInit|date:"d/m/Y" }}
+                        –
+                        {{ audit.fechaEnd|date:"d/m/Y" }}
+                      </span>
+                    </div>
+
+                    <div>
+                      <i class="bi bi-person-badge"></i>
+
+                      <span>
+                        {{ audit.audit_manager.get_full_name|default:audit.audit_manager.username }}
+                      </span>
+                    </div>
+
+                  </div>
+
+                </div>
+
+                <footer>
+                  <span>
+                    ID #{{ audit.pk }}
+                  </span>
+
+                  <span class="ap-select-audit-action">
+                    Seleccionar
+                    <i class="bi bi-arrow-right"></i>
+                  </span>
+                </footer>
+
+              </article>
+
+            </label>
+
+          {% endfor %}
+
+        </div>
+
+        <section
+          class="ap-select-audit-no-results"
+          id="selectAuditNoResults"
+          hidden
+        >
+          <i class="bi bi-search"></i>
+
+          <h3>
+            No se encontraron auditorías
+          </h3>
+
+          <p>
+            Cambia el texto de búsqueda para ver otros resultados.
+          </p>
+        </section>
+
+      </section>
+
+      <footer class="ap-select-audit-footer">
+
+        <div>
+          <i class="bi bi-shield-check"></i>
+
+          <span id="selectedAuditMessage">
+            Selecciona una auditoría para continuar.
+          </span>
+        </div>
+
+        <button
+          type="submit"
+          class="ap-select-audit-submit"
+          id="selectAuditSubmit"
+          disabled
+        >
+          Continuar
+          <i class="bi bi-arrow-right"></i>
+        </button>
+
+      </footer>
+
+    </form>
+
+  {% else %}
+
+    <section class="ap-select-audit-empty">
+
+      <div>
+        <i class="bi bi-clipboard2-x"></i>
+      </div>
+
+      <h2>
+        No tienes auditorías disponibles
+      </h2>
+
+      <p>
+        Primero debes crear un proyecto o ser asignado a una
+        auditoría para utilizar las herramientas.
+      </p>
+
+      {% if user.role.name == "audit_manager" %}
+        <a
+          href="{% url 'assigned_audits' %}?open=new"
+          class="ap-select-audit-empty-button"
+        >
+          <i class="bi bi-plus-lg"></i>
+          Crear Auditoría
+        </a>
+      {% else %}
+        <a
+          href="{% url 'assigned_audits' %}"
+          class="ap-select-audit-empty-button"
+        >
+          Ver Proyectos
+        </a>
+      {% endif %}
+
+    </section>
+
+  {% endif %}
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+  <script
+    src="{% static 'js/select-audit-v2.js' %}"
+  ></script>
+{% endblock v2_scripts %}

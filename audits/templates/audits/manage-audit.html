@@ -1,262 +1,951 @@
-{% extends "common/system-base.html" %}
-
-{% block title %}
-Gestionar Auditoria - {{ audit_to_manage.id }}
-{% endblock title %}
-{% block page_title %}
-Gestionar Auditoría
-{% endblock page_title %}
-{% block page_subtitle %}
-{% endblock page_subtitle %}
-
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
 {% load filters %}
 
-{% block main_content %}
-{% if user.id == audit_to_manage.audit_manager.id %}
-<div class="container">
-    <div class="row mb-4">
-        <div class="col d-flex align-items-center gap-3">
-            <span>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M7 18H17V16H7V18Z" fill="currentColor" />
-                    <path d="M17 14H7V12H17V14Z" fill="currentColor" />
-                    <path d="M7 10H11V8H7V10Z" fill="currentColor" />
-                    <path fill-rule="evenodd" clip-rule="evenodd"
-                        d="M6 2C4.34315 2 3 3.34315 3 5V19C3 20.6569 4.34315 22 6 22H18C19.6569 22 21 20.6569 21 19V9C21 5.13401 17.866 2 14 2H6ZM6 4H13V9H19V19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V5C5 4.44772 5.44772 4 6 4ZM15 4.10002C16.6113 4.4271 17.9413 5.52906 18.584 7H15V4.10002Z"
-                        fill="currentColor" />
-                </svg>
-            </span>
-            <h1 class="flex-grow-1 fs-4 fw-semibold mb-0">Auditoria: {{ audit_to_manage.title }}</h1>
-            <form action="{% url 'manage_audit' audit_to_manage.id %}" method="post" class="d-none"
-                id="update_audit{{ audit_to_manage.id }}_form">
-                {% csrf_token %}
+{% block title %}
+  Gestionar Auditoría - {{ audit_to_manage.id }}
+{% endblock title %}
+
+{% block page_title %}
+  Gestionar Auditoría
+{% endblock page_title %}
+
+{% block page_subtitle %}
+  {{ audit_to_manage.title }} · {{ audit_to_manage.identidad }}
+{% endblock page_subtitle %}
+
+{% block v2_styles %}
+
+  <link
+    rel="stylesheet"
+    href="{% static 'css/manage-audit-v2.css' %}?v=1"
+  >
+
+{% endblock v2_styles %}
+
+{% block page_actions %}
+
+  <a
+    href="{% url 'assigned_audits' %}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-left"></i>
+    Volver a Auditorías
+  </a>
+
+  <a
+    href="{{ request.path }}"
+    class="ap-secondary-button"
+  >
+    <i class="bi bi-arrow-counterclockwise"></i>
+    Descartar
+  </a>
+
+  <button
+    type="submit"
+    class="manage-audit-save-button"
+    form="update_audit{{ audit_to_manage.id }}_form"
+  >
+    <i class="bi bi-floppy"></i>
+    Guardar cambios
+  </button>
+
+{% endblock page_actions %}
+
+{% block v2_content %}
+
+  {% if user.id == audit_to_manage.audit_manager.id %}
+
+    <form
+      action="{% url 'manage_audit' audit_to_manage.id %}"
+      method="post"
+      class="d-none"
+      id="update_audit{{ audit_to_manage.id }}_form"
+    >
+      {% csrf_token %}
+    </form>
+
+    <div class="manage-audit-page">
+
+      <div class="container">
+
+        <div class="row g-4">
+
+          <!-- Columna principal -->
+          <div class="col-lg-8">
+
+            <!-- Información general -->
+            <section class="card shadow-sm">
+
+              <div class="card-body">
+
+                <h2 class="card-title fs-5 fw-semibold">
+                  Detalles de la Auditoría
+                </h2>
+
+                <p class="card-text">
+                  Revisa y modifica los datos generales del encargo.
+                </p>
+
+                <div class="mb-3">
+
+                  <label
+                    for="audit_title"
+                    class="form-label"
+                  >
+                    Título de la Auditoría
+                  </label>
+
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="audit_title"
+                    name="audit_title"
+                    value="{{ audit_to_manage.title }}"
+                    form="update_audit{{ audit_to_manage.id }}_form"
+                    required
+                  >
+
+                </div>
+
+                <div class="mb-3">
+
+                  <label
+                    for="audit_identidad"
+                    class="form-label"
+                  >
+                    Cliente / Identidad
+                  </label>
+
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="audit_identidad"
+                    name="audit_identidad"
+                    value="{{ audit_to_manage.identidad }}"
+                    form="update_audit{{ audit_to_manage.id }}_form"
+                    required
+                  >
+
+                </div>
+
+                <div class="row">
+
+                  <div class="col-md-6 mb-3">
+
+                    <label
+                      for="audit_fechaInit"
+                      class="form-label"
+                    >
+                      Fecha de inicio
+                    </label>
+
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="audit_fechaInit"
+                      name="audit_fechaInit"
+                      value="{{ audit_to_manage.fechaInit|date:'Y-m-d' }}"
+                      form="update_audit{{ audit_to_manage.id }}_form"
+                      required
+                    >
+
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+
+                    <label
+                      for="audit_fechaEnd"
+                      class="form-label"
+                    >
+                      Fecha final
+                    </label>
+
+                    <input
+                      type="date"
+                      class="form-control"
+                      id="audit_fechaEnd"
+                      name="audit_fechaEnd"
+                      value="{{ audit_to_manage.fechaEnd|date:'Y-m-d' }}"
+                      form="update_audit{{ audit_to_manage.id }}_form"
+                      required
+                    >
+
+                  </div>
+
+                </div>
+
+                <div class="row">
+
+                  <div class="col-md-8 mb-3">
+
+                    <label
+                      for="audit_period"
+                      class="form-label"
+                    >
+                      Período auditado
+                    </label>
+
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="audit_period"
+                      name="audit_period"
+                      value="{{ audit_to_manage.periodo_auditado }}"
+                      placeholder="Ejemplo: Ene–Dic 2026"
+                      form="update_audit{{ audit_to_manage.id }}_form"
+                      required
+                    >
+
+                  </div>
+
+                  <div class="col-md-4 mb-3">
+
+                    <label
+                      for="audit_moneda"
+                      class="form-label"
+                    >
+                      Moneda
+                    </label>
+
+                    <select
+                      class="form-select"
+                      id="audit_moneda"
+                      name="audit_moneda"
+                      form="update_audit{{ audit_to_manage.id }}_form"
+                    >
+                    {% include "audits/_monedas_productivo.html" with selected_moneda=audit_to_manage.moneda %}
+                  </select>
+
+                  </div>
+
+                </div>
+
+                <div class="mb-3">
+
+                  <label class="form-label">
+                    Tipos de auditoría
+                  </label>
+
+                  <div class="form-check mb-2">
+
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      id="audit_financial"
+                      name="audit_financial"
+                      form="update_audit{{ audit_to_manage.id }}_form"
+                      {% if "F" in active_type_codes %}
+                        checked
+                      {% endif %}
+                    >
+
+                    <label
+                      class="form-check-label"
+                      for="audit_financial"
+                    >
+                      Auditoría Financiera
+                    </label>
+
+                  </div>
+
+                  <div class="form-check mb-2">
+
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      id="activa_revisoria"
+                      name="activa_revisoria"
+                      form="update_audit{{ audit_to_manage.id }}_form"
+                      {% if "R" in active_type_codes %}
+                        checked
+                      {% endif %}
+                    >
+
+                    <label
+                      class="form-check-label"
+                      for="activa_revisoria"
+                    >
+                      Revisoría Fiscal
+                    </label>
+
+                  </div>
+
+                  <div class="form-check">
+
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      id="audit_internal"
+                      name="audit_internal"
+                      form="update_audit{{ audit_to_manage.id }}_form"
+                      {% if "I" in active_type_codes %}
+                        checked
+                      {% endif %}
+                    >
+
+                    <label
+                      class="form-check-label"
+                      for="audit_internal"
+                    >
+                      Auditoría Interna
+                    </label>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            </section>
+
+            <!-- Asignar miembros del equipo -->
+            {% if user_modalidad == "G" %}
+
+            <section class="card shadow-sm mt-4">
+
+                <div class="card-body">
+
+                <div class="manage-audit-section-header">
+
+                    <div>
+
+                    <h2 class="card-title fs-5 fw-semibold">
+                        Asignar miembros del equipo
+                    </h2>
+
+                    <p class="card-text">
+                        Selecciona los auditores que participarán
+                        en este encargo.
+                    </p>
+
+                    </div>
+
+                    <span class="manage-audit-counter">
+                    {{ available_users_count }} disponibles
+                    </span>
+
+                </div>
+
+                {% if available_users %}
+
+                    <form
+                    method="post"
+                    action="{% url 'manage_audit_assign_audit' audit_to_manage.id %}"
+                    class="manage-audit-team-form"
+                    >
+                    {% csrf_token %}
+
+                    <div class="manage-audit-team-grid">
+
+                        {% for available_user in available_users %}
+
+                        <label
+                            class="manage-audit-team-option"
+                            for="available-user-{{ available_user.id }}"
+                        >
+
+                            <input
+                            type="checkbox"
+                            id="available-user-{{ available_user.id }}"
+                            name="user_ids"
+                            value="{{ available_user.id }}"
+                            >
+
+                            <span class="manage-audit-team-check">
+                            <i class="bi bi-check-lg"></i>
+                            </span>
+
+                            <span class="manage-audit-team-avatar">
+
+                            {% if available_user.first_name or available_user.last_name %}
+
+                                {{ available_user.first_name|first|upper }}
+                                {{ available_user.last_name|first|upper }}
+
+                            {% else %}
+
+                                {{ available_user.username|first|upper }}
+
+                            {% endif %}
+
+                            </span>
+
+                            <span class="manage-audit-team-information">
+
+                            <strong>
+
+                                {% if available_user.get_full_name %}
+                                {{ available_user.get_full_name }}
+                                {% else %}
+                                {{ available_user.username }}
+                                {% endif %}
+
+                            </strong>
+
+                            <small>
+                                {{ available_user.email|default:"Sin correo registrado" }}
+                            </small>
+
+                            <span>
+
+                                {% if available_user.role %}
+                                {{ available_user.role.verbose_name }}
+                                {% else %}
+                                Auditor
+                                {% endif %}
+
+                            </span>
+
+                            </span>
+
+                        </label>
+
+                        {% endfor %}
+
+                    </div>
+
+                    <div class="manage-audit-team-actions">
+
+                        <p>
+                        Los usuarios seleccionados obtendrán acceso
+                        a esta auditoría según su rol.
+                        </p>
+
+                        <button
+                        type="submit"
+                        class="manage-audit-assign-button"
+                        >
+                        <i class="bi bi-person-check"></i>
+                        Asignar seleccionados
+                        </button>
+
+                    </div>
+
+                    </form>
+
+                {% else %}
+
+                    <div class="manage-audit-empty-team">
+
+                    <i class="bi bi-people"></i>
+
+                    <strong>
+                        No hay auditores disponibles
+                    </strong>
+
+                    <p>
+                        Todos los integrantes activos de tu equipo
+                        ya están asignados a esta auditoría.
+                    </p>
+
+                    </div>
+
+                {% endif %}
+
+                </div>
+
+            </section>
+
+            {% endif %}
+
+            <!-- Auditores asignados -->
+            {% if user_modalidad == "G" %}
+
+              <section class="card shadow-sm mt-4">
+
+                <div class="card-body">
+
+                  <div class="manage-audit-section-header">
+
+                    <div>
+
+                        <h2 class="card-title fs-5 fw-semibold">
+                        Auditores asignados
+                        </h2>
+
+                        <p class="card-text">
+                        Consulta y administra los auditores y supervisores
+                        asignados a este encargo.
+                        </p>
+
+                    </div>
+
+                    <span class="manage-audit-counter">
+                        {{ assigned_users_count }} asignados
+                    </span>
+
+                    </div>
+
+                  <div class="table-responsive">
+
+                    <table class="table table-hover">
+
+                      <thead>
+                        <tr>
+                          <th>Nombre</th>
+                          <th>Correo electrónico</th>
+                          <th class="text-end">Acciones</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+
+                        {% for assigned_user in assigned_users %}
+
+                          <tr>
+
+                            <td>
+
+                              {% if assigned_user.get_full_name %}
+                                {{ assigned_user.get_full_name }}
+                              {% else %}
+                                {{ assigned_user.username }}
+                              {% endif %}
+
+                            </td>
+
+                            <td>
+                              {{ assigned_user.email|default:"Sin correo registrado" }}
+                            </td>
+
+                            <td class="text-end">
+
+                              <a
+                                href="{% url 'create_notification' %}?audit_id={{ audit_to_manage.id }}&amp;notifieds_ids={{ assigned_user.id }}"
+                                class="btn btn-outline-secondary btn-sm"
+                              >
+                                <i class="bi bi-bell"></i>
+                                Notificar
+                              </a>
+
+                              <form
+                                action="{% url 'unassign_audit' audit_to_manage.id assigned_user.id %}"
+                                method="post"
+                                class="d-none"
+                                id="unassigned_audit_form{{ assigned_user.id }}"
+                              >
+                                {% csrf_token %}
+                              </form>
+
+                              <button
+                                type="submit"
+                                class="btn btn-outline-danger btn-sm"
+                                form="unassigned_audit_form{{ assigned_user.id }}"
+                                onclick="return confirm('¿Deseas retirar a este usuario de la auditoría?');"
+                              >
+                                <i class="bi bi-person-dash"></i>
+                                Desasignar
+                              </button>
+
+                            </td>
+
+                          </tr>
+
+                        {% empty %}
+
+                          <tr>
+
+                            <td
+                              colspan="3"
+                              class="text-center py-4"
+                            >
+                              <i class="bi bi-people text-muted"></i>
+
+                              <p class="mb-0 mt-2 text-muted">
+                                No hay auditores asignados a esta auditoría.
+                              </p>
+                            </td>
+
+                          </tr>
+
+                        {% endfor %}
+
+                      </tbody>
+
+                    </table>
+
+                  </div>
+
+                </div>
+
+              </section>
+
+            {% endif %}
+
+          </div>
+
+          <!-- Columna lateral -->
+          <div class="col-lg-4">
+
+            <!-- Estado -->
+            <section class="card shadow-sm">
+
+              <div class="card-body">
+
+                <h2 class="card-title fs-5 fw-semibold">
+                  Estado de la Auditoría
+                </h2>
+
+                <p class="card-text">
+                  Gestiona el avance, el nivel de riesgo y el estado
+                  actual del encargo.
+                </p>
+
+                <div class="mb-3">
+
+                  <label
+                    for="progress"
+                    class="form-label"
+                  >
+                    Avance
+                  </label>
+
+                  <select
+                    id="progress"
+                    name="progress"
+                    class="form-select"
+                    form="update_audit{{ audit_to_manage.id }}_form"
+                  >
+
+                    {% for option in progress_options %}
+
+                      <option
+                        value="{{ option }}"
+                        {% if audit_row.progress == option %}
+                          selected
+                        {% endif %}
+                      >
+                        {{ option }}%
+                      </option>
+
+                    {% endfor %}
+
+                  </select>
+
+                </div>
+
+                <div class="mb-3">
+
+                  <label
+                    for="risk_level"
+                    class="form-label"
+                  >
+                    Nivel de riesgo
+                  </label>
+
+                  <select
+                    id="risk_level"
+                    name="risk_level"
+                    class="form-select"
+                    form="update_audit{{ audit_to_manage.id }}_form"
+                  >
+
+                    {% for value, label in risk_choices %}
+
+                      <option
+                        value="{{ value }}"
+                        {% if audit_row.risk_slug == value %}
+                          selected
+                        {% endif %}
+                      >
+                        {{ label }}
+                      </option>
+
+                    {% endfor %}
+
+                  </select>
+
+                </div>
+
+                <div class="mb-0">
+
+                  <label
+                    for="workflow_status"
+                    class="form-label"
+                  >
+                    Estado
+                  </label>
+
+                  <select
+                    id="workflow_status"
+                    name="workflow_status"
+                    class="form-select"
+                    form="update_audit{{ audit_to_manage.id }}_form"
+                  >
+
+                    {% for value, label in status_choices %}
+
+                      <option
+                        value="{{ value }}"
+                        {% if audit_row.status_slug == value %}
+                          selected
+                        {% endif %}
+                      >
+                        {{ label }}
+                      </option>
+
+                    {% endfor %}
+
+                  </select>
+
+                </div>
+
+              </div>
+
+            </section>
+
+            <!-- Acciones críticas -->
+            <section class="card shadow-sm mt-4">
+
+              <div class="card-body">
+
+                <h2 class="card-title fs-5 fw-semibold">
+                  Acciones de la Auditoría
+                </h2>
+
+                <p class="card-text">
+                  Administra las acciones críticas relacionadas con
+                  este encargo.
+                </p>
+
+                <div class="d-grid">
+
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger"
+                    data-bs-toggle="modal"
+                    data-bs-target="#delete_audit_confirmation_dialog"
+                  >
+                    <i class="bi bi-trash3"></i>
+                    Borrar auditoría
+                  </button>
+
+                </div>
+
+              </div>
+
+            </section>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Modal para eliminar auditoría -->
+    <div
+      class="modal fade"
+      id="delete_audit_confirmation_dialog"
+      tabindex="-1"
+      aria-labelledby="delete_audit_confirmation_dialog_label"
+      aria-hidden="true"
+    >
+
+      <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+          <div class="modal-header">
+
+            <h2
+              class="modal-title fs-5 text-danger"
+              id="delete_audit_confirmation_dialog_label"
+            >
+              Confirmar eliminación
+            </h2>
+
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Cerrar"
+            ></button>
+
+          </div>
+
+          <div class="modal-body">
+
+            <p>
+              Esta acción es irreversible. Las notificaciones, reportes,
+              informes y demás datos relacionados con esta auditoría serán
+              eliminados permanentemente.
+            </p>
+
+            <div class="alert alert-warning">
+
+              <strong>
+                Auditoría:
+              </strong>
+
+              {{ audit_to_manage.title }}
+
+            </div>
+
+            <form
+              action="{% url 'delete_audit' audit_to_manage.id %}"
+              method="post"
+              id="validation-delete-audit-form"
+              novalidate
+            >
+              {% csrf_token %}
+
+              <label
+                for="validation-delete-audit-form-input-confirmation"
+                class="form-label"
+              >
+                Escribe el nombre exacto de la auditoría para confirmar:
+              </label>
+
+              <input
+                type="text"
+                class="form-control"
+                id="validation-delete-audit-form-input-confirmation"
+                autocomplete="off"
+                required
+              >
+
             </form>
-            <div class="d-none d-md-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm">Descartar</button>
-                <button class="btn btn-primary btn-sm" form="update_audit{{ audit_to_manage.id }}_form">Guardar
-                    Cambios</button>
-            </div>
+
+          </div>
+
+          <div class="modal-footer">
+
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              class="btn btn-danger"
+              form="validation-delete-audit-form"
+              id="validation-delete-audit-form-submit-button"
+              disabled
+            >
+              Borrar definitivamente
+            </button>
+
+          </div>
+
         </div>
+
+      </div>
+
     </div>
-    <div class="row g-4">
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h3 class="card-title fs-5 fw-semibold">Detalles de la Auditoria</h3>
-                    <p class="card-text">Revice y cambie los datos según lo necesite.</p>
-                    <div class="mb-3">
-                        <label for="title" class="form-label">Título de la Auditoría</label>
-                        <input type="text" class="form-control" id="audit_title" name="audit_title"
-                            value="{{ audit_to_manage.title }}" form="update_audit{{ audit_to_manage.id }}_form"
-                            required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="identidad" class="form-label">Identidad</label>
-                        <input type="text" class="form-control" id="audit_identidad"
-                            value="{{ audit_to_manage.identidad }}" name="audit_identidad"
-                            form="update_audit{{ audit_to_manage.id }}_form" required />
-                    </div>
 
-                    <div class="mb-3">
-                        <label for="fechaInit" class="form-label">Fecha de Inicio</label>
-                        <input type="date" class="form-control" id="audit_fechaInit"
-                            value="{{ audit_to_manage.fechaInit|date:'Y-m-d' }}" name="audit_fechaInit"
-                            form="update_audit{{ audit_to_manage.id }}_form" required />
-                    </div>
+  {% else %}
 
-                    <div class="mb-3">
-                        <label for="fechaEnd" class="form-label">Fecha Final</label>
-                        <input type="date" class="form-control" id="audit_fechaEnd"
-                            value="{{ audit_to_manage.fechaEnd|date:'Y-m-d' }}" name="audit_fechaEnd"
-                            form="update_audit{{ audit_to_manage.id }}_form" required />
-                    </div>
+    <section class="ap-panel">
 
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="audit_financial" name="audit_financial"
-                            form="update_audit{{ audit_to_manage.id }}_form" {% if audit_to_manage.tipoAuditoria=='F'
-                            %}checked{% endif %} />
-                        <label class="form-check-label" for="audit_financial">Auditoría Financiera</label>
-                    </div>
+      <div class="text-center py-5">
 
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="activa_revisoria" name="activa_revisoria"
-                            form="update_audit{{ audit_to_manage.id }}_form" {% if audit_to_manage.activa_revisoria%}
-                            checked {% endif %} />
-                        <label class="form-check-label" for="activa_revisoria">Activar Revisoría</label>
-                    </div>
+        <i class="bi bi-shield-lock fs-1 text-muted"></i>
 
-                    <div class="mb-3">
-                        <label for="finishDate" class="form-label">Fecha de entrega</label>
-                        <input type="date" class="form-control" id="finishDate" value="2023-12-31"
-                            form="update_audit{{ audit_to_manage.id }}_form" />
-                    </div>
-                </div>
-            </div>
-            <div class="card shadow-sm mt-4">
-                <div class="card-body">
-                    {% if audit_to_manage.assigned_users.all %}
-                    {% if user_modalidad == 'G' %}
-                    <h3 class="card-title fs-5 fw-semibold">Auditores Asignados</h3>
-                    <p class="card-text">Gestione los Auditores y supervisores asignados para esta auditoría.</p>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Correo electrónico</th>
-                                    <th class="text-end">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in audit_to_manage.assigned_users.all %}
-                                <tr>
-                                    <td>{{ user.get_full_name }}</td>
-                                    <td>{{ user.email }}</td>
-                                    <td class="text-end">
-                                        <button class="btn btn-outline-secondary btn-sm"
-                                            aria-label="Notificar">Notificar</button>
-                                        <form action="{% url 'unassign_audit' audit_to_manage.id user.id %}"
-                                            method="post" class="d-none" id="unassigned_audit_form{{ user.id }}">
-                                            {% csrf_token %}
-                                        </form>
-                                        <button type="submit" aria-label="Desasignar"
-                                            class="btn btn-outline-danger btn-sm"
-                                            form="unassigned_audit_form{{ user.id }}">
-                                            Desasignar
-                                        </button>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% endif %}
-                    {% else %}
-                    {% if user_modalidad == 'G' %}
-                    <h5 class="text-center">No hay Auditores asignados para esta Auditoría</h5>
-                    {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4 d-flex gap-5 flex-column justify-content-between">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h3 class="card-title fs-5 fw-semibold">Estado de la Auditoría</h3>
-                    <p class="card-text">Gestione el estado de la auditoría para esta auditoría.</p>
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Status</label>
-                        <select id="status" class="form-select">
-                            <option value="">Estado ejemplo</option>
-                            <option value="">Estado ejemplo</option>
-                            <option value="">Estado ejemplo</option>
-                            <option value="">Estado ejemplo</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h3 class="card-title fs-5 fw-semibold">Audit Actions</h3>
-                    <p class="card-text">Perform actions related to the audit.</p>
-                    <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal"
-                            data-bs-target="#delete_audit_confirmation_dialog">Borrar Auditoría</button>
-                        <div class="modal fade" id="delete_audit_confirmation_dialog" tabindex="-1"
-                            aria-labelledby="delete_audit_confirmation_dialog_label" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h1 class="modal-title fs-5 text-danger"
-                                            id="delete_audit_confirmation_dialog_label">
-                                            ¿Está seguro de borrar esta Auditoría
-                                        </h1>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <p>
-                                            Esta acción es irreversible, todas las notificaciones, reportes, informes y
-                                            cualquier dato relacionado con esta Auditoría será borrado permanentemente
-                                        </p>
-                                        <p class="text-warning">
-                                            <strong>Auditoría:</strong>{{ audit_to_manage.title }}
-                                        </p>
-                                        <form action="{% url 'delete_audit' audit_to_manage.id %}" method="post"
-                                            class="needs-validation" id="validation-delete-audit-form" novalidate>
-                                            {% csrf_token %}
-                                            <label for="">Escribe el nombre de la auditoría para confirmar.</label>
-                                            <input type="text" class="form-control"
-                                                id="validation-delete-audit-form-input-confirmation" required />
-                                        </form>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary"
-                                            data-bs-dismiss="modal">Cancelar</button>
-                                        <button type="submit" class="btn btn-danger" form="validation-delete-audit-form"
-                                            id="validation-delete-audit-form-submit-button" disabled>Borrar</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary btn-sm">Completar Auditoría</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="d-md-none d-flex justify-content-center gap-2 mt-4">
-        <button class="btn btn-outline-secondary btn-sm">Descargar</button>
-        <button class="btn btn-primary btn-sm">Guardar Auditoría</button>
-    </div>
-</div>
+        <h2 class="mt-3">
+          Acceso no autorizado
+        </h2>
 
-{% endblock main_content %}
-{% block extra_scripts %}
-{{ block.super }}
-<script>
-    window.addEventListener("DOMContentLoaded", () => {
-        const button = document.getElementById("validation-delete-audit-form-submit-button");
-        const input = document.getElementById("validation-delete-audit-form-input-confirmation");
-        input.addEventListener("input", (e) => {
-            if (e.target.value !== "{{audit_to_manage.title}}") {
-                button.disabled = true
+        <p class="text-muted">
+          No tienes permisos para administrar esta auditoría.
+        </p>
+
+        <a
+          href="{% url 'assigned_audits' %}"
+          class="ap-secondary-button"
+        >
+          Volver a Auditorías
+        </a>
+
+      </div>
+
+    </section>
+
+  {% endif %}
+
+{% endblock v2_content %}
+
+{% block v2_scripts %}
+  {{ block.super }}
+
+  <script>
+    window.addEventListener(
+      "DOMContentLoaded",
+      function () {
+        const deleteButton = document.getElementById(
+          "validation-delete-audit-form-submit-button"
+        );
+
+        const confirmationInput = document.getElementById(
+          "validation-delete-audit-form-input-confirmation"
+        );
+
+        if (deleteButton && confirmationInput) {
+          confirmationInput.addEventListener(
+            "input",
+            function (event) {
+              deleteButton.disabled =
+                event.target.value !==
+                "{{ audit_to_manage.title|escapejs }}";
             }
-            else {
-                button.disabled = false
-            };
-        })
-    });
+          );
+        }
 
-    function toggleAuditType(clicked) {
-        const checkboxes = document.querySelectorAll('input[name="audit_financial"], input[name="activa_revisoria"]');
-        checkboxes.forEach(cb => {
-            if (cb !== clicked) cb.checked = false;
-        });
-    }
+        const updateForm = document.getElementById(
+          "update_audit{{ audit_to_manage.id }}_form"
+        );
 
-    // Attach validation to the update form
-    const updateForm = document.getElementById('update_audit{{ audit_to_manage.id }}_form');
-    if (updateForm) {
-        updateForm.addEventListener('submit', function (e) {
-            const financial = document.getElementById('audit_financial').checked;
-            const revisoria = document.getElementById('activa_revisoria').checked;
-            // Solo validamos si es obligatorio que uno esté seleccionado. 
-            // Si el comportamiento "ambos desmarcados = Interna" es deseado, se puede quitar esta validación.
-            // Pero el usuario pidió "exclusividad", no necesariamente obligatoriedad.
-            // Sin embargo, en create-audit.html del reference SÍ validaban.
-            // Asumiré que para update también deseamos mantener la consistencia si se desea cambiar el tipo.
-            if (!financial && !revisoria) {
-                // Si ambos están desmarcados, podría significar "Interna"? 
-                // En create_audit logic: if not financial and not revisoria => 'I'.
-                // Así que tal vez NO debamos bloquear el submit si ambos están desmarcados,
-                // a menos que queramos forzar que sea F o R.
-                // En create-audit.html del reference: alert('Debe seleccionar al menos un tipo de auditoría.')
-                // Así que bloquearé.
-                e.preventDefault();
-                alert('Debe seleccionar al menos un tipo de auditoría.');
+        if (!updateForm) {
+          return;
+        }
+
+        updateForm.addEventListener(
+          "submit",
+          function (event) {
+            const financialInput = document.getElementById(
+              "audit_financial"
+            );
+
+            const revisoriaInput = document.getElementById(
+              "activa_revisoria"
+            );
+
+            const internalInput = document.getElementById(
+              "audit_internal"
+            );
+
+            const financial =
+              financialInput &&
+              financialInput.checked;
+
+            const revisoria =
+              revisoriaInput &&
+              revisoriaInput.checked;
+
+            const internal =
+              internalInput &&
+              internalInput.checked;
+
+            if (
+              !financial &&
+              !revisoria &&
+              !internal
+            ) {
+              event.preventDefault();
+
+              window.alert(
+                "Debe seleccionar al menos un tipo de auditoría."
+              );
             }
-        });
-    }
-</script>
-{% endblock extra_scripts %}
+          }
+        );
+      }
+    );
+  </script>
+
+{% endblock v2_scripts %}

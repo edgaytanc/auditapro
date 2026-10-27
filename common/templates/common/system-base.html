@@ -1,51 +1,20 @@
-{% extends "common/base.html" %}
+{% extends "common/v2/system-base-v2.html" %}
 {% load static %}
-
-{% block content %}
-
-  {% include "common/_aside.html" %}
-
-  <div class="w-100 ms-sm-auto overflow-y-auto d-flex flex-column flex-grow-1">
-    <header>
-      
-      {% include "common/_aside_header.html" %}
-
-      <div class="bg-secondary-subtle w-100 p-3 d-flex flex-column gap-3"
-           style="max-height: fit-content">
-
-        {% include "common/_breadcrumbs.html" %}
-
-        <div class="w-100 d-flex flex-column" style="max-height: fit-content">
-          <h1 class="m-0 fw-bold">
-            {% block page_title %}
-            {% endblock page_title %}
-          </h1>
-          <p class="m-0">
-            {% block page_subtitle %}
-            {% endblock page_subtitle %}
-          </p>
-        </div>
-      </div>
-    </header>
-
-    <main class="d-flex flex-wrap flex-grow-1 flex-column gap-4 flex-md-nowrap align-items-center pt-3 pb-2 p-md-4 px-3">
-
-      {% include "common/_status-alert.html" %}
-
-      <header class="w-100 d-flex align-items-center justify-content-end flex-row gap-3">
-        {% block main_header_content %}
-        {% endblock main_header_content %}
-        {% if is_choose_new_audit_path and request.session.selected_audit %}
-          <a class="btn btn-secondary" href="{{ request.path }}?reload_audit=true">Escoger Nueva Auditoría</a>
-        {% endif %}
-      </header>
-
-      {% block main_content %}
-      {% endblock main_content %}
-    </main>
+{# Puente de compatibilidad: conserva los nombres de bloques del sistema anterior. #}
+{% block v2_styles %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/auditapro-legacy-bridge-v2.css' %}">
+{% endblock v2_styles %}
+{% block page_actions %}
+  {% block main_header_content %}{% endblock main_header_content %}
+  {% if is_choose_new_audit_path and request.session.selected_audit %}
+    <a class="ap-secondary-button" href="{{ request.path }}?reload_audit=true">
+      <i class="bi bi-arrow-repeat" aria-hidden="true"></i> Escoger nueva auditoría
+    </a>
+  {% endif %}
+{% endblock page_actions %}
+{% block v2_content %}
+  <div class="ap-legacy-content">
+    {% block main_content %}{% endblock main_content %}
   </div>
-
-  <link rel="stylesheet" href="{% static 'css/audita_ia_button.css' %}">
-  <script src="{% static 'js/audita_ia_button.js' %}"></script>
-
-{% endblock content %}
+{% endblock v2_content %}

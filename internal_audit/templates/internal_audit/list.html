@@ -1,0 +1,72 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+
+{% block title %}Auditoría Interna · Panel manual{% endblock title %}
+{% block page_title %}Auditorías Internas{% endblock page_title %}
+{% block page_subtitle %}Panel de gestión manual por proceso o área. No altera auditorías ni automatizaciones existentes.{% endblock page_subtitle %}
+{% block page_actions %}
+  <button class="iam-btn iam-btn-primary" type="button" id="iamAddAudit"><i class="bi bi-plus-lg"></i> Nueva Auditoría Interna</button>
+{% endblock page_actions %}
+{% block v2_styles %}
+  <link rel="stylesheet" href="{% static 'css/internal-audit-manual.css' %}?v=3">
+{% endblock v2_styles %}
+{% block v2_content %}
+<div class="iam-app" id="iamApp" data-user-id="{{ manual_dashboard_user_id }}">
+  <section id="iamListView">
+    <div class="iam-toolbar-main">
+      <div class="iam-actions">
+        <button type="button" id="iamExport" class="iam-btn iam-btn-excel"><i class="bi bi-file-earmark-spreadsheet"></i> Descargar Excel (.xlsx)</button>
+        <button type="button" id="iamSaveAll" class="iam-btn iam-btn-outline"><i class="bi bi-floppy"></i> Guardar cambios</button>
+      </div>
+      <button type="button" id="iamRestore" class="iam-btn iam-btn-ghost"><i class="bi bi-arrow-counterclockwise"></i> Restaurar ejemplos</button>
+    </div>
+    <div id="iamSaveFeedback" class="iam-save-feedback" role="status" aria-live="polite" hidden></div>
+    <div class="iam-kpis" aria-label="Indicadores calculados del listado manual">
+      <article class="iam-kpi"><span>Auditorías Internas</span><strong class="iam-blue" id="iamTotal">0</strong><small>Registros visibles</small></article>
+      <article class="iam-kpi"><span>En proceso</span><strong class="iam-teal" id="iamInProgress">0</strong><small>Estado seleccionado</small></article>
+      <article class="iam-kpi"><span>Riesgo alto</span><strong class="iam-red" id="iamHighRisk">0</strong><small>Riesgo seleccionado</small></article>
+      <article class="iam-kpi"><span>Avance promedio</span><strong class="iam-green" id="iamAvg">0%</strong><small>Porcentajes manuales</small></article>
+      <article class="iam-kpi"><span>Cierran en ≤ 7 días</span><strong class="iam-amber" id="iamClosing">0</strong><small>Sin contar vencidas</small></article>
+    </div>
+    <div class="iam-filters">
+      <label class="iam-search"><i class="bi bi-search"></i><input id="iamSearch" type="search" placeholder="Buscar por ID, proceso, cliente o auditor..." autocomplete="off"></label>
+      <select id="iamFilterStatus" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="planificacion">Planificación</option><option value="proceso">En proceso</option><option value="seguimiento">Seguimiento</option><option value="finalizada">Finalizada</option></select>
+      <select id="iamFilterRisk" aria-label="Filtrar por riesgo"><option value="">Todos los riesgos</option><option value="alto">Alto</option><option value="medio">Medio</option><option value="bajo">Bajo</option></select>
+      <select id="iamFilterAuditor" aria-label="Filtrar por auditor"><option value="">Todos los auditores</option></select>
+      <span id="iamResults" class="iam-count" aria-live="polite"></span>
+    </div>
+    <div class="iam-table-wrap">
+      <table class="iam-table" aria-label="Registros manuales de auditoría interna">
+        <thead><tr>
+          <th><button data-sort="id" type="button">ID <i class="bi bi-arrow-down-up"></i></button></th>
+          <th><button data-sort="proceso" type="button">Proceso / Área <i class="bi bi-arrow-down-up"></i></button></th>
+          <th><button data-sort="cliente" type="button">Cliente <i class="bi bi-arrow-down-up"></i></button></th>
+          <th><button data-sort="estado" type="button">Estado <i class="bi bi-arrow-down-up"></i></button></th>
+          <th><button data-sort="riesgo" type="button">Riesgo <i class="bi bi-arrow-down-up"></i></button></th>
+          <th><button data-sort="auditor" type="button">Auditor asignado <i class="bi bi-arrow-down-up"></i></button></th>
+          <th><button data-sort="avance" type="button">Avance <i class="bi bi-arrow-down-up"></i></button></th>
+          <th><button data-sort="cierre" type="button">Cierre estimado <i class="bi bi-arrow-down-up"></i></button></th>
+          <th>Acciones</th>
+        </tr></thead>
+        <tbody id="iamRows"></tbody>
+      </table>
+      <div class="iam-empty" id="iamEmpty" hidden>No se encontraron registros. Puedes crear uno con «Nueva Auditoría Interna».</div>
+    </div>
+    <div class="iam-footer">
+      <span id="iamSaveStatus" role="status" aria-live="polite">Los cambios no afectan el sistema de auditorías.</span>
+      <span>Almacenamiento local en este navegador · Sin conexión con proyectos</span>
+    </div>
+  </section>
+
+  <section class="iam-detail" id="iamDetailView" hidden>
+    <button class="iam-btn iam-btn-outline" id="iamBack" type="button"><i class="bi bi-arrow-left"></i> Volver al listado</button>
+    <header class="iam-detail-header">
+      <div><p class="iam-eyebrow">FICHA MANUAL · NO MODIFICA LA AUDITORÍA REAL</p><h2 id="iamDetailTitle"></h2><p id="iamDetailSubtitle"></p></div>
+      <div class="iam-actions"><button type="button" class="iam-btn iam-btn-primary" id="iamSaveDetail"><i class="bi bi-floppy"></i> Guardar ficha</button><button type="button" class="iam-btn iam-btn-ghost" id="iamExportDetail"><i class="bi bi-download"></i> Exportar ficha</button></div>
+    </header>
+    <div class="iam-tabs" id="iamTabs" role="tablist" aria-label="Secciones manuales de la ficha"></div>
+    <div class="iam-detail-panel" id="iamDetailContent"></div>
+  </section>
+</div>
+{% endblock v2_content %}
+{% block v2_scripts %}<script src="{% static 'js/internal-audit-manual.js' %}?v=4" defer></script>{% endblock v2_scripts %}
