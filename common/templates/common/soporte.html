@@ -1,0 +1,70 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+
+{% block title %}Ayuda y Soporte — AuditaPro{% endblock title %}
+
+{% block v2_styles %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/soporte-v2.css' %}">
+{% endblock v2_styles %}
+
+{% block page_title %}Soporte{% endblock page_title %}
+
+{% block page_subtitle %}
+  Canales de atención y asistencia para el uso de AuditaPro.
+{% endblock page_subtitle %}
+
+{% block v2_content %}
+<div class="ap-support-page">
+  <div class="ap-support-breadcrumb">
+    <a href="{% url 'dashboard' %}">Inicio</a>
+    <span aria-hidden="true">›</span>
+    <span>Soporte</span>
+  </div>
+
+  <section class="ap-support-hero" aria-labelledby="ap-support-heading">
+    <div class="ap-support-hero-icon" aria-hidden="true">
+      <i class="bi bi-life-preserver"></i>
+    </div>
+    <h2 id="ap-support-heading">Ayuda y Soporte</h2>
+    <p>Estamos aquí para ayudarle a aprovechar al máximo Audita. Elija el canal que le resulte más cómodo.</p>
+  </section>
+
+  <section class="ap-support-cards" aria-label="Canales de contacto">
+    <article class="ap-support-card">
+      <div class="ap-support-card-icon ap-support-card-icon--whatsapp" aria-hidden="true">
+        <i class="bi bi-whatsapp"></i>
+      </div>
+      <h3>Chat de WhatsApp</h3>
+      <p class="ap-support-description">Obtenga respuestas instantáneas de nuestro equipo de soporte.</p>
+      <p class="ap-support-contact">+502 3091 1642</p>
+      <div class="ap-support-spacer"></div>
+      <a class="ap-support-button ap-support-button--whatsapp"
+         href="https://wa.me/50230911642?text=Hola%2C%20necesito%20soporte%20con%20Audita"
+         target="_blank" rel="noopener noreferrer">
+        <i class="bi bi-whatsapp" aria-hidden="true"></i>
+        Iniciar chat
+      </a>
+    </article>
+
+    <article class="ap-support-card">
+      <div class="ap-support-card-icon ap-support-card-icon--email" aria-hidden="true">
+        <i class="bi bi-envelope"></i>
+      </div>
+      <h3>Soporte por correo</h3>
+      <p class="ap-support-description">Envíenos una consulta detallada por correo electrónico a los dos correos.</p>
+      <div class="ap-support-spacer"></div>
+      <div class="ap-support-email-list">
+        <a class="ap-support-button ap-support-button--email"
+           href="mailto:sistemaaudita@gmail.com?subject=Soporte%20Audita">sistemaaudita@gmail.com</a>
+        <a class="ap-support-button ap-support-button--email"
+           href="mailto:info@auditoriapractica.com?subject=Soporte%20Audita">info@auditoriapractica.com</a>
+      </div>
+    </article>
+  </section>
+
+  <p class="ap-support-note">
+    Para una atención más rápida, indique su nombre, el módulo en el que está trabajando y, si es posible, adjunte una captura de pantalla del problema.
+  </p>
+</div>
+{% endblock v2_content %}

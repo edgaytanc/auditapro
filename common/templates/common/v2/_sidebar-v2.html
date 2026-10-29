@@ -287,6 +287,14 @@
     <span class="ap-nav-label">Mejorar Plan</span>
   </a>
 
+  <!-- Soporte: ultimo modulo del menu lateral, tras Renovacion y Mejorar Plan. -->
+  <a href="{% url 'soporte' %}"
+     class="ap-nav-item {% if request.resolver_match.url_name == 'soporte' %}active{% endif %}"
+     {% if request.resolver_match.url_name == 'soporte' %}aria-current="page"{% endif %}>
+    <i class="bi bi-headset" aria-hidden="true"></i>
+    <span class="ap-nav-label">Soporte</span>
+  </a>
+
 </nav>
 
   <div class="ap-sidebar-footer">

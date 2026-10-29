@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path, include
+from common.views import soporte
 from analisis_ia.views import audita_analisis, enviar_consulta
 from analisis_ia.admin_views import administrar_cupos
 from notifications import urls as notifications_urls
@@ -12,6 +13,7 @@ from auditoria import urls as auditoria_urls
 from user_management import urls as user_management_urls
 
 urlpatterns = [
+    path("soporte/", soporte, name="soporte"),
     # Consultas reales Claude y pantalla de cupos separadas de auditorías y Superadmin.
     path("audita-analisis/", audita_analisis, name="audita_analisis"),
     path("audita-analisis/consultar/", enviar_consulta, name="audita_analisis_consultar"),
