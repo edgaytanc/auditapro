@@ -14,7 +14,7 @@ Spanish version: [README.md](README.md)
 - **The original is never modified**: it is read, results go to a `_llenado.xlsx` copy, SHA-256 compared before/after.
 - **A formula is never overwritten**; occupied target → next free cell / cancel. Text from documents starting with `=` is stored as text.
 - **Every figure has an origin** (file, sheet, rows/page, coordinates) and a cell comment in the paper.
-- **The copy is verified** cell by cell against the original; if anything outside the written range changed, it is not delivered.
+- **The copy is verified** cell by cell against the original; if anything outside the written range changed, it is not delivered. Anything the copy cannot keep (shapes, images, conditional formats…) is reported.
 - **Proposed ≠ approved**: only the project's audit manager approves, and only if all figures re-check against their source.
 - **Hash-chained, append-only log** (ISA 230). **An alert is not proof of fraud**: the conclusion is the auditor's.
 
@@ -48,11 +48,15 @@ volume** for `ANALISIS_STORAGE_ROOT`. Install: `pip install -r requirements.txt 
 
 ## Tests
 
-`python manage.py test analisis --settings=saas_project.settings_test` — 103 tests (performance test skipped unless `ANALISIS_SLOW_TESTS=1`).
+`python manage.py test analisis --settings=saas_project.settings_test` — 107 tests (performance and all-538-templates tests run with `ANALISIS_SLOW_TESTS=1`).
 
 ## Not included in this version
 
 Client Portal and Continuous Monitoring (folder 8) modules; OCR for scanned PDFs (flagged as "evidence without text");
-decision cards, PBC, credits/plans, closed-file lock, multi-firm isolation; real AuditoriaPractica templates were not
-supplied (the copy is verified and risks are flagged — **test with the real templates**); Word "pages" are page-break
-sections; the queue is in-process threads (move to Celery/RQ at scale); the Claude API was tested only with a **simulated** API.
+decision cards, PBC, credits/plans, closed-file lock, multi-firm isolation; Word "pages" are page-break sections; the queue is
+in-process threads (move to Celery/RQ at scale).
+
+**Real Audit-module templates** (`static/templates_base_*`): all **538** tested (437 Financial, 67 Internal, 34 Statutory).
+All fill and pass the cell-by-cell check, 0 formulas overwritten (26,765 formulas). 4 copies drop a minor drawing element
+(3 lines/text boxes, 1 extended conditional-format rule) and **the system warns about it** on that paper version.
+The Claude API was tested live.

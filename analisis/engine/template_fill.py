@@ -7,6 +7,8 @@ Reglas que este módulo hace cumplir por código:
 - Todo texto que venga de un documento y empiece con «=» se guarda como texto, nunca como fórmula.
 - Tras guardar se compara la copia contra el original; si algo cambió fuera del rango escrito,
   el archivo no se entrega.
+- Se comparan además las partes del archivo (formas, imágenes, gráficos, formato condicional, validaciones…):
+  lo que la copia no conserve se advierte con precisión, para que el auditor lo revise contra el original.
 """
 from __future__ import annotations
 
@@ -404,10 +406,62 @@ def fill_template(
     if problems:
         out.unlink(missing_ok=True)
         raise FillError("La copia no pasó la verificación y no se entrega: " + "; ".join(problems[:3]))
+    report.warnings.extend(lost_features(src, out))
     return report
 
 
 # --------------------------------------------------------------------------- verificación
+
+_FEATURES = (
+    # (etiqueta, cómo contarla) — se cuentan en el original y en la copia
+    ("forma(s) o línea(s) dibujada(s)", "drawing", re.compile(rb"<xdr:(?:sp|cxnSp)[ >]")),
+    ("imagen(es)", "drawing", re.compile(rb"<xdr:pic[ >]")),
+    ("gráfico(s)", "part", "xl/charts/chart"),
+    ("regla(s) de formato condicional", "sheet", re.compile(rb"<(?:\w+:)?conditionalFormatting[ >]")),
+    ("validación(es) de datos", "sheet", re.compile(rb"<(?:\w+:)?dataValidation[ >]")),
+    ("hipervínculo(s)", "sheet", re.compile(rb"<hyperlink ")),
+    ("protección(es) de hoja", "sheet", re.compile(rb"<sheetProtection")),
+    ("tabla(s) de Excel", "part", "xl/tables/"),
+    ("tabla(s) dinámica(s)", "part", "xl/pivotTables/"),
+    ("nombre(s) definido(s)", "workbook", re.compile(rb"<definedName ")),
+)
+
+
+def _feature_counts(path: str | Path) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    with zipfile.ZipFile(path) as zf:
+        names = zf.namelist()
+        cache: dict[str, bytes] = {}
+
+        def read(prefix: str) -> list[bytes]:
+            return [cache.setdefault(n, zf.read(n)) for n in names if n.startswith(prefix) and n.endswith(".xml")]
+
+        for label, where, rule in _FEATURES:
+            if where == "part":
+                counts[label] = sum(1 for n in names if n.startswith(rule))
+            elif where == "drawing":
+                counts[label] = sum(len(rule.findall(x)) for x in read("xl/drawings/drawing"))
+            elif where == "sheet":
+                counts[label] = sum(len(rule.findall(x)) for x in read("xl/worksheets/sheet"))
+            else:
+                counts[label] = sum(len(rule.findall(x)) for x in read("xl/workbook.xml"))
+    return counts
+
+
+def lost_features(src: str | Path, out: str | Path) -> list[str]:
+    """Lo que el original tiene y la copia no conserva (openpyxl no guarda todo lo que Excel sabe dibujar)."""
+    try:
+        before, after = _feature_counts(src), _feature_counts(out)
+    except (zipfile.BadZipFile, KeyError, OSError):
+        return []
+    lost = [f"{before[k] - after.get(k, 0)} {k}" for k in before if after.get(k, 0) < before[k]]
+    if not lost:
+        return []
+    return [
+        "La copia no conserva " + ", ".join(lost) + " del original (los datos y las fórmulas sí se conservan). "
+        "Revise esos elementos contra el original o cópielos a mano antes de entregar el papel."
+    ]
+
 
 def verify_copy(src: str | Path, out: str | Path, *, written_region: tuple, evidence_sheet: str = "") -> list[str]:
     """Compara la copia con el original. Solo puede diferir el rango escrito y la hoja de evidencia."""

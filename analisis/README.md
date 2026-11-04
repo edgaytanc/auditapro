@@ -16,7 +16,7 @@ English version: [README.en.md](README.en.md)
 | Una fórmula jamás se sobrescribe | Rango destino verificado; si está ocupado: siguiente celda libre / cancelar; las fórmulas nunca se pisan | `test_template.py` |
 | Texto de un documento que empieza con `=` no se vuelve fórmula | Se guarda como texto; el CSV lo neutraliza | `test_template.py` |
 | Toda cifra tiene origen | `CifraAnalisis` (archivo, hoja, filas/página, coordenadas) + comentario en la celda | `test_template.py` |
-| La copia se verifica | Tras guardar se compara celda por celda con el original; si algo cambió fuera del rango, no se entrega | `test_template.py` |
+| La copia se verifica | Tras guardar se compara celda por celda con el original; si algo cambió fuera del rango, no se entrega. Lo que la copia no conserve (formas, imágenes, formato condicional…) se advierte | `test_template.py`, `test_plantillas_reales.py` |
 | Propuesto ≠ aprobado | Solo el jefe de auditoría del proyecto aprueba, y solo si todas las cifras cuadran con su origen | `test_template.py` |
 | Bitácora (NIA 230) | Encadenada con hash, solo se agrega | `test_template.py` |
 | Una alerta no demuestra fraude | Texto fijo en pantalla y en el papel; la conclusión es del auditor | `test_views.py` |
@@ -95,7 +95,7 @@ Migrar: `python manage.py migrate`.
 ```
 python manage.py test analisis --settings=saas_project.settings_test
 ```
-103 pruebas (la de rendimiento se salta salvo `ANALISIS_SLOW_TESTS=1`). Requieren `reportlab` solo para
+107 pruebas (la de rendimiento y la de las 538 plantillas se saltan salvo `ANALISIS_SLOW_TESTS=1`). Requieren `reportlab` solo para
 generar PDFs de ejemplo. `saas_project/settings_test.py` solo desactiva el manifiesto de estáticos.
 
 ## Lo que NO incluye esta versión (decisiones pendientes)
@@ -106,9 +106,13 @@ generar PDFs de ejemplo. `saas_project/settings_test.py` solo desactiva el manif
   para revisión manual (la guía propone Tesseract o visión de Claude).
 - **Tarjetas de decisión** que pausan al agente, **PBC**, **créditos/planes**, **expediente cerrado**
   y **aislamiento por firma**: AuditaPro aísla por proyecto de auditoría y por rol; no se creó el modelo multi-firma.
-- **Plantillas reales de AuditoriaPractica**: no se recibieron. La copia se verifica celda por celda y se
-  avisa si el papel tiene gráficos, imágenes, tablas dinámicas o vínculos (openpyxl puede no conservarlos).
-  **Probar con las plantillas reales antes de producción.**
+- **Plantillas reales del Módulo Auditoría** (`static/templates_base_financiera`, `_interna`, `_revisoria`): probadas
+  las **538** (437 Financiera, 67 Interna, 34 Revisoría Fiscal). Todas se llenan y pasan la verificación celda por celda;
+  0 fórmulas sobrescritas (26,765 fórmulas en 386 plantillas). 4 copias no conservan un elemento gráfico menor
+  (un cuadro de texto vacío en Revisoría «Centralizadora del pasivo» y en «… del estado de resultados», líneas
+  dibujadas en «Fase 1 Planeación», y 1 regla de formato condicional extendido en Financiera «Evaluación de procesos – Cuentas por
+  cobrar»): **el sistema lo advierte** en la versión del papel. Prueba: `test_plantillas_reales.py`
+  (todas con `ANALISIS_SLOW_TESTS=1`).
 - Páginas de **Word** = secciones por saltos de página (Word no guarda páginas fijas).
 - La cola es de hilos en el proceso web. Con varios procesos o mucha carga, migrar a Celery/RQ como propone la guía.
-- La API de Claude solo se probó **simulada** (sin red ni clave real).
+- La API de Claude se probó en vivo (clasificar, extraer con evidencia, interpretar el pedido, redactar la conclusión).

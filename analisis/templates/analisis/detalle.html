@@ -160,6 +160,7 @@
               <span><b>v{{ v.numero }}</b> · {{ v.nombre }} · {{ v.hoja }}!{{ v.celda_inicio }} · {{ v.informe.celdas_escritas }} celdas · {{ v.informe.formulas_sobrescritas }} fórmulas sobrescritas
                 <span class="text-body-secondary small">· {{ v.creado_en|date:"d/m/Y H:i" }}{% if v.motivo %} · {{ v.motivo }}{% endif %}</span>
                 {% if v.informe.movido_desde %}<span class="badge text-bg-warning">el destino estaba ocupado: se usó la siguiente celda libre</span>{% endif %}</span>
+              {% for w in v.informe.advertencias %}<div class="w-100 small text-warning-emphasis">⚠ {{ w }}</div>{% endfor %}
               <a class="btn btn-sm btn-primary" href="{% url 'analisis_descargar_version' run.pk v.numero %}">Descargar</a>
             </li>
           {% endfor %}
