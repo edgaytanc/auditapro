@@ -32,6 +32,7 @@ from .engine.classify import (
 from .engine.crossmatch import AuxIndex, CruceRow, match_document
 from .engine.extract import Extraction, amount_of, date_of, extract_fields
 from .engine.normalize import fmt_money, fmt_num, parse_amount, parse_date
+from .engine import integration
 from .engine.orchestrator import build_plan
 from .engine.readers import Limits, SourceDoc, find_pdf_bboxes, read_document
 from .engine.shared import Fig, Finding, Table, table_to_dict
@@ -205,7 +206,7 @@ def _cruce(sections: list[DocSection], index: AuxIndex | None, tolerance: Decima
         total = amount_of(ex)
         if not numero and total is None:
             continue
-        estado, motivo, aux = match_document(index, numero or "", total, date_of(ex), tolerance)
+        estado, motivo, aux = match_document(index, numero or "", total, date_of(ex), tolerance, proveedor=str(ex.get("Proveedor") or ""))
         fig = Fig(value=total, doc=s.doc, page=s.page, bbox=s.bboxes.get("Total"), label=f"Importe documento {numero or ''}".strip()) if total is not None else None
         rows.append(
             CruceRow(
@@ -316,13 +317,15 @@ def _execute(run: CorridaAnalisis, ctl: _Control) -> None:
     has_amounts = bool(aux_ctx and any(r.amount is not None for r in aux_ctx[3]))
     contract_docs = sum(1 for s in sections if s.tipo == TIPO_CONTRATO)
     requested = list(run.agentes_solicitados or [])
+    requested_source = "auditor"
     if not requested and run.instruccion and ai.enabled:
         suggested = ai.interpret_request(run.instruccion, list(AGENTES))
         if suggested:
             requested = [a for a in suggested if a in AGENTES]
+            requested_source = "ia"
     plan = build_plan(
         context_text=_context_text(run, docs, template_text, aux_ctx[1].headers if aux_ctx else []),
-        request=run.instruccion, requested_agents=requested or None,
+        request=run.instruccion, requested_agents=requested or None, requested_source=requested_source,
         has_tabular=bool(aux_ctx), has_dates=has_dates, has_amounts=has_amounts, contract_docs=contract_docs,
     )
 
@@ -410,9 +413,15 @@ def _execute(run: CorridaAnalisis, ctl: _Control) -> None:
     ctl.stage("05 · Guardando resultados", 93)
     ordered_findings = [f for f in findings if f.kind == "riesgo"] + [f for f in findings if f.kind == "hallazgo"]
     ordered_findings.sort(key=lambda f: (f.kind != "riesgo", f.codigo))
-    all_tables = tables + [classification, extraction]
+    integ: list[Table] = []
+    if aux_ctx:
+        src_, tab_, cols_, rows_ = aux_ctx
+        integ = integration.build(src_.name, tab_.sheet, tab_.headers, cols_, rows_, tables, cruce)
+    all_tables = tables + [classification, extraction] + integ
+    # cifras con origen: las de los resultados y las de la integración que van al papel (resumen mensual y detalle corto)
+    fig_tables = tables + [t for t in integ if t.key == "integracion_mes" or len(t.rows) <= 200]
     counter = 0
-    for fig in _walk_figs(tables):
+    for fig in _walk_figs(fig_tables):
         counter += 1
         fig.fid = f"C-{counter:04d}"
     name_to_doc = {}
@@ -440,7 +449,7 @@ def _execute(run: CorridaAnalisis, ctl: _Control) -> None:
                     documento=name_to_doc.get(fig.doc), documento_nombre=fig.doc[:255], hoja_origen=fig.sheet[:120], pagina=fig.page,
                     filas=fig.rows, agregacion=fig.agg, columna=fig.col, bbox=fig.bbox,
                 )
-                for fig in _walk_figs(tables)
+                for fig in _walk_figs(fig_tables)
                 if fig.value is not None
             ]
         )
@@ -456,23 +465,26 @@ def _execute(run: CorridaAnalisis, ctl: _Control) -> None:
         run.conclusion_ia = conclusion_ia
         run.advertencias = warnings
         run.ai_llamadas = ai.calls
-        run.estado = CorridaAnalisis.Estado.TERMINADO
-        run.progreso = 100
-        run.etapa = "Terminado"
-        run.terminado_en = timezone.now()
         run.save()
+
+    # -- integrar en el papel de trabajo (si se subió uno) ANTES de marcar «Terminado»:
+    #    así la pantalla nunca muestra un análisis terminado sin su papel de trabajo
+    if template_doc:
+        from . import services
+
+        ctl.stage("06 · Integrando en el papel de trabajo", 96)
+        try:
+            services.paste_to_template(run, services.default_paste_options(), run.creado_por, motivo="Llenado automático",
+                                       during_run=True)
+        except services.PasteError as exc:
+            run.advertencias = run.advertencias + [f"No se llenó el papel de trabajo: {exc}"]
+            run.hallazgos.update(marcado_revision=True, destino_pt="⚑ Revisión")
+    run.estado = CorridaAnalisis.Estado.TERMINADO
+    run.progreso = 100
+    run.etapa = "Terminado"
+    run.terminado_en = timezone.now()
+    run.save(update_fields=["estado", "progreso", "etapa", "terminado_en", "advertencias"])
     BitacoraAnalisis.registrar(
         run, run.creado_por, "terminada",
         {"agentes": [o.agent for o in outputs], "hallazgos": len(hall_table.rows), "riesgos": len(risk_table.rows), "ia_llamadas": ai.calls},
     )
-
-    # -- integrar en el papel de trabajo (si se subió uno)
-    if template_doc:
-        from . import services
-
-        try:
-            services.paste_to_template(run, services.default_paste_options(), run.creado_por, motivo="Llenado automático")
-        except services.PasteError as exc:
-            run.advertencias = run.advertencias + [f"No se llenó el papel de trabajo: {exc}"]
-            run.save(update_fields=["advertencias"])
-            run.hallazgos.update(marcado_revision=True, destino_pt="⚑ Revisión")

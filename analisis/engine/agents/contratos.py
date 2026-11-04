@@ -6,6 +6,8 @@ gasto facturado.
 """
 from __future__ import annotations
 
+import re
+
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -32,12 +34,19 @@ def estado_vigencia(venc: date | None, cierre: date, ventana: int) -> str:
     return VIGENTE
 
 
+_RX_EXPIRY = re.compile(r"venc|vigen|hasta|fin|t[eé]rmino|expira|caduc", re.I)
+
+
 def run(ctx: AgentContext) -> AgentOutput:
     cierre = ctx.param_date("fecha_cierre")
     if cierre is None:
         raise AgentError("El agente de Contratos necesita la fecha de cierre.")
     ventana = int(ctx.param_float("ventana_dias", 90))
-    has_register = ctx.cols.date >= 0 and any(r.date for r in ctx.rows)
+    date_header = ctx.headers[ctx.cols.date] if 0 <= ctx.cols.date < len(ctx.headers) else ""
+    # Solo es un «registro de contratos» si la fecha del auxiliar es de vencimiento/vigencia. En un libro de
+    # transacciones («Fecha» de pago o de factura) la vigencia sale de los contratos en PDF/Word, no de cada fila.
+    expiry_column = bool(_RX_EXPIRY.search(date_header))
+    has_register = expiry_column and any(r.date for r in ctx.rows)
     if not has_register and not ctx.contracts:
         raise AgentError(
             "El agente de Contratos necesita una columna con la fecha de vencimiento o contratos en PDF/Word."
@@ -66,7 +75,9 @@ def run(ctx: AgentContext) -> AgentOutput:
     main.cap()
     out.exceptions = sum(c for s, c in counts.items() if s != VIGENTE)
     if not rows:
-        main.add(["Sin registro de contratos con fecha de vencimiento", "", "", "", ctx.source_name])
+        reason = (f"El auxiliar es un registro de transacciones (columna «{date_header}»): la vigencia se toma de los contratos leídos"
+                  if ctx.cols.date >= 0 and not expiry_column else "Sin registro de contratos con fecha de vencimiento")
+        main.add([reason, "", "", "", ctx.source_name])
 
     # -- contratos leídos de PDF y Word
     contracts = ctx.contracts
@@ -158,6 +169,22 @@ def run(ctx: AgentContext) -> AgentOutput:
             gasto.flagged = any(gasto.flags)
             out.extras.append(gasto)
             out.exceptions += sum(1 for f in gasto.flags if f)
+        # cada pago posterior al vencimiento, con su fila (para la integración y para revisarlo uno por uno)
+        posteriores = Table(
+            key="extra:posteriores", title="Pagos o facturas posteriores al vencimiento del contrato",
+            head=["Indicador", "Proveedor", "Importe", "Detalle", "Ref. origen"], flagged=True,
+        )
+        for name, monto, billed, exceeds, after, after_sum, aux, c, vence in findings_gasto:
+            for r in sorted(after, key=lambda r: r.date):
+                posteriores.add(
+                    ["Posterior al vencimiento del contrato", name,
+                     Fig(value=r.amount, doc=aux.name, sheet=aux.sheet, rows=[r.n], label=f"Pago fila {r.n}", col=aux.cols.amount),
+                     f"{fmt_date(r.date)}; el contrato venció el {fmt_date(vence)}", f"{aux.name} · fila {r.n} + {c.doc}"],
+                    "warn",
+                )
+        if posteriores.rows:
+            posteriores.cap()
+            out.extras.append(posteriores)
         for name, monto, billed, exceeds, after, after_sum, aux, c, vence in findings_gasto:
             if exceeds:
                 out.findings.append(

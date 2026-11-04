@@ -134,19 +134,37 @@ def _summary_line(run: CorridaAnalisis) -> str:
     return "Resumen: " + " · ".join(f"{k} {v}" for k, v in kpis)
 
 
+def _structure_data(run: CorridaAnalisis, data: dict) -> dict | None:
+    """Datos para llenar la tabla propia del papel (integración, cuadre contra el mayor y observaciones)."""
+    if "integracion" not in data["tablas"]:
+        return None
+    ledger = parse_amount(run.parametros.get("saldo_mayor")) if run.parametros.get("saldo_mayor") not in (None, "") else None
+    # hallazgos concretos primero (por nivel), luego riesgos; nunca los descartados por el auditor
+    nivel = {"Alta": 0, "Media": 1, "Baja": 2}
+    items = [h for h in run.hallazgos.all() if h.codigo and h.decision != HallazgoAnalisis.Decision.DESCARTADO]
+    items.sort(key=lambda h: (h.tipo != "hallazgo", nivel.get(h.alerta, 3), h.orden))
+    observations = [f"• {h.codigo} ({h.alerta}): {h.resultado}"[:220] for h in items]
+    return {
+        "detail": table_from_dict(data["tablas"]["integracion"]),
+        "monthly": table_from_dict(data["tablas"]["integracion_mes"]) if "integracion_mes" in data["tablas"] else None,
+        "ledger_total": ledger,
+        "observations": observations,
+    }
+
+
 @transaction.atomic
-def paste_to_template(run: CorridaAnalisis, options: PasteOptions, user, motivo: str = "") -> VersionPapel:
+def paste_to_template(run: CorridaAnalisis, options: PasteOptions, user, motivo: str = "", during_run: bool = False) -> VersionPapel:
     """Escribe los resultados en una copia del papel de trabajo y la guarda como nueva versión."""
     tpl = run.plantilla
     if not tpl:
         raise PasteError("Esta corrida no tiene un papel de trabajo para llenar.")
-    if run.estado != CorridaAnalisis.Estado.TERMINADO:
+    if run.estado != CorridaAnalisis.Estado.TERMINADO and not during_run:
         raise PasteError("El análisis aún no termina.")
     if run.revision == CorridaAnalisis.Revision.APROBADO:
         raise PasteError("El resultado ya está aprobado: no se puede volver a pegar.")
 
     data = run.tablas
-    keys = [k for k in data["orden"] if k not in ("clasificacion", "extraccion")]
+    keys = [k for k in data["orden"] if k not in ("clasificacion", "extraccion", "integracion", "integracion_mes")]
     tables = [table_from_dict(data["tablas"][k]) for k in keys]
     evidence = [
         [r[0], r[1], r[2], r[3], r[4] if not hasattr(r[4], "isoformat") else r[4].strftime("%d/%m/%Y"), r[5], ""]
@@ -172,6 +190,7 @@ def paste_to_template(run: CorridaAnalisis, options: PasteOptions, user, motivo:
                 sources_line=sources, evidence_rows=evidence,
                 evidence_note=f"Clasificación: {len(data['tablas']['clasificacion']['rows'])} secciones de {run.documentos.count() - 1} documentos",
                 options=options,
+                structure=_structure_data(run, data),
             )
         except FillError as exc:
             raise PasteError(str(exc)) from None
@@ -182,6 +201,7 @@ def paste_to_template(run: CorridaAnalisis, options: PasteOptions, user, motivo:
                 "celdas_escritas": report.cells_written, "formulas_sobrescritas": report.formulas_overwritten,
                 "hoja_evidencia": report.evidence_sheet, "movido_desde": report.moved_from, "advertencias": report.warnings,
                 "rango": f"{report.start_cell}:{report.end_cell}",
+                "estructura": report.structure,
             },
         )
         with out_path.open("rb") as fh:

@@ -52,6 +52,12 @@ KINDS: list[PaperKind] = [
          "contratos": "Se activa si se suben contratos"},
     ),
     PaperKind(
+        "egresos", "G-1", "Integración y pruebas de egresos y gastos",
+        _kw(r"egresos?\b", r"gastos?\b", r"desembolsos?", r"cheques?\b", r"integraci[oó]n de (?:egresos|gastos)"),
+        ["masivo", "fraudes", "predictivo"],
+        {"contratos": "Se activa si se suben contratos (gasto contra contrato y vigencias)"},
+    ),
+    PaperKind(
         "contratos", "L-1", "Contratos y arrendamientos (NIIF 16)",
         _kw(r"contrat", r"arrend", r"pr[eé]stamo"),
         ["contratos", "masivo"],
@@ -168,6 +174,7 @@ def build_plan(
     has_dates: bool,
     has_amounts: bool,
     contract_docs: int = 0,
+    requested_source: str = "auditor",
 ) -> Plan:
     plan = Plan()
     kind, confidence, candidates = recognize_kind(f"{context_text}\n{request}")
@@ -186,7 +193,8 @@ def build_plan(
     if requested_agents:
         for agent in requested_agents:
             if agent in AGENTES:
-                wanted[agent] = "Elegido por el auditor"
+                wanted[agent] = ("Elegido por el auditor" if requested_source == "auditor"
+                                 else "Lo pide la instrucción (interpretada por Claude): " + ACTIVE_REASON[agent].lower())
     else:
         if kind:
             for agent in kind.agents:
@@ -223,5 +231,7 @@ def build_plan(
             plan.notes.append(f"{AGENTES[agent]}: {blocked[agent]}.")
         else:
             reason = (kind.not_used.get(agent) if kind else None) or "No es necesario para este papel"
+            if requested_agents and requested_source == "ia" and not (kind and agent in kind.not_used):
+                reason = "La instrucción no lo pide (según Claude); el auditor puede activarlo"
             plan.items.append(PlanItem(agent, False, reason))
     return plan

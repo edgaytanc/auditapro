@@ -22,7 +22,7 @@ from .validators import UploadRejected, allowed_extensions
 XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 XLSM_TYPE = "application/vnd.ms-excel.sheet.macroEnabled.12"
 
-HIDDEN_IN_UI = {"clasificacion", "extraccion", "riesgos", "hallazgos"}
+HIDDEN_IN_UI = {"clasificacion", "extraccion", "riesgos", "hallazgos", "integracion", "integracion_mes"}
 
 
 def _run_or_404(request, pk: int) -> CorridaAnalisis:

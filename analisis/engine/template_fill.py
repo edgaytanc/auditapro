@@ -76,6 +76,7 @@ class FillReport:
     formulas_overwritten: int = 0
     moved_from: str = ""
     warnings: list[str] = field(default_factory=list)
+    structure: dict = field(default_factory=dict)  # tabla del papel llenada (ver structured_fill)
 
 
 # --------------------------------------------------------------------------- inspección
@@ -277,6 +278,7 @@ def fill_template(
     evidence_note: str,
     options: PasteOptions,
     figure_prefix: str = "C",
+    structure: dict | None = None,
 ) -> FillReport:
     src, out = Path(src), Path(out)
     if src.resolve() == out.resolve():
@@ -310,6 +312,21 @@ def fill_template(
             report.moved_from = f"{ws.title}!{start_ref.upper()}"
             r0 = new_r
             report.start_cell = f"{get_column_letter(c0)}{r0}"
+
+    struct = None
+    if structure:
+        from .structured_fill import fill_structure
+
+        struct = fill_structure(
+            wb, detail=structure.get("detail"), monthly=structure.get("monthly"), ledger_total=structure.get("ledger_total"),
+            observations=structure.get("observations") or [], conclusion=conclusion,
+            results_anchor=f"{ws.title}!{get_column_letter(c0)}{r0}",
+        )
+        report.warnings.extend(struct.warnings)
+        if struct.detail:
+            report.structure = struct.summary()
+            for sheet_name, addr, fig in struct.figures:
+                report.figures.append(FigureRecord(sheet=sheet_name, cell=addr, fig=fig))
 
     thin = Font(italic=True, color="FF6B7280")
     row = r0
@@ -401,8 +418,14 @@ def fill_template(
     wb.save(out)
     wb.close()
 
-    region = (ws.title, r0, c0, row - r0, width)
-    problems = verify_copy(src, out, written_region=region, evidence_sheet=report.evidence_sheet)
+    regions = [(ws.title, r0, c0, row - r0, width)]
+    extra_sheets = []
+    if struct and struct.detail:
+        regions += struct.regions
+        extra_sheets.append(struct.detail_sheet)
+    if report.evidence_sheet:
+        extra_sheets.append(report.evidence_sheet)
+    problems = verify_copy(src, out, written_region=regions, evidence_sheet=extra_sheets)
     if problems:
         out.unlink(missing_ok=True)
         raise FillError("La copia no pasó la verificación y no se entrega: " + "; ".join(problems[:3]))
@@ -463,9 +486,18 @@ def lost_features(src: str | Path, out: str | Path) -> list[str]:
     ]
 
 
-def verify_copy(src: str | Path, out: str | Path, *, written_region: tuple, evidence_sheet: str = "") -> list[str]:
-    """Compara la copia con el original. Solo puede diferir el rango escrito y la hoja de evidencia."""
-    sheet_name, r0, c0, h, w = written_region
+def verify_copy(src: str | Path, out: str | Path, *, written_region, evidence_sheet="") -> list[str]:
+    """Compara la copia con el original. Solo pueden diferir los rangos escritos y las hojas agregadas.
+
+    ``written_region``: (hoja, fila, col, alto, ancho) o una lista de ellos. ``evidence_sheet``: nombre o lista de nombres.
+    """
+    regions = [written_region] if isinstance(written_region, tuple) else list(written_region)
+    added = [evidence_sheet] if isinstance(evidence_sheet, str) else list(evidence_sheet)
+    added = [n for n in added if n]
+
+    def inside_any(title, r, c):
+        return any(t == title and r0 <= r < r0 + h and c0 <= c < c0 + w for t, r0, c0, h, w in regions)
+
     problems: list[str] = []
     _, macro = _template_risks(src)
     a = load_workbook(src, keep_vba=macro)
@@ -475,7 +507,7 @@ def verify_copy(src: str | Path, out: str | Path, *, written_region: tuple, evid
         return ["el archivo generado no se puede abrir"]
     try:
         names_a = a.sheetnames
-        expected = names_a + ([evidence_sheet] if evidence_sheet else [])
+        expected = names_a + added
         if b.sheetnames != expected:
             problems.append("cambió la lista de hojas")
             return problems
@@ -487,9 +519,7 @@ def verify_copy(src: str | Path, out: str | Path, *, written_region: tuple, evid
                 for cell in row:
                     if cell.value in (None, ""):
                         continue
-                    inside = (
-                        ws_a.title == sheet_name and r0 <= cell.row < r0 + h and c0 <= cell.column < c0 + w
-                    )
+                    inside = inside_any(ws_a.title, cell.row, cell.column)
                     other = ws_b.cell(row=cell.row, column=cell.column)
                     if cell.value != other.value or cell.data_type != other.data_type:
                         if inside and cell.data_type != "f":

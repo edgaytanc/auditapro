@@ -42,6 +42,18 @@ def _numeric_part(raw: str) -> int | None:
     return int(digits) if digits else None
 
 
+def _close_repeats(rows: list) -> list:
+    """Filas de un pago recurrente que sí se repiten: mismo documento o fechas a 10 días o menos."""
+    out = []
+    for i, a in enumerate(rows):
+        for b in rows[i + 1:]:
+            same_doc = a.doc and a.doc == b.doc
+            close = a.date and b.date and abs((a.date - b.date).days) <= 10
+            if same_doc or close:
+                out += [x for x in (a, b) if x not in out]
+    return out
+
+
 def run(ctx: AgentContext) -> AgentOutput:
     valued = [r for r in ctx.rows if r.amount is not None]
     if not valued:
@@ -59,7 +71,22 @@ def run(ctx: AgentContext) -> AgentOutput:
     dup_groups: dict[tuple, list] = {}
     for r in valued:
         dup_groups.setdefault((r.group, r.amount), []).append(r)
-    duplicates = [rows for rows in dup_groups.values() if len(rows) > 1]
+    # Pago recurrente (alquiler, honorario fijo, planilla): mismo grupo e importe en 3 meses distintos o más.
+    # No es una señal de duplicado ni de «monto redondo»; se informa aparte.
+    recurrent = {
+        key for key, rows in dup_groups.items()
+        if len({(r.date.year, r.date.month) for r in rows if r.date}) >= 3
+    }
+    duplicates = []
+    for key, rows in dup_groups.items():
+        if len(rows) < 2:
+            continue
+        if key in recurrent:
+            # dentro de un pago recurrente, solo es duplicado lo que repite documento o cae en el mismo período corto
+            rows = _close_repeats(rows)
+            if len(rows) < 2:
+                continue
+        duplicates.append(rows)
     for rows in duplicates:
         for r in rows:
             signals.append(("Posible duplicado", r, f"mismo {ctx.group_header.lower()} e importe"))
@@ -70,7 +97,8 @@ def run(ctx: AgentContext) -> AgentOutput:
             if abs(z) > z_threshold:
                 atypical.append(r)
                 signals.append(("Importe atípico", r, f"z = {z:.1f}"))
-    rounds = [r for r in valued if multiplo > 0 and r.amount >= multiplo and r.amount % multiplo == 0]
+    rounds = [r for r in valued if multiplo > 0 and r.amount >= multiplo and r.amount % multiplo == 0
+              and (r.group, r.amount) not in recurrent]
     for r in rounds:
         signals.append(("Monto redondo", r, f"múltiplo exacto de {multiplo:,.0f}"))
     weekends = [r for r in valued if r.date and r.date.weekday() >= 5]
@@ -97,8 +125,14 @@ def run(ctx: AgentContext) -> AgentOutput:
         reading = "sin desviación"
     main.add(["Ley de Benford", f"{benford_n:,} partidas", "", f"χ² = {chi:.1f} · {reading}", f"{ctx.source_name} · 100 %"], "total")
     main.cap()
+    notes = []
     if main.truncated:
-        main.note = f"Se muestran las señales de mayor importe; {main.truncated:,} señales menores se omiten (los conteos las incluyen)."
+        notes.append(f"Se muestran las señales de mayor importe; {main.truncated:,} señales menores se omiten (los conteos las incluyen).")
+    if recurrent:
+        names = ", ".join(sorted({g for g, _ in recurrent})[:4])
+        notes.append(f"Pagos recurrentes ({names}): mismo {ctx.group_header.lower()} e importe cada mes; no se tratan como duplicados "
+                     "ni como montos redondos, salvo que repitan documento o caigan a 10 días o menos.")
+    main.note = " ".join(notes)
 
     out = AgentOutput(agent=AGENT, main=main)
     out.exceptions = len(signals)
@@ -109,7 +143,11 @@ def run(ctx: AgentContext) -> AgentOutput:
     for r in bajo:
         extra_rows.append(("Bajo el límite de autorización", r.group, ctx.fig_row(r), f"{fmt_pct(r.amount / limite)} del límite", ctx.ref_rows([r])))
     consecutivos = []
-    if ctx.cols.doc >= 0:
+    doc_header = ctx.headers[ctx.cols.doc] if 0 <= ctx.cols.doc < len(ctx.headers) else ""
+    # La numeración consecutiva de un PROVEEDOR (sus facturas) es señal de proveedor ficticio. La de nuestros propios
+    # cheques o transferencias es normal: si la columna no es de facturas del proveedor, la prueba no aplica.
+    supplier_docs = bool(re.search(r"factura|fact|invoice|serie|dte|fel", doc_header, re.I))
+    if ctx.cols.doc >= 0 and supplier_docs:
         by_group: dict[str, list] = {}
         for r in valued:
             num = _numeric_part(r.doc_raw)
@@ -145,6 +183,9 @@ def run(ctx: AgentContext) -> AgentOutput:
         extra.add(list(item), "warn")
     if not extra_rows:
         extra.add(["Sin hallazgos adicionales", "", "", "", ctx.source_name])
+    if ctx.cols.doc >= 0 and not supplier_docs:
+        extra.note = (f"Numeración consecutiva: no aplica, la columna «{doc_header}» no es de facturas del proveedor "
+                      "(cheques o transferencias propios van en secuencia).")
     extra.cap()
     out.extras.append(extra)
     out.exceptions += len(extra_rows)

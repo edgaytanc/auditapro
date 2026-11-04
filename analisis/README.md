@@ -63,6 +63,26 @@ English version: [README.en.md](README.en.md)
 «Informes» no es un quinto agente: la consolidación la hace `engine/consolidate.py` (la guía del
 Portal propone mantenerlo dentro del asistente de Cierre; se puede separar si el cliente lo decide).
 
+## Papeles de integración: el resultado dentro de la tabla del propio papel
+
+En los papeles de **integración** del Módulo Auditoría (p. ej. `10_INTEGRACION_EGRESOS` · A-12 y
+`8_INTEGRACION_INGRESOS` · A-10) el resultado no solo va debajo: se escribe **dentro de su tabla de detalle**.
+
+- Si las partidas caben en las filas de la tabla, una por fila; si no, **integración mensual** (Σ por mes, cada
+  total con su origen verificable) y las partidas completas en la hoja **«Detalle integración»** con marca y observación.
+- Se llena el **total según registros contables** con el saldo del mayor indicado; la diferencia la calcula la
+  fórmula del papel. Las fórmulas del papel nunca se tocan y nunca se insertan filas.
+- **Observaciones generales**: los hallazgos (primero los de nivel alto). La **conclusión del auditor no se
+  reemplaza**: si la plantilla ya trae texto, se deja un comentario con la propuesta.
+- Las pruebas por muestra, arqueos y análisis especiales no se tocan por dentro (sus partidas las elige el auditor).
+- Prueba: `test_egresos_a12.py` (libro de egresos de 70 partidas + facturas + contrato con la plantilla real).
+
+Reglas afinadas en esta prueba de gastos: los **pagos recurrentes** (alquiler, honorario fijo) no son duplicados ni
+montos redondos; la **numeración consecutiva** solo aplica a facturas del proveedor (no a cheques propios); la
+**vigencia por fila** solo si la columna es de vencimiento (en un libro de transacciones la vigencia sale del
+contrato); una factura del mismo proveedor y fecha con otro monto se informa como **«importe difiere»**; y el
+análisis no se marca «Terminado» hasta que el papel está llenado.
+
 ## Claude (opcional)
 
 Sin clave el sistema funciona completo con reglas. Con clave, Claude: clasifica páginas dudosas,
@@ -95,7 +115,7 @@ Migrar: `python manage.py migrate`.
 ```
 python manage.py test analisis --settings=saas_project.settings_test
 ```
-107 pruebas (la de rendimiento y la de las 538 plantillas se saltan salvo `ANALISIS_SLOW_TESTS=1`). Requieren `reportlab` solo para
+113 pruebas (la de rendimiento y la de las 538 plantillas se saltan salvo `ANALISIS_SLOW_TESTS=1`). Requieren `reportlab` solo para
 generar PDFs de ejemplo. `saas_project/settings_test.py` solo desactiva el manifiesto de estáticos.
 
 ## Lo que NO incluye esta versión (decisiones pendientes)
