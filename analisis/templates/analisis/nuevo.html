@@ -1,0 +1,100 @@
+{% extends "common/system-base.html" %}
+{% block title %}Nuevo análisis{% endblock title %}
+{% block page_title %}Nuevo análisis{% endblock page_title %}
+{% block page_subtitle %}Una sola puerta de carga: papel de trabajo, auxiliar y documentos de soporte.{% endblock page_subtitle %}
+
+{% block main_content %}
+  <form method="post" enctype="multipart/form-data" class="w-100" id="form-analisis" style="max-width: 980px">
+    {% csrf_token %}
+    {% if form.errors %}
+      <div class="alert alert-danger">Revise los campos marcados.</div>
+    {% endif %}
+
+    <div class="card mb-3"><div class="card-body">
+      <h5 class="card-title">1 · Proyecto</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.audit.id_for_label }}">{{ form.audit.label }}</label>
+          {{ form.audit }}
+          {{ form.audit.errors }}
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="{{ form.titulo.id_for_label }}">{{ form.titulo.label }}</label>
+          {{ form.titulo }}
+        </div>
+        <div class="col-12">
+          <label class="form-label" for="{{ form.instruccion.id_for_label }}">{{ form.instruccion.label }}</label>
+          {{ form.instruccion }}
+          <div class="form-text">Por ejemplo: «Revisa los pagos de noviembre: duplicados y facturas sin registro». El orquestador usa esto para elegir los agentes.</div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="card mb-3"><div class="card-body">
+      <h5 class="card-title">2 · Archivos</h5>
+      <p class="text-body-secondary small">Formatos: {{ extensiones }}. Se verifica el contenido real de cada archivo. Su papel de trabajo original nunca se modifica: el resultado se escribe en una copia.</p>
+      <div class="row g-3">
+        <div class="col-md-12">
+          <label class="form-label" for="plantilla">Papel de trabajo (Excel de AuditaPro o AuditoriaPractica)</label>
+          <input class="form-control" type="file" name="plantilla" id="plantilla" accept=".xlsx,.xlsm">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="auxiliares">Auxiliar o reporte (Excel o CSV)</label>
+          <input class="form-control" type="file" name="auxiliares" id="auxiliares" accept=".xlsx,.xlsm,.csv" multiple>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" for="soportes">Documentos de soporte (PDF, Word, Excel, imágenes)</label>
+          <input class="form-control" type="file" name="soportes" id="soportes" accept=".pdf,.docx,.xlsx,.xlsm,.csv,.png,.jpg,.jpeg,.tif,.tiff" multiple>
+        </div>
+      </div>
+      <div class="form-text mt-2" id="resumen-archivos"></div>
+    </div></div>
+
+    <div class="card mb-3"><div class="card-body">
+      <h5 class="card-title">3 · Agentes <span class="text-body-secondary fs-6">(opcional)</span></h5>
+      <div class="d-flex flex-wrap gap-3">
+        {% for choice in form.agentes %}
+          <div class="form-check">{{ choice.tag }} <label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label></div>
+        {% endfor %}
+      </div>
+      <div class="form-text">Si no marca ninguno, el orquestador reconoce el papel y activa solo los agentes necesarios, explicando por qué usa u omite cada uno.</div>
+    </div></div>
+
+    <details class="card mb-3"><summary class="card-body fw-semibold" style="cursor:pointer">4 · Parámetros y columnas (opcional)</summary>
+      <div class="card-body pt-0"><div class="row g-3">
+        {% for f in form %}
+          {% if f.name in "fecha_cierre saldo_mayor limite_autorizacion umbral_concentracion rango meses_proyectar tolerancia col_grupo col_importe col_documento col_fecha" %}
+            <div class="col-md-3">
+              <label class="form-label small" for="{{ f.id_for_label }}">{{ f.label }}</label>
+              {{ f }}
+              {{ f.errors }}
+            </div>
+          {% endif %}
+        {% endfor %}
+        <div class="col-12 form-text">Las columnas se detectan por el encabezado (proveedor, importe, factura, fecha). Escriba el nombre exacto del encabezado solo si necesita cambiarlas.</div>
+      </div></div>
+    </details>
+
+    <button class="btn btn-primary" type="submit" id="btn-enviar">Iniciar análisis</button>
+    <a class="btn btn-outline-secondary" href="{% url 'analisis_home' %}">Cancelar</a>
+  </form>
+
+  <script>
+    (function () {
+      var form = document.getElementById('form-analisis');
+      var ids = ['plantilla', 'auxiliares', 'soportes'];
+      var out = document.getElementById('resumen-archivos');
+      function fmt(b) { return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.ceil(b / 1024) + ' KB'; }
+      function refresh() {
+        var n = 0, total = 0;
+        ids.forEach(function (id) { Array.prototype.forEach.call(document.getElementById(id).files, function (f) { n++; total += f.size; }); });
+        out.textContent = n ? n + ' archivo(s) · ' + fmt(total) : '';
+      }
+      ids.forEach(function (id) { document.getElementById(id).addEventListener('change', refresh); });
+      form.addEventListener('submit', function () {
+        var btn = document.getElementById('btn-enviar');
+        btn.disabled = true; btn.textContent = 'Subiendo archivos…';
+      });
+    })();
+  </script>
+{% endblock main_content %}

@@ -8,6 +8,7 @@ from archivo import urls as archivo_urls
 from tools import urls as tools_urls
 from auditoria import urls as auditoria_urls
 from user_management import urls as user_management_urls
+from analisis import urls as analisis_urls
 
 urlpatterns = [
     path("admin/", admin.site.urls, name="admin"),
@@ -20,5 +21,6 @@ urlpatterns = [
     path("auditoria/", include(auditoria_urls)),
     path("usuarios/", include(user_management_urls)),
     path("mfa/", include("mfa.urls")),  # Rutas para la autenticación de dos factores
+    path("analisis/", include(analisis_urls)),
     
 ]

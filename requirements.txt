@@ -37,3 +37,8 @@ weasyprint==62.3
 webencodings==0.5.1
 zopfli==0.2.3
 python-dotenv==1.0.1
+openpyxl==3.1.5
+python-docx==1.2.0
+pdfplumber==0.11.10
+requests==2.34.2
+whitenoise==6.12.0

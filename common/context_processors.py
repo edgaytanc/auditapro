@@ -48,13 +48,15 @@ def breadcrumbs_processor(req):
         "actividades": "Actividades",
         "superadmin": "Panel Administrativo",
         "users": "Usuarios",
+        "analisis": "Audita Análisis",
+        "nuevo": "Nuevo análisis",
     }
 
     # Construimos los breadcrumbs dinámicamente basados en la URL
     current_url = "/"
     for part in path:
         if part.isdigit():
-            part_name = "Actualizar"
+            part_name = "Detalle" if path[0] == "analisis" else "Actualizar"
         else:
             part_name = path_name_map.get(part, part.capitalize())
 
@@ -166,6 +168,13 @@ def aside_navbar_processor(req: HttpRequest):
             "name": "Herramientas",
             "type": "anchor",
             "url": "tools",
+        },
+        {
+            "active": get_is_active_route("analisis_home", req),
+            "icon": """<svg xmlns="http://www.w3.org/2000/svg" class="ionicon" viewBox="0 0 512 512"><path d="M32 32v432a16 16 0 0016 16h432" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><path d="M96 384l96-112 80 64 144-176" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="32"/><circle cx="416" cy="160" r="20" fill="currentColor"/></svg>""",
+            "name": "Audita Análisis",
+            "type": "anchor",
+            "url": "analisis_home",
         },
         {
             "active": get_is_active_route("assigned_audits", req),

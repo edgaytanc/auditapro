@@ -1,0 +1,46 @@
+{% extends "common/system-base.html" %}
+{% block title %}Audita Análisis{% endblock title %}
+{% block page_title %}Audita Análisis{% endblock page_title %}
+{% block page_subtitle %}Suba su papel de trabajo y los documentos del cliente: los agentes analizan y dejan el resultado en una copia de su papel.{% endblock page_subtitle %}
+
+{% block main_header_content %}
+  {% if tiene_proyectos %}
+    <a class="btn btn-primary" href="{% url 'analisis_nuevo' %}">Nuevo análisis</a>
+  {% endif %}
+{% endblock main_header_content %}
+
+{% block main_content %}
+  <div class="w-100">
+    {% if not tiene_proyectos %}
+      <div class="alert alert-secondary">No tiene proyectos de auditoría asignados. Pida a su jefe de auditoría que lo asigne a uno para usar Audita Análisis.</div>
+    {% elif not runs %}
+      <div class="card"><div class="card-body text-center py-5">
+        <h5 class="mb-2">Aún no hay análisis</h5>
+        <p class="text-body-secondary mb-3">Suba el papel de trabajo en Excel, el auxiliar y los documentos de soporte. El auditor siempre revisa y aprueba el resultado.</p>
+        <a class="btn btn-primary" href="{% url 'analisis_nuevo' %}">Crear el primer análisis</a>
+      </div></div>
+    {% else %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>#</th><th>Análisis</th><th>Proyecto</th><th>Creado por</th><th>Fecha</th><th>Estado</th><th>Revisión</th></tr></thead>
+          <tbody>
+            {% for r in runs %}
+              <tr>
+                <td>{{ r.pk }}</td>
+                <td><a href="{% url 'analisis_detalle' r.pk %}">{{ r.titulo|default:"Análisis sin nombre" }}</a></td>
+                <td>{{ r.audit.title }}</td>
+                <td>{{ r.creado_por.get_full_name|default:r.creado_por.username }}</td>
+                <td>{{ r.creado_en|date:"d/m/Y H:i" }}</td>
+                <td>
+                  <span class="badge text-bg-{% if r.estado == 'terminado' %}success{% elif r.estado == 'error' %}danger{% elif r.estado == 'detenido' %}secondary{% else %}primary{% endif %}">{{ r.get_estado_display }}</span>
+                </td>
+                <td><span class="badge text-bg-{% if r.revision == 'aprobado' %}success{% elif r.revision == 'rechazado' %}danger{% else %}warning{% endif %}">{{ r.get_revision_display }}</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+    <p class="text-body-secondary small mt-3">Una alerta no demuestra fraude ni error: la conclusión y la aprobación son siempre del auditor.</p>
+  </div>
+{% endblock main_content %}

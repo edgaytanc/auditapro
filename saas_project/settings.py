@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "tools",
     "auditoria",
     "user_management",
+    "analisis",
     "django_tables2",
 ]
 
@@ -149,3 +150,33 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+
+
+# ---------------------------------------------------------------------------
+# Audita Análisis (orquestador, agentes y llenado de papeles de trabajo)
+# ---------------------------------------------------------------------------
+# Los archivos del cliente se guardan en una carpeta privada, fuera de static/ y media/.
+ANALISIS_STORAGE_ROOT = Path(os.environ.get("ANALISIS_STORAGE_ROOT", BASE_DIR / "private_analisis"))
+
+# Límites para que subir archivos y analizar no sobrecargue el servidor.
+ANALISIS_MAX_FILE_MB = int(os.environ.get("ANALISIS_MAX_FILE_MB", "100"))        # por archivo
+ANALISIS_MAX_TOTAL_MB = int(os.environ.get("ANALISIS_MAX_TOTAL_MB", "400"))      # por corrida
+ANALISIS_MAX_FILES = int(os.environ.get("ANALISIS_MAX_FILES", "40"))             # por corrida
+ANALISIS_MAX_UNZIPPED_MB = int(os.environ.get("ANALISIS_MAX_UNZIPPED_MB", "600"))  # Excel/Word descomprimido
+ANALISIS_MAX_ZIP_RATIO = int(os.environ.get("ANALISIS_MAX_ZIP_RATIO", "100"))    # anti «bomba zip»
+ANALISIS_MAX_ROWS = int(os.environ.get("ANALISIS_MAX_ROWS", "100000"))           # filas leídas por archivo
+ANALISIS_MAX_PDF_PAGES = int(os.environ.get("ANALISIS_MAX_PDF_PAGES", "300"))
+
+# Cola acotada: pocos trabajadores y un tope de corridas activas (se rechaza lo que exceda).
+ANALISIS_MAX_WORKERS = int(os.environ.get("ANALISIS_MAX_WORKERS", "2"))
+ANALISIS_MAX_QUEUE = int(os.environ.get("ANALISIS_MAX_QUEUE", "8"))
+ANALISIS_MAX_ACTIVE_PER_USER = int(os.environ.get("ANALISIS_MAX_ACTIVE_PER_USER", "2"))
+ANALISIS_STALE_MINUTES = int(os.environ.get("ANALISIS_STALE_MINUTES", "20"))
+ANALISIS_RUN_INLINE = os.environ.get("ANALISIS_RUN_INLINE", "False") == "True"   # solo pruebas
+
+# Claude (opcional). La clave se lee SOLO del entorno; nunca se guarda en el repositorio.
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ANALISIS_USE_AI = os.environ.get("ANALISIS_USE_AI", "True") == "True"
+ANALISIS_CLAUDE_MODEL = os.environ.get("ANALISIS_CLAUDE_MODEL", "claude-sonnet-5-5")
+ANALISIS_AI_TIMEOUT = int(os.environ.get("ANALISIS_AI_TIMEOUT", "60"))
+ANALISIS_AI_MAX_CALLS = int(os.environ.get("ANALISIS_AI_MAX_CALLS", "60"))

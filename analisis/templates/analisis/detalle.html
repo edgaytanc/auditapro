@@ -1,0 +1,313 @@
+{% extends "common/system-base.html" %}
+{% block title %}Análisis #{{ run.pk }}{% endblock title %}
+{% block page_title %}{{ run.titulo|default:"Análisis" }} <small class="text-body-secondary fs-6">#{{ run.pk }} · {{ run.audit.title }}</small>{% endblock page_title %}
+{% block page_subtitle %}Los agentes proponen; el auditor decide y aprueba. Los números los calcula el código y cada cifra lleva su origen.{% endblock page_subtitle %}
+
+{% block main_header_content %}
+  <a class="btn btn-outline-secondary" href="{% url 'analisis_home' %}">Todos los análisis</a>
+  {% if run.activa %}
+    <form method="post" action="{% url 'analisis_parar' run.pk %}">{% csrf_token %}<button class="btn btn-outline-danger" type="submit">Detener</button></form>
+  {% endif %}
+{% endblock main_header_content %}
+
+{% block main_content %}
+<div class="w-100">
+
+  {# ---------- estado / avance ---------- #}
+  <div class="card mb-3" id="card-estado"><div class="card-body">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+      <div>
+        <span class="badge text-bg-{% if run.estado == 'terminado' %}success{% elif run.estado == 'error' %}danger{% elif run.estado == 'detenido' %}secondary{% else %}primary{% endif %}" id="badge-estado">{{ run.get_estado_display }}</span>
+        <span class="badge text-bg-{% if run.revision == 'aprobado' %}success{% elif run.revision == 'rechazado' %}danger{% else %}warning{% endif %}">{{ run.get_revision_display }}</span>
+        <span class="text-body-secondary ms-2" id="txt-etapa">{{ run.etapa }}</span>
+      </div>
+      <small class="text-body-secondary">Creado {{ run.creado_en|date:"d/m/Y H:i" }}{% if run.terminado_en %} · terminó {{ run.terminado_en|date:"H:i" }}{% endif %}</small>
+    </div>
+    {% if run.activa %}
+      <div class="progress" role="progressbar" aria-label="Avance" aria-valuenow="{{ run.progreso }}" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" id="barra" style="width: {{ run.progreso }}%">{{ run.progreso }} %</div>
+      </div>
+    {% endif %}
+    {% if run.estado == 'error' %}<div class="alert alert-danger mt-2 mb-0">{{ run.error_mensaje }}</div>{% endif %}
+    {% if run.estado == 'detenido' %}<div class="alert alert-secondary mt-2 mb-0">El análisis se detuvo antes de terminar.</div>{% endif %}
+    {% if run.instruccion %}<p class="mt-3 mb-0"><b>Pedido del auditor:</b> {{ run.instruccion }}</p>{% endif %}
+  </div></div>
+
+  {% if plan.agents %}
+  {# ---------- plan del orquestador ---------- #}
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="card-title">Plan del orquestador</h5>
+    {% if plan.kind_label %}
+      <p class="mb-2">Papel reconocido: <b>{{ plan.kind_ref }} · {{ plan.kind_label }}</b> <span class="text-body-secondary">(confianza {{ plan.confidence }})</span></p>
+    {% else %}
+      <p class="mb-2 text-body-secondary">No se reconoció el tipo de papel por su contenido.</p>
+    {% endif %}
+    {% if plan.needs_confirmation %}<div class="alert alert-warning py-2">Confirme que los agentes sugeridos corresponden a su papel.</div>{% endif %}
+    <div class="row g-2">
+      {% for a in plan.agents %}
+        <div class="col-md-6"><div class="border rounded p-2 h-100 {% if a.active %}border-success{% endif %}">
+          <b>{{ a.name }}</b> <span class="badge text-bg-{% if a.active %}success{% else %}secondary{% endif %}">{% if a.active %}activo{% else %}no se usa{% endif %}</span>
+          <div class="small text-body-secondary">{{ a.reason }}</div>
+        </div></div>
+      {% endfor %}
+    </div>
+    <ol class="small text-body-secondary mt-3 mb-0">
+      {% for s in plan.steps %}<li><b>{{ s.title }}:</b> {{ s.detail }}</li>{% endfor %}
+    </ol>
+  </div></div>
+  {% endif %}
+
+  {% if terminado %}
+  {# ---------- indicadores y conclusión ---------- #}
+  <div class="row g-2 mb-3">
+    {% for k in kpis %}
+      <div class="col-6 col-md-4 col-lg"><div class="card text-center h-100"><div class="card-body py-2">
+        <div class="fs-5 fw-bold">{{ k.1 }}</div><div class="small text-body-secondary">{{ k.0 }}</div>
+      </div></div></div>
+    {% endfor %}
+  </div>
+
+  {% if run.advertencias %}
+    <div class="alert alert-warning"><b>Avisos del análisis</b>
+      <ul class="mb-0">{% for w in run.advertencias %}<li>{{ w }}</li>{% endfor %}</ul>
+    </div>
+  {% endif %}
+
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="card-title">Conclusión preliminar</h5>
+    <p class="mb-1">{{ run.conclusion }}</p>
+    <p class="small text-body-secondary mb-0">{% if run.conclusion_ia %}Redactada con Claude y verificada contra los números calculados. {% endif %}Pendiente de revisión del auditor. Una alerta no demuestra fraude ni error.</p>
+  </div></div>
+
+  {# ---------- tablas ---------- #}
+  {% for t in tablas %}
+    <details class="card mb-3" {% if not t.support %}open{% endif %}>
+      <summary class="card-body fw-semibold" style="cursor:pointer">{% if t.flagged %}⚠ {% endif %}{{ t.title }}</summary>
+      <div class="card-body pt-0">
+        <div class="table-responsive" style="max-height: 460px; overflow:auto">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light" style="position: sticky; top: 0"><tr>{% for h in t.head %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+            <tbody>
+              {% for row, flag in t.rows %}
+                <tr class="{% if flag == 'ok' %}table-success{% elif flag == 'error' %}table-danger{% elif flag == 'warn' %}table-warning{% elif flag == 'total' %}fw-bold{% endif %}">
+                  {% for c in row %}
+                    <td class="{% if c.num %}text-end{% endif %}">
+                      {% if c.fid %}<a href="#" class="fig-link text-decoration-none" data-fid="{{ c.fid }}" title="Ver el origen de esta cifra">{{ c.text }}</a>{% else %}{{ c.text }}{% endif %}
+                    </td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if t.truncated %}<p class="small text-body-secondary mt-2 mb-0">… y {{ t.truncated }} filas más no se muestran aquí.</p>{% endif %}
+        {% if t.note %}<p class="small text-body-secondary mt-2 mb-0">{{ t.note }}</p>{% endif %}
+      </div>
+    </details>
+  {% endfor %}
+
+  {# ---------- riesgos y hallazgos con decisión del auditor ---------- #}
+  {% if hallazgos %}
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="card-title">Riesgos y hallazgos propuestos (NIA 315 · 330 · 450)</h5>
+    <p class="small text-body-secondary">Nivel preliminar según las reglas del agente. La causa siempre se confirma con la gerencia. Usted decide: aceptar o descartar como falso positivo (con motivo).</p>
+    <div class="table-responsive"><table class="table table-sm align-middle">
+      <thead><tr><th>ID</th><th>Qué se encontró</th><th>NIA</th><th>Nivel</th><th>Importe</th><th>Origen</th><th>En el papel</th><th style="min-width:230px">Decisión</th></tr></thead>
+      <tbody>
+        {% for h in hallazgos %}
+          <tr>
+            <td><b>{{ h.codigo }}</b><div class="small text-body-secondary">{{ h.get_tipo_display|default:h.tipo }}</div></td>
+            <td>{{ h.condicion|default:h.resultado }}
+              {% if h.recomendacion %}<div class="small text-body-secondary"><b>Recomendación:</b> {{ h.recomendacion }}</div>{% endif %}
+              {% if h.criterio %}<div class="small text-body-secondary"><b>Criterio:</b> {{ h.criterio }}</div>{% endif %}
+              <div class="small text-body-secondary"><b>Causa:</b> {{ h.causa }}</div></td>
+            <td class="small">{{ h.nia }}</td>
+            <td><span class="badge text-bg-{% if h.alerta == 'Alta' %}danger{% elif h.alerta == 'Media' %}warning{% else %}secondary{% endif %}">{{ h.alerta }}</span></td>
+            <td class="text-end">{% if h.importe %}{{ h.importe|floatformat:2 }}{% endif %}</td>
+            <td class="small">{{ h.origen }}</td>
+            <td class="small">{% if h.marcado_revision %}<span class="text-danger">⚑ Revisión</span>{% else %}{{ h.destino_pt|default:"—" }}{% endif %}</td>
+            <td>
+              {% if aprobado %}
+                <span class="badge text-bg-{% if h.decision == 'aceptado' %}success{% elif h.decision == 'descartado' %}secondary{% else %}light{% endif %}">{{ h.get_decision_display }}</span>
+              {% else %}
+                <form method="post" action="{% url 'analisis_decidir' run.pk h.pk %}" class="d-flex flex-column gap-1">
+                  {% csrf_token %}
+                  <input class="form-control form-control-sm" name="nota" maxlength="1000" placeholder="Nota (obligatoria para descartar)" value="{{ h.decision_nota }}">
+                  <div class="btn-group btn-group-sm">
+                    <button name="decision" value="aceptado" class="btn btn-{% if h.decision == 'aceptado' %}success{% else %}outline-success{% endif %}">Aceptar</button>
+                    <button name="decision" value="descartado" class="btn btn-{% if h.decision == 'descartado' %}secondary{% else %}outline-secondary{% endif %}">Descartar</button>
+                  </div>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </div></div>
+  {% endif %}
+
+  {# ---------- paso 4: papel de trabajo ---------- #}
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="card-title">Papel de trabajo</h5>
+    {% if plantilla %}
+      <p>Original: <b>{{ plantilla.nombre_original }}</b> <span class="text-body-secondary">(no se modifica; huella {{ plantilla.sha256|slice:":12" }}…)</span></p>
+      {% if template_info.risks %}<div class="alert alert-warning py-2">Este papel {{ template_info.risks|join:"; " }}. Revise la copia descargada.</div>{% endif %}
+      {% if versiones %}
+        <ul class="list-group mb-3">
+          {% for v in versiones %}
+            <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <span><b>v{{ v.numero }}</b> · {{ v.nombre }} · {{ v.hoja }}!{{ v.celda_inicio }} · {{ v.informe.celdas_escritas }} celdas · {{ v.informe.formulas_sobrescritas }} fórmulas sobrescritas
+                <span class="text-body-secondary small">· {{ v.creado_en|date:"d/m/Y H:i" }}{% if v.motivo %} · {{ v.motivo }}{% endif %}</span>
+                {% if v.informe.movido_desde %}<span class="badge text-bg-warning">el destino estaba ocupado: se usó la siguiente celda libre</span>{% endif %}</span>
+              <a class="btn btn-sm btn-primary" href="{% url 'analisis_descargar_version' run.pk v.numero %}">Descargar</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if not aprobado %}
+        <form method="post" action="{% url 'analisis_pegar' run.pk %}" class="row g-2 align-items-end">
+          {% csrf_token %}
+          <div class="col-md-3"><label class="form-label small">Hoja</label>
+            <select name="hoja" class="form-select form-select-sm">
+              {% for s in template_info.sheets %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+            </select></div>
+          <div class="col-md-2"><label class="form-label small">Celda de inicio</label>
+            <input name="celda" class="form-control form-control-sm" placeholder="automática" maxlength="12"></div>
+          <div class="col-md-3"><label class="form-label small">Si el destino no está vacío</label>
+            <select name="conflicto" class="form-select form-select-sm">
+              <option value="siguiente_libre">Usar la siguiente celda libre</option>
+              <option value="cancelar">Cancelar</option>
+              <option value="sobrescribir">Sobrescribir texto y números (nunca fórmulas)</option>
+            </select></div>
+          <div class="col-md-2">
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="conclusion" id="c1" checked><label class="form-check-label small" for="c1">Conclusión</label></div>
+            <div class="form-check"><input class="form-check-input" type="checkbox" name="evidencia" id="c2" checked><label class="form-check-label small" for="c2">Hoja Evidencia</label></div>
+          </div>
+          <div class="col-md-2"><button class="btn btn-outline-primary btn-sm w-100" type="submit">{% if versiones %}Pegar de nuevo{% else %}Pegar{% endif %}</button></div>
+        </form>
+      {% endif %}
+    {% else %}
+      <p class="text-body-secondary mb-0">Este análisis no incluye un papel de trabajo. Puede volver a ejecutarlo subiendo el Excel de su firma para recibir una copia llenada.</p>
+    {% endif %}
+    <hr>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'analisis_csv' run.pk %}">Descargar resultados (CSV)</a>
+  </div></div>
+
+  {# ---------- validación y aprobación ---------- #}
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="card-title">Validación y aprobación</h5>
+    {% if validation %}
+      <p class="mb-2"><b>{{ validation.verificadas }}</b> de {{ validation.total }} cifras cuadran con su origen · {{ validation.no_cuadran }} no cuadran · {{ validation.cambio }} cambiaron de origen · {{ validation.sin_origen }} no verificables <span class="text-body-secondary small">({{ validation.validado_en|slice:":16" }})</span></p>
+      {% if cifras_pendientes %}
+        <ul class="small">{% for c in cifras_pendientes %}<li><a href="#" class="fig-link" data-fid="{{ c.fid }}">{{ c.fid }}</a> · {{ c.get_estado_display }} · {{ c.detalle }}</li>{% endfor %}</ul>
+      {% endif %}
+    {% else %}
+      <p class="text-body-secondary">Aún no se validan las cifras contra sus archivos de origen.</p>
+    {% endif %}
+    <div class="d-flex flex-wrap gap-2 align-items-start">
+      <form method="post" action="{% url 'analisis_validar' run.pk %}">{% csrf_token %}<button class="btn btn-outline-primary btn-sm" type="submit">Validar cédula</button></form>
+      {% if run.revision == 'aprobado' %}
+        <span class="badge text-bg-success align-self-center">Aprobado por {{ run.aprobado_por.get_full_name|default:run.aprobado_por.username }} · {{ run.aprobado_en|date:"d/m/Y H:i" }}</span>
+      {% elif puede_aprobar %}
+        <form method="post" action="{% url 'analisis_aprobar' run.pk %}" class="d-flex gap-2">{% csrf_token %}
+          <input class="form-control form-control-sm" name="comentario" placeholder="Comentario (opcional)" maxlength="1000">
+          <button class="btn btn-success btn-sm" type="submit">Aprobar</button>
+        </form>
+        <form method="post" action="{% url 'analisis_rechazar' run.pk %}" class="d-flex gap-2">{% csrf_token %}
+          <input class="form-control form-control-sm" name="comentario" placeholder="Motivo del rechazo" maxlength="1000" required>
+          <button class="btn btn-outline-danger btn-sm" type="submit">Rechazar</button>
+        </form>
+      {% else %}
+        <span class="text-body-secondary small align-self-center">Solo el jefe de auditoría del proyecto aprueba el resultado.</span>
+      {% endif %}
+    </div>
+    {% if run.revision_comentario %}<p class="small mt-2 mb-0"><b>Comentario de revisión:</b> {{ run.revision_comentario }}</p>{% endif %}
+  </div></div>
+  {% endif %}
+
+  {# ---------- archivos y bitácora ---------- #}
+  <details class="card mb-3"><summary class="card-body fw-semibold" style="cursor:pointer">Archivos del análisis ({{ documentos|length }})</summary>
+    <div class="card-body pt-0"><table class="table table-sm mb-0">
+      <thead><tr><th>Archivo</th><th>Rol</th><th>Formato</th><th>Lectura</th><th>SHA-256</th></tr></thead>
+      <tbody>{% for d in documentos %}
+        <tr><td>{{ d.nombre_original }}</td><td>{{ d.get_rol_display }}</td><td>{{ d.formato }}</td>
+          <td>{{ d.estado_lectura }}{% if d.paginas_leidas %} · {{ d.paginas_leidas }} pág.{% endif %}{% if d.filas_leidas %} · {{ d.filas_leidas }} filas{% endif %}{% if d.nota %}<div class="small text-body-secondary">{{ d.nota }}</div>{% endif %}</td>
+          <td class="small font-monospace">{{ d.sha256|slice:":16" }}…</td></tr>
+      {% endfor %}</tbody></table></div>
+  </details>
+
+  <details class="card mb-3"><summary class="card-body fw-semibold" style="cursor:pointer">Bitácora (NIA 230) · cadena {% if cadena_valida %}íntegra ✓{% else %}<span class="text-danger">con inconsistencias</span>{% endif %}</summary>
+    <div class="card-body pt-0"><table class="table table-sm mb-0">
+      <tbody>{% for b in bitacora %}
+        <tr><td class="small text-nowrap">{{ b.creado_en|date:"d/m/Y H:i:s" }}</td><td>{{ b.usuario.get_full_name|default:b.usuario.username|default:"Sistema" }}</td><td>{{ b.accion }}</td><td class="small font-monospace">{{ b.hash|slice:":10" }}</td></tr>
+      {% endfor %}</tbody></table></div>
+  </details>
+</div>
+
+{# ---------- visor de origen ---------- #}
+<div class="offcanvas offcanvas-end" tabindex="-1" id="visor" style="width: min(560px, 100vw)">
+  <div class="offcanvas-header"><h5 class="offcanvas-title" id="visor-titulo">Origen de la cifra</h5><button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar"></button></div>
+  <div class="offcanvas-body" id="visor-cuerpo"></div>
+</div>
+
+<script>
+(function () {
+  var runId = {{ run.pk }};
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+  // ----- avance en vivo
+  {% if run.activa %}
+  (function poll() {
+    fetch("{% url 'analisis_estado' run.pk %}", { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        document.getElementById('txt-etapa').textContent = d.etapa || '';
+        var bar = document.getElementById('barra');
+        if (bar) { bar.style.width = d.progreso + '%'; bar.textContent = d.progreso + ' %'; }
+        if (d.estado === 'en_cola' || d.estado === 'ejecutando') { setTimeout(poll, 2000); } else { location.reload(); }
+      })
+      .catch(function () { setTimeout(poll, 5000); });
+  })();
+  {% endif %}
+
+  // ----- visor de origen de una cifra
+  var panel = document.getElementById('visor');
+  var body = document.getElementById('visor-cuerpo');
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest('.fig-link');
+    if (!a) return;
+    e.preventDefault();
+    var fid = a.getAttribute('data-fid');
+    body.innerHTML = '<p class="text-body-secondary">Cargando…</p>';
+    new bootstrap.Offcanvas(panel).show();
+    fetch('/analisis/' + runId + '/cifra/' + encodeURIComponent(fid) + '/', { credentials: 'same-origin' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var h = '<p class="fs-4 fw-bold mb-1">' + esc(d.valor) + '</p><p class="text-body-secondary">' + esc(d.etiqueta) + ' · ' + esc(d.fid) + '</p>';
+        h += '<dl class="row small"><dt class="col-4">Archivo</dt><dd class="col-8">' + esc(d.documento) + '</dd>';
+        if (d.hoja) h += '<dt class="col-4">Hoja</dt><dd class="col-8">' + esc(d.hoja) + '</dd>';
+        if (d.pagina) h += '<dt class="col-4">Página</dt><dd class="col-8">' + esc(d.pagina) + '</dd>';
+        if (d.filas && d.filas.length) h += '<dt class="col-4">Filas</dt><dd class="col-8">' + esc(d.filas.join(', ')) + '</dd>';
+        if (d.agregacion) h += '<dt class="col-4">Cálculo</dt><dd class="col-8">Suma recalculada sobre ' + esc(d.agregacion.count) + ' filas</dd>';
+        if (d.celda) h += '<dt class="col-4">En el papel</dt><dd class="col-8">' + esc(d.celda) + '</dd>';
+        h += '<dt class="col-4">Validación</dt><dd class="col-8">' + esc(d.estado) + (d.detalle ? ' · ' + esc(d.detalle) : '') + '</dd></dl>';
+        if (d.vecinas) {
+          h += '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Fila</th>';
+          (d.encabezados || []).forEach(function (t) { h += '<th>' + esc(t) + '</th>'; });
+          h += '</tr></thead><tbody>';
+          d.vecinas.forEach(function (r) {
+            h += '<tr class="' + (r.citada ? 'table-warning' : '') + '"><td>' + esc(r.fila) + '</td>';
+            r.valores.forEach(function (v) { h += '<td>' + esc(v) + '</td>'; });
+            h += '</tr>';
+          });
+          h += '</tbody></table></div>';
+        }
+        if (d.tiene_imagen) h += '<img class="img-fluid border" alt="Página de origen con la cifra resaltada" src="/analisis/' + runId + '/cifra/' + encodeURIComponent(d.fid) + '/pagina.png">';
+        body.innerHTML = h;
+      })
+      .catch(function () { body.innerHTML = '<p class="text-danger">No se pudo cargar el origen.</p>'; });
+  });
+})();
+</script>
+{% endblock main_content %}
