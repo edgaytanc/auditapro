@@ -194,7 +194,7 @@ def build_plan(
         for agent in requested_agents:
             if agent in AGENTES:
                 wanted[agent] = ("Elegido por el auditor" if requested_source == "auditor"
-                                 else "Lo pide la instrucción (interpretada por Claude): " + ACTIVE_REASON[agent].lower())
+                                 else "Lo pide la instrucción (interpretada por Audita Análisis): " + ACTIVE_REASON[agent].lower())
     else:
         if kind:
             for agent in kind.agents:
@@ -232,6 +232,6 @@ def build_plan(
         else:
             reason = (kind.not_used.get(agent) if kind else None) or "No es necesario para este papel"
             if requested_agents and requested_source == "ia" and not (kind and agent in kind.not_used):
-                reason = "La instrucción no lo pide (según Claude); el auditor puede activarlo"
+                reason = "La instrucción no lo pide (según Audita Análisis); el auditor puede activarlo"
             plan.items.append(PlanItem(agent, False, reason))
     return plan
