@@ -33,14 +33,17 @@ fill paper) → orchestrator plan (each agent "active" / "not used" with reason)
 tables, risks & findings with auditor decisions → versioned filled paper + "Evidence" sheet →
 validate figures → approve. Click any figure for the source viewer (Excel row + neighbours; PDF page with the amount highlighted).
 
-## Integration papers: results inside the paper's own table
+## Pasting rule: each value in its own column (all templates)
 
-For **integration** papers (e.g. `10_INTEGRACION_EGRESOS` · A-12, `8_INTEGRACION_INGRESOS` · A-10) results are also
-written **inside the paper's detail table**: one row per item if they fit, otherwise a **monthly integration** (Σ per
-month, each total traceable) plus all items in a **«Detalle integración»** sheet with mark and observation. The ledger
-total cell is filled from the auditor's "saldo según mayor"; the paper's own formula computes the difference. Formulas are
-never touched and rows are never inserted. General observations get the findings; the **auditor's conclusion is never
-replaced** (a comment with the proposal is added). Test: `test_egresos_a12.py`.
+Client rule (PT A-11 guide): every template has its own table with named columns; transactions are pasted there,
+replacing the examples. Applies to any template with a transaction table (amount + date or document number, TOTAL `=SUM`).
+Columns are matched by name/synonym (e.g. «Monto Doc. (Q)» ← `Total_Facturado`); one transaction per row; when they do
+not fit, **rows are inserted like Excel does** (the total `=SUM` grows; everything below moves with its formulas, merges,
+formats, validations and print area — `engine/sheet_rows.py`). «Observaciones» gets the system's analysis per
+transaction; auditor-only columns stay empty and a formula depending on them is guarded (`=IF(J19="","",J19-F19)`);
+test parameters are filled; the template's example conclusion is replaced by the proposal (original kept in a comment);
+everything else goes to the «ANÁLISIS AGENTES» and «Evidencia» sheets. The copy is verified against the original with
+the row shift applied. Tests: `test_ingresos_a11.py` (500 invoices), `test_egresos_a12.py`, all 538 templates.
 
 ## Claude (optional)
 
@@ -57,7 +60,7 @@ volume** for `ANALISIS_STORAGE_ROOT`. Install: `pip install -r requirements.txt 
 
 ## Tests
 
-`python manage.py test analisis --settings=saas_project.settings_test` — 113 tests (performance and all-538-templates tests run with `ANALISIS_SLOW_TESTS=1`).
+`python manage.py test analisis --settings=saas_project.settings_test` — 120 tests (performance and all-538-templates tests run with `ANALISIS_SLOW_TESTS=1`).
 
 ## Not included in this version
 

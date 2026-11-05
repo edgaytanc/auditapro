@@ -34,7 +34,7 @@ def estado_vigencia(venc: date | None, cierre: date, ventana: int) -> str:
     return VIGENTE
 
 
-_RX_EXPIRY = re.compile(r"venc|vigen|hasta|fin|t[eé]rmino|expira|caduc", re.I)
+_RX_EXPIRY = re.compile(r"venc|vigen|hasta|\bfin\b|t[eé]rmino|expira|caduc", re.I)
 
 
 def run(ctx: AgentContext) -> AgentOutput:

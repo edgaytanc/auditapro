@@ -63,19 +63,36 @@ English version: [README.en.md](README.en.md)
 «Informes» no es un quinto agente: la consolidación la hace `engine/consolidate.py` (la guía del
 Portal propone mantenerlo dentro del asistente de Cierre; se puede separar si el cliente lo decide).
 
-## Papeles de integración: el resultado dentro de la tabla del propio papel
+## Regla de pegado: cada dato en su columna (todas las plantillas)
 
-En los papeles de **integración** del Módulo Auditoría (p. ej. `10_INTEGRACION_EGRESOS` · A-12 y
-`8_INTEGRACION_INGRESOS` · A-10) el resultado no solo va debajo: se escribe **dentro de su tabla de detalle**.
+Regla del cliente (guía «Prueba de Ingresos PT A-11»): cada plantilla tiene su tabla con sus columnas y sus nombres;
+ahí se pegan las transacciones, sustituyendo los ejemplos. Se aplica a cualquier plantilla con una tabla de
+transacciones (encabezados con monto y fecha o número de documento, y una fila TOTAL con `=SUM`).
 
-- Si las partidas caben en las filas de la tabla, una por fila; si no, **integración mensual** (Σ por mes, cada
-  total con su origen verificable) y las partidas completas en la hoja **«Detalle integración»** con marca y observación.
-- Se llena el **total según registros contables** con el saldo del mayor indicado; la diferencia la calcula la
-  fórmula del papel. Las fórmulas del papel nunca se tocan y nunca se insertan filas.
-- **Observaciones generales**: los hallazgos (primero los de nivel alto). La **conclusión del auditor no se
-  reemplaza**: si la plantilla ya trae texto, se deja un comentario con la propuesta.
-- Las pruebas por muestra, arqueos y análisis especiales no se tocan por dentro (sus partidas las elige el auditor).
-- Prueba: `test_egresos_a12.py` (libro de egresos de 70 partidas + facturas + contrato con la plantilla real).
+- **Columna por nombre**: cada columna del papel se empareja con la del archivo que tiene su nombre o un sinónimo
+  («Monto Doc. (Q)» ← `Total_Facturado`, «Boleta No.» ← `Referencia_Bancaria`, «Banco» ← `Cuenta_Bancaria_Destino`,
+  «Tipo Doc.» ← «Factura» si el archivo tiene número de factura…). El encabezado lleva un comentario con el origen.
+- **Una transacción por fila**; si no caben, **la tabla crece** (se insertan filas como en Excel): el `=SUM` del total
+  se agranda solo y lo de abajo (atributos, control interno, conclusión, firmas) baja con sus fórmulas, celdas
+  combinadas, formatos, validaciones y área de impresión (`engine/sheet_rows.py`). Hasta 5,000 filas; más que eso,
+  integración mensual + hoja «Detalle integración».
+- **Observaciones** = análisis del sistema por transacción (estado y método de cobro si existen, más la alerta:
+  duplicado, atípico, fin de semana, cotejo con documento… o «Sin alertas en las pruebas del sistema»).
+- Lo del auditor queda vacío (fecha y monto del depósito, atributos ✓/✗) y la fórmula que depende de ello se
+  condiciona: `=J19-F19` pasa a `=IF(J19="","",J19-F19)` para no mostrar diferencias falsas.
+- **Parámetros de la prueba** completados (período, población, muestra 100 %, método, cuentas revisadas).
+- **Conclusión**: la de ejemplo de la plantilla se sustituye por la propuesta (pendiente de firma; el texto original
+  queda en un comentario). Los «✓ Cumple» de ejemplo del control interno pasan a «Por evaluar».
+- **Lo demás va en hojas aparte**: «ANÁLISIS AGENTES» (sumarias, estadísticas, corte, fraude, riesgos, hallazgos,
+  resumen y fuentes) y «Evidencia». Nada se pega debajo del papel.
+- Con varios auxiliares, la tabla se llena con el que tiene las columnas de la plantilla (p. ej. el reporte de
+  facturas y no el libro mayor).
+- La copia se verifica contra el original con el desplazamiento de filas: ninguna fórmula del papel se pierde.
+- Pruebas: `test_ingresos_a11.py` (500 facturas, plantilla real PT A-11), `test_egresos_a12.py` (70 egresos, A-12) y
+  la de las 538 plantillas con dos juegos de datos.
+
+En **ingresos** las facturas son de la entidad: no aplica el límite de autorización (es de pagos) ni la numeración
+consecutiva de proveedor; se prueba la **correlatividad** (saltos en la numeración, atributo 3).
 
 Reglas afinadas en esta prueba de gastos: los **pagos recurrentes** (alquiler, honorario fijo) no son duplicados ni
 montos redondos; la **numeración consecutiva** solo aplica a facturas del proveedor (no a cheques propios); la
@@ -115,7 +132,7 @@ Migrar: `python manage.py migrate`.
 ```
 python manage.py test analisis --settings=saas_project.settings_test
 ```
-113 pruebas (la de rendimiento y la de las 538 plantillas se saltan salvo `ANALISIS_SLOW_TESTS=1`). Requieren `reportlab` solo para
+120 pruebas (la de rendimiento y la de las 538 plantillas se saltan salvo `ANALISIS_SLOW_TESTS=1`). Requieren `reportlab` solo para
 generar PDFs de ejemplo. `saas_project/settings_test.py` solo desactiva el manifiesto de estáticos.
 
 ## Lo que NO incluye esta versión (decisiones pendientes)

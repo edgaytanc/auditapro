@@ -47,6 +47,7 @@ class ColumnMap:
 
 _RX_GROUP = re.compile(r"prov|cuenta|client|nombre|contrat", re.I)
 _RX_AMOUNT = re.compile(r"import|monto|valor|total|saldo", re.I)
+_RX_NOT_AMOUNT = re.compile(r"sub.?total|\biva\b|impuesto|descuento|retenci", re.I)
 _RX_DOC = re.compile(r"factura|n[uú]m|docu|serie|^no\.?$|^n[°º]", re.I)
 _RX_DATE = re.compile(r"fecha", re.I)
 _RX_DATE_CONTRACT = re.compile(r"venc|fin|hasta|fecha", re.I)
@@ -62,7 +63,10 @@ def _first(headers: list[str], rx: re.Pattern) -> int:
 def detect_columns(headers: list[str], agent: str = "masivo") -> ColumnMap:
     """Propone columnas por el encabezado (guía §5); el auditor puede cambiarlas."""
     group = _first(headers, _RX_GROUP)
-    amount = _first(headers, _RX_AMOUNT)
+    # el importe es el total (no el subtotal, el IVA ni un descuento)
+    amount = next((i for i, h in enumerate(headers) if _RX_AMOUNT.search(h) and not _RX_NOT_AMOUNT.search(h)), -1)
+    if amount < 0:
+        amount = _first(headers, _RX_AMOUNT)
     return ColumnMap(
         group=group if group >= 0 else 0,
         amount=amount if amount >= 0 else len(headers) - 1,

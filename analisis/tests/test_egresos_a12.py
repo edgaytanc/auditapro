@@ -43,29 +43,33 @@ class PruebaDeGastosA12(AnalisisCase):
         activos = {a["agent"] for a in self.run_.plan["agents"] if a["active"]}
         self.assertEqual(activos, {"masivo", "predictivo", "fraudes", "contratos"})
 
-    def test_tabla_del_papel_integrada_por_mes_y_cuadra_con_el_mayor(self):
+    def test_cada_partida_en_la_tabla_del_papel_y_cuadra_con_el_mayor(self):
         est = self.version.informe["estructura"]
-        self.assertEqual((est["modo"], est["filas"], est["cuadre"]), ("mensual", 12, "PT A-12 Egresos!H42"))
-        total = sum(Decimal(str(self.ws[f"F{r}"].value)) for r in range(23, 35))
+        self.assertEqual((est["modo"], est["filas"], est["insertadas"], est["cuadre"]), ("partidas", 70, 55, "PT A-12 Egresos!H97"))
+        ws = self.ws
+        total = sum(Decimal(str(ws[f"F{r}"].value)) for r in range(23, 93))
         self.assertEqual(total.quantize(Decimal("0.01")), fx.total_libro())
-        self.assertEqual(self.ws["F38"].value, "=SUM(F23:F37)")  # fórmulas del papel intactas
-        self.assertEqual((self.ws["H41"].value, self.ws["H43"].value), ("=F38", "=H41-H42"))
-        self.assertEqual(Decimal(str(self.ws["H42"].value)), fx.total_libro())
-        self.assertEqual(self.ws["H23"].value, "Σ")
-        self.assertIsNone(self.ws["H35"].value)  # fila sin usar: sin «✓» de ejemplo
-        self.assertIn("Origen", self.ws["F23"].comment.text)
+        self.assertEqual(ws["F93"].value, "=SUM(F23:F92)")  # el total del papel creció con la tabla
+        self.assertEqual((ws["H96"].value, ws["H98"].value), ("=F93", "=H96-H97"))
+        self.assertEqual(Decimal(str(ws["H97"].value)), fx.total_libro())
+        self.assertEqual((ws["A23"].value, ws["A92"].value), (1, 70))
+        self.assertIn("Origen", ws["F23"].comment.text)
         self.assertEqual(self.version.informe["formulas_sobrescritas"], 0)
 
-    def test_hoja_detalle_con_las_70_partidas_y_sus_observaciones(self):
-        det = self.wb["Detalle integración"]
-        rows = [r for r in det.iter_rows(min_row=2, values_only=True) if isinstance(r[0], int)]
-        self.assertEqual(len(rows), 70)
-        obs = {r[4]: r[9] or "" for r in rows if r[9]}
-        self.assertIn("Posible duplicado", obs["Distribuidora de Combustibles Petro"])
-        self.assertIn("Bajo el límite de autorización", obs["Servicios Varios López"])
-        self.assertIn("importe difiere: documento 3,480.00 vs. auxiliar 3,840.00", obs["Taller El Rápido"])
-        self.assertIn("Posterior al vencimiento del contrato", obs["Inmobiliaria Los Arcos, S.A."])
-        self.assertIn("Proveedor ocasional con pago alto", obs["Fundación Esperanza"])
+    def test_observaciones_de_cada_partida_en_su_columna(self):
+        obs = {}
+        for r in range(23, 93):
+            desc, o = str(self.ws[f"D{r}"].value or ""), str(self.ws[f"I{r}"].value or "")
+            self.assertTrue(o, f"fila {r} sin análisis")
+            obs.setdefault(desc.split(" — ")[0], []).append(o)
+        flat = {k: " ".join(v) for k, v in obs.items()}
+        self.assertIn("Posible duplicado", flat["Distribuidora de Combustibles Petro"])
+        self.assertIn("Bajo el límite de autorización", flat["Servicios Varios López"])
+        self.assertIn("importe difiere: documento 3,480.00 vs. auxiliar 3,840.00", flat["Taller El Rápido"])
+        self.assertIn("Posterior al vencimiento del contrato", flat["Inmobiliaria Los Arcos, S.A."])
+        self.assertIn("Proveedor ocasional con pago alto", flat["Fundación Esperanza"])
+        self.assertIn("Sin alertas", " ".join(flat.values()))
+        self.assertEqual(self.wb.sheetnames, ["PT A-12 Egresos", "ANÁLISIS AGENTES", "Evidencia"])
 
     def test_pagos_recurrentes_no_son_duplicados(self):
         codes = " ".join(h.resultado for h in self.run_.hallazgos.all())
@@ -79,7 +83,7 @@ class PruebaDeGastosA12(AnalisisCase):
         kpis = dict(self.run_.resumen["kpis"])
         self.assertEqual(Decimal(kpis["Monto documental sin cuadrar"]), Decimal("9780.00"))  # 3,480 + 6,300
 
-    def test_conclusion_del_auditor_no_se_reemplaza(self):
-        self.assertTrue(self.ws["A52"].value.startswith("Con base en la revisión de los egresos"))
-        self.assertIn("Revise esta conclusión", self.ws["A52"].comment.text)
-        self.assertTrue(self.ws["A47"].value.startswith("• "))
+    def test_conclusion_de_ejemplo_se_sustituye_y_queda_en_comentario(self):
+        self.assertTrue(self.ws["A107"].value.startswith("Propuesta de Audita Análisis"))
+        self.assertIn("Con base en la revisión de los egresos", self.ws["A107"].comment.text)
+        self.assertTrue(self.ws["A102"].value.startswith("• "))

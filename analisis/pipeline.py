@@ -18,6 +18,7 @@ from .engine import consolidate
 from .engine.agents import RUNNERS, AgentContext, AgentError, build_aux_rows, resolve_columns
 from .engine.agents.common import AGENTES, AuxSet, ColumnMap, DocSection
 from .engine.ai import ClaudeClient
+from .engine import structured_fill
 from .engine.classify import (
     TIPO_AUXILIAR,
     TIPO_COMPROBANTE,
@@ -173,7 +174,7 @@ def _extract(sections: list[DocSection], ai: ClaudeClient) -> Table:
 
 # --------------------------------------------------------------------------- etapa 03
 
-def _pick_aux(run: CorridaAnalisis, docs_db: dict[int, DocumentoAnalisis], docs: dict[int, SourceDoc]):
+def _pick_aux(run: CorridaAnalisis, docs_db: dict[int, DocumentoAnalisis], docs: dict[int, SourceDoc], template_table=None):
     candidates = [(pk, d) for pk, d in docs.items() if d.tabular]
     if not candidates:
         return None
@@ -183,6 +184,10 @@ def _pick_aux(run: CorridaAnalisis, docs_db: dict[int, DocumentoAnalisis], docs:
             if str(pk) == str(wanted_id):
                 return pk, d
     preferred = [(pk, d) for pk, d in candidates if docs_db[pk].rol == DocumentoAnalisis.Rol.AUXILIAR] or candidates
+    if template_table is not None and len(preferred) > 1:
+        # el archivo cuyas columnas tienen los nombres de la tabla del papel (p. ej. el auxiliar de facturas y no el mayor)
+        return max(preferred, key=lambda t: (structured_fill.match_score(template_table, [str(h) for h in t[1].main_table.headers]),
+                                             len(t[1].main_table.rows)))
     return max(preferred, key=lambda t: len(t[1].main_table.rows))
 
 
@@ -293,7 +298,7 @@ def _execute(run: CorridaAnalisis, ctl: _Control) -> None:
     extraction = _extract(sections, ai)
 
     # -- auxiliar y columnas
-    picked = _pick_aux(run, docs_db, docs)
+    picked = _pick_aux(run, docs_db, docs, structured_fill.template_table(template_doc.archivo.path) if template_doc else None)
     aux_ctx = None
     index = None
     if picked:
@@ -332,6 +337,7 @@ def _execute(run: CorridaAnalisis, ctl: _Control) -> None:
     # -- 04 agentes
     params = dict(run.parametros)
     params.setdefault("fecha_cierre", run.audit.fechaEnd.date().isoformat() if run.audit.fechaEnd else None)
+    params["tipo_papel"] = plan.kind_code  # p. ej. «ingresos»: facturas emitidas por la entidad, no de un proveedor
     aux_sets = []
     for pk, src in docs.items():
         if not src.tabular:
@@ -419,7 +425,7 @@ def _execute(run: CorridaAnalisis, ctl: _Control) -> None:
         integ = integration.build(src_.name, tab_.sheet, tab_.headers, cols_, rows_, tables, cruce)
     all_tables = tables + [classification, extraction] + integ
     # cifras con origen: las de los resultados y las de la integración que van al papel (resumen mensual y detalle corto)
-    fig_tables = tables + [t for t in integ if t.key == "integracion_mes" or len(t.rows) <= 200]
+    fig_tables = tables + [t for t in integ if t.key == "integracion_mes" or (t.key == "integracion" and len(t.rows) <= structured_fill.MAX_TABLE_ROWS)]
     counter = 0
     for fig in _walk_figs(fig_tables):
         counter += 1

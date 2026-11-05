@@ -161,8 +161,9 @@
                 <span class="text-body-secondary small">· {{ v.creado_en|date:"d/m/Y H:i" }}{% if v.motivo %} · {{ v.motivo }}{% endif %}</span>
                 {% if v.informe.movido_desde %}<span class="badge text-bg-warning">el destino estaba ocupado: se usó la siguiente celda libre</span>{% endif %}</span>
               {% with e=v.informe.estructura %}{% if e.tabla %}
-              <div class="w-100 small text-success-emphasis">✓ Integrado en la tabla del propio papel: <b>{{ e.tabla }}</b>
-                ({{ e.filas }} {% if e.modo == "mensual" %}meses, Σ por mes{% else %}partidas{% endif %}){% if e.cuadre %} · cuadre contra el mayor en <b>{{ e.cuadre }}</b>{% endif %}{% if e.observaciones %} · observaciones en {{ e.observaciones }}{% endif %}{% if e.hoja_detalle %} · detalle completo en la hoja «{{ e.hoja_detalle }}»{% endif %}</div>
+              <div class="w-100 small text-success-emphasis">✓ Pegado en la tabla del propio papel: <b>{{ e.tabla }}</b>
+                ({% if e.modo == "mensual" %}{{ e.filas }} meses, Σ por mes{% else %}{{ e.filas }} transacciones, una por fila, con el análisis de cada una en Observaciones{% if e.insertadas %}; la tabla creció {{ e.insertadas }} filas{% endif %}{% endif %}){% if e.parametros %} · parámetros de la prueba completados{% endif %}{% if e.cuadre %} · cuadre contra el mayor en <b>{{ e.cuadre }}</b>{% endif %}{% if e.hoja_analisis %} · resultados de los agentes en la hoja «{{ e.hoja_analisis }}»{% endif %}{% if e.hoja_detalle %} · detalle completo en la hoja «{{ e.hoja_detalle }}»{% endif %}</div>
+              {% if e.columnas %}<div class="w-100 small text-body-secondary">Columnas: {{ e.columnas|join:" · " }}</div>{% endif %}
               {% endif %}{% endwith %}
               {% for w in v.informe.advertencias %}<div class="w-100 small text-warning-emphasis">⚠ {{ w }}</div>{% endfor %}
               <a class="btn btn-sm btn-primary" href="{% url 'analisis_descargar_version' run.pk v.numero %}">Descargar</a>

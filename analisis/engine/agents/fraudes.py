@@ -58,7 +58,12 @@ def run(ctx: AgentContext) -> AgentOutput:
     valued = [r for r in ctx.rows if r.amount is not None]
     if not valued:
         raise AgentError("El auxiliar no tiene importes reconocibles en la columna elegida.")
+    # Ingresos: las facturas las emite la entidad. El límite de autorización es de pagos (solo si el auditor lo indica)
+    # y la numeración consecutiva es lo normal; lo que se prueba es que no haya saltos (correlatividad).
+    own_docs = ctx.params.get("tipo_papel") == "ingresos"
     limite = ctx.param_decimal("limite_autorizacion", "10000")
+    if own_docs and ctx.params.get("limite_autorizacion") in (None, ""):
+        limite = Decimal(0)
     z_threshold = ctx.param_float("z", 3.0)
     multiplo = ctx.param_decimal("multiplo_redondo", "1000")
 
@@ -146,7 +151,12 @@ def run(ctx: AgentContext) -> AgentOutput:
     doc_header = ctx.headers[ctx.cols.doc] if 0 <= ctx.cols.doc < len(ctx.headers) else ""
     # La numeración consecutiva de un PROVEEDOR (sus facturas) es señal de proveedor ficticio. La de nuestros propios
     # cheques o transferencias es normal: si la columna no es de facturas del proveedor, la prueba no aplica.
-    supplier_docs = bool(re.search(r"factura|fact|invoice|serie|dte|fel", doc_header, re.I))
+    supplier_docs = not own_docs and bool(re.search(r"factura|fact\b|invoice|serie|dte|fel", doc_header, re.I))
+    saltos: list[tuple[int, int]] = []
+    issued: list[int] = []
+    if ctx.cols.doc >= 0 and own_docs:
+        issued = sorted({x for x in (_numeric_part(r.doc_raw) for r in valued) if x is not None})
+        saltos = [(a, b) for a, b in zip(issued, issued[1:]) if b - a > 1]
     if ctx.cols.doc >= 0 and supplier_docs:
         by_group: dict[str, list] = {}
         for r in valued:
@@ -167,7 +177,9 @@ def run(ctx: AgentContext) -> AgentOutput:
         if len(rows) == 1 and mean > 0 and float(rows[0].amount) > mean * 3:
             occasional.append(rows[0])
             extra_rows.append(
-                ("Proveedor ocasional con pago alto", group, ctx.fig_row(rows[0]), f"1 solo pago, {float(rows[0].amount) / mean:.1f} veces la media", ctx.ref_rows(rows))
+                ("Cliente ocasional con factura alta" if own_docs else "Proveedor ocasional con pago alto", group, ctx.fig_row(rows[0]),
+                 f"1 sola {'factura' if own_docs else 'pago'}, {float(rows[0].amount) / mean:.1f} veces la media".replace("1 sola pago", "1 solo pago"),
+                 ctx.ref_rows(rows))
             )
     sin_registro = [c for c in ctx.cruce if c.estado == "no_cuadra" and c.motivo.startswith("Documento sin registro")]
     for c in sin_registro:
@@ -183,7 +195,12 @@ def run(ctx: AgentContext) -> AgentOutput:
         extra.add(list(item), "warn")
     if not extra_rows:
         extra.add(["Sin hallazgos adicionales", "", "", "", ctx.source_name])
-    if ctx.cols.doc >= 0 and not supplier_docs:
+    if own_docs and issued:
+        extra.note = (f"Correlatividad de las facturas emitidas («{doc_header}»): {len(issued):,} números, del {issued[0]} al "
+                      f"{issued[-1]}, " + ("sin saltos." if not saltos else f"con {len(saltos)} salto(s): "
+                                          + ", ".join(f"{a} → {b}" for a, b in saltos[:5]) + ".")
+                      + " La numeración consecutiva de un proveedor no aplica: son facturas de la entidad.")
+    elif ctx.cols.doc >= 0 and not supplier_docs:
         extra.note = (f"Numeración consecutiva: no aplica, la columna «{doc_header}» no es de facturas del proveedor "
                       "(cheques o transferencias propios van en secuencia).")
     extra.cap()
@@ -263,6 +280,19 @@ def run(ctx: AgentContext) -> AgentOutput:
                     aseveracion="Ocurrencia · Autorización", origen=ctx.ref_rows(bajo),
                     recomendacion="Probar el control de autorización y comunicar la deficiencia a la gerencia (NIA 265)")
         )
+    if saltos:
+        missing = sum(b - a - 1 for a, b in saltos)
+        out.findings.append(
+            finding(AGENT, "hallazgo", "Correlatividad de las facturas emitidas (atributo 3)",
+                    f"{missing} número(s) de factura faltantes en {len(saltos)} salto(s) de la numeración", MEDIA,
+                    nia="NIA 500 · 330", aseveracion="Integridad",
+                    condicion=f"Saltos en la numeración: " + ", ".join(f"{a} → {b}" for a, b in saltos[:5]),
+                    criterio="Las facturas emitidas deben ser correlativas y las anuladas, conservarse",
+                    causa="Por confirmar con la gerencia (facturas anuladas o no registradas)",
+                    efecto=f"{missing} factura(s) sin registro en el reporte de ingresos",
+                    recomendacion="Obtener las facturas anuladas o faltantes y confirmar que no son ventas sin registrar",
+                    origen=ctx.source_name)
+        )
     if consecutivos:
         out.findings.append(
             finding(AGENT, "hallazgo", "Numeración consecutiva del mismo proveedor",
@@ -274,7 +304,19 @@ def run(ctx: AgentContext) -> AgentOutput:
                     recomendacion="Revisar si es un solo servicio dividido en varias facturas",
                     origen=ctx.ref_rows([consecutivos[0][1], consecutivos[0][2]]))
         )
-    if occasional:
+    if occasional and own_docs:
+        out.findings.append(
+            finding(AGENT, "hallazgo", "Clientes ocasionales con una sola factura alta",
+                    f"{len(occasional)} cliente(s) ocasional(es) con una sola factura alta", MEDIA, importe=sum_amounts(occasional),
+                    nia="NIA 240 · 500", aseveracion="Ocurrencia",
+                    condicion=f"{len(occasional)} cliente(s) con una única factura mayor a 3 veces la media",
+                    criterio="NIA 240: ventas ficticias o no recurrentes · NIA 500",
+                    causa="Por confirmar con la gerencia (venta puntual o cliente sin soporte)",
+                    efecto=fmt_money(sum_amounts(occasional)),
+                    recomendacion="Validar la existencia del cliente (NIT), la entrega y el cobro de la factura",
+                    origen=ctx.ref_rows(occasional))
+        )
+    elif occasional:
         out.findings.append(
             finding(AGENT, "hallazgo", "Proveedores ocasionales con un solo pago alto",
                     f"{len(occasional)} proveedores ocasionales con un solo pago alto", MEDIA, importe=sum_amounts(occasional),

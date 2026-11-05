@@ -7,7 +7,7 @@ papel de trabajo sin recalcular.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Any
 
@@ -117,6 +117,8 @@ def enc(value: Any) -> Any:
         return value
     if isinstance(value, Decimal):
         return {"$d": str(value)}
+    if isinstance(value, datetime):  # celdas de Excel con fecha (y hora 00:00): se guardan como fecha
+        return {"$date": value.date().isoformat()} if value.time() == time(0) else value.isoformat(sep=" ")
     if isinstance(value, date):
         return {"$date": value.isoformat()}
     if isinstance(value, Fig):

@@ -149,6 +149,8 @@ def _structure_data(run: CorridaAnalisis, data: dict) -> dict | None:
         "monthly": table_from_dict(data["tablas"]["integracion_mes"]) if "integracion_mes" in data["tablas"] else None,
         "ledger_total": ledger,
         "observations": observations,
+        "source": table_from_dict(data["tablas"]["integracion_fuente"]) if "integracion_fuente" in data["tablas"] else None,
+        "source_name": data["tablas"]["integracion_fuente"]["title"].split("·", 1)[-1].strip() if "integracion_fuente" in data["tablas"] else "",
     }
 
 
@@ -164,7 +166,7 @@ def paste_to_template(run: CorridaAnalisis, options: PasteOptions, user, motivo:
         raise PasteError("El resultado ya está aprobado: no se puede volver a pegar.")
 
     data = run.tablas
-    keys = [k for k in data["orden"] if k not in ("clasificacion", "extraccion", "integracion", "integracion_mes")]
+    keys = [k for k in data["orden"] if k not in ("clasificacion", "extraccion", "integracion", "integracion_mes", "integracion_fuente")]
     tables = [table_from_dict(data["tablas"][k]) for k in keys]
     evidence = [
         [r[0], r[1], r[2], r[3], r[4] if not hasattr(r[4], "isoformat") else r[4].strftime("%d/%m/%Y"), r[5], ""]

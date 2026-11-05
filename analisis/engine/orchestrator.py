@@ -58,6 +58,13 @@ KINDS: list[PaperKind] = [
         {"contratos": "Se activa si se suben contratos (gasto contra contrato y vigencias)"},
     ),
     PaperKind(
+        "ingresos", "I-1", "Prueba e integración de ingresos",
+        _kw(r"ingresos?\b", r"ventas?\b", r"facturaci[oó]n|facturas? emitid", r"cobros?\b|cobranza", r"recaudaci"),
+        ["masivo", "fraudes"],
+        {"predictivo": "No se requieren tendencias para probar los ingresos",
+         "contratos": "Se activa si se suben contratos"},
+    ),
+    PaperKind(
         "contratos", "L-1", "Contratos y arrendamientos (NIIF 16)",
         _kw(r"contrat", r"arrend", r"pr[eé]stamo"),
         ["contratos", "masivo"],

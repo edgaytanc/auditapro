@@ -65,24 +65,31 @@ class PlantillasRealesDelModuloAuditoria(AnalisisCase):
 
         from analisis import services
         from . import fixtures_egresos as fx
+        from . import fixtures_ingresos as fi
 
-        run = self.start(auxiliares=[self.upload("Libro.xlsx", fx.libro_xlsx())],
-                         soportes=[self.upload("S.pdf", fx.soportes_pdf())], parametros={"saldo_mayor": str(fx.total_libro())})
-        hidden = ("clasificacion", "extraccion", "integracion", "integracion_mes")
-        tables = [table_from_dict(run.tablas["tablas"][k]) for k in run.tablas["orden"] if k not in hidden]
-        structure = services._structure_data(run, run.tablas)
+        datasets = [
+            ("egresos (70)", [self.upload("Libro.xlsx", fx.libro_xlsx())], {"saldo_mayor": str(fx.total_libro())}),
+            ("ingresos (500)", [self.upload("reporte_ingresos.csv", fi.ingresos_csv())], {}),
+        ]
         out = Path(self.tmp) / "out.xlsx"
-        estructuradas = []
-        for path in sorted(STATIC.glob("templates_base_*/**/*.xlsx")):
-            with self.subTest(plantilla=str(path.relative_to(STATIC))):
-                try:
-                    r = fill_template(path, out, tables=tables, conclusion="c", summary_line="s", sources_line="f",
-                                      evidence_rows=[], evidence_note="", options=PasteOptions(), structure=structure)
-                except FillError as exc:
-                    self.fail(str(exc))
-                self.assertEqual(r.formulas_overwritten, 0)
-                if r.structure:
-                    estructuradas.append((str(path.relative_to(STATIC)), r.structure["tabla"], r.structure["modo"]))
-        print(f"\n{len(estructuradas)} plantillas con tabla de detalle llenada en su estructura:")
-        for item in estructuradas:
-            print("  ", *item)
+        for label, aux, params in datasets:
+            run = self.start(auxiliares=aux, soportes=[self.upload("S.pdf", fx.soportes_pdf())], parametros=params)
+            hidden = ("clasificacion", "extraccion", "integracion", "integracion_mes", "integracion_fuente")
+            tables = [table_from_dict(run.tablas["tablas"][k]) for k in run.tablas["orden"] if k not in hidden]
+            structure = services._structure_data(run, run.tablas)
+            estructuradas = []
+            for path in sorted(STATIC.glob("templates_base_*/**/*.xlsx")):
+                with self.subTest(datos=label, plantilla=str(path.relative_to(STATIC))):
+                    try:
+                        r = fill_template(path, out, tables=tables, conclusion="c", summary_line="s", sources_line="f",
+                                          evidence_rows=[], evidence_note="", options=PasteOptions(), structure=structure)
+                    except FillError as exc:
+                        self.fail(str(exc))
+                    self.assertEqual(r.formulas_overwritten, 0)
+                    if r.structure:
+                        estructuradas.append((str(path.relative_to(STATIC)), r.structure["tabla"], r.structure["modo"],
+                                              len(r.structure["columnas"])))
+            print()
+            print(f"[{label}] {len(estructuradas)} plantillas con su tabla llenada transacción por transacción:")
+            for item in estructuradas:
+                print("  ", *item)

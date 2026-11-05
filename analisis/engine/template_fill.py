@@ -292,10 +292,41 @@ def fill_template(
 
     blocks = build_blocks(tables, conclusion, summary_line, sources_line, options.include_conclusion)
     height, width = _layout(blocks)
+
+    # 1) la tabla propia del papel (cada transacción en sus columnas); si se llenó, el resto va en hoja aparte
+    struct = None
+    if structure:
+        from .structured_fill import ANALYSIS_SHEET, fill_structure
+
+        struct = fill_structure(
+            wb, detail=structure.get("detail"), monthly=structure.get("monthly"), ledger_total=structure.get("ledger_total"),
+            observations=structure.get("observations") or [], conclusion=conclusion,
+            results_anchor=f"la hoja «{ANALYSIS_SHEET}»", source=structure.get("source"),
+            source_name=structure.get("source_name") or "",
+        )
+        if struct.detail:
+            name, k = ANALYSIS_SHEET, 2
+            while name in wb.sheetnames:
+                name = f"{ANALYSIS_SHEET} {k}"
+                k += 1
+            ws = wb.create_sheet(name)
+            ws.column_dimensions["A"].width = 38
+            for col in "BCDEFGHIJKLMN":
+                ws.column_dimensions[col].width = 17
+            options = PasteOptions(sheet=name, start="A1", conflict="cancelar", include_conclusion=options.include_conclusion,
+                                   include_evidence=options.include_evidence)
+
     start_ref = options.start or propose_start(ws)
     r0, c0 = _parse_cell(start_ref)
     merged = _merged_cells(ws)
     report = FillReport(sheet=ws.title, start_cell=start_ref.upper(), end_cell="", cells_written=0)
+    if struct is not None:
+        report.warnings.extend(struct.warnings)
+        if struct.detail:
+            report.structure = struct.summary()
+            report.structure["hoja_analisis"] = ws.title
+            for sheet_name, addr, fig in struct.figures:
+                report.figures.append(FigureRecord(sheet=sheet_name, cell=addr, fig=fig))
 
     values, formulas, in_merge = _region_state(ws, r0, c0, height, width, merged)
     if values or formulas or in_merge:
@@ -312,21 +343,6 @@ def fill_template(
             report.moved_from = f"{ws.title}!{start_ref.upper()}"
             r0 = new_r
             report.start_cell = f"{get_column_letter(c0)}{r0}"
-
-    struct = None
-    if structure:
-        from .structured_fill import fill_structure
-
-        struct = fill_structure(
-            wb, detail=structure.get("detail"), monthly=structure.get("monthly"), ledger_total=structure.get("ledger_total"),
-            observations=structure.get("observations") or [], conclusion=conclusion,
-            results_anchor=f"{ws.title}!{get_column_letter(c0)}{r0}",
-        )
-        report.warnings.extend(struct.warnings)
-        if struct.detail:
-            report.structure = struct.summary()
-            for sheet_name, addr, fig in struct.figures:
-                report.figures.append(FigureRecord(sheet=sheet_name, cell=addr, fig=fig))
 
     thin = Font(italic=True, color="FF6B7280")
     row = r0
@@ -393,6 +409,22 @@ def fill_template(
 
     report.end_cell = f"{get_column_letter(c0 + width - 1)}{row - 2}"
     report.cells_written = written
+    if struct is not None and struct.detail:
+        # hoja «ANÁLISIS AGENTES»: cada columna al ancho de su contenido (los títulos de bloque no cuentan)
+        longest: dict[int, int] = {}
+        for cells in ws.iter_rows(min_row=1, max_row=row):
+            filled = [c for c in cells if c.value not in (None, "")]
+            if len(filled) <= 1:
+                continue
+            for c in filled:
+                text = f"{c.value:,.2f}" if isinstance(c.value, float) else str(c.value)
+                longest[c.column] = max(longest.get(c.column, 0), len(text))
+        for col, n in longest.items():
+            ws.column_dimensions[get_column_letter(col)].width = max(10, min(n * 1.05 + 2, 50))
+        for cells in ws.iter_rows(min_row=1, max_row=row):
+            for c in cells:
+                if isinstance(c.value, str) and len(c.value) > 50 and c.font and not c.font.b:
+                    c.alignment = Alignment(wrap_text=False, vertical="top")
 
     if options.include_evidence and evidence_rows is not None:
         name, k = "Evidencia", 2
@@ -420,12 +452,18 @@ def fill_template(
 
     regions = [(ws.title, r0, c0, row - r0, width)]
     extra_sheets = []
+    shifts, guarded = [], set()
     if struct and struct.detail:
-        regions += struct.regions
-        extra_sheets.append(struct.detail_sheet)
+        regions = list(struct.regions)
+        if struct.detail_sheet:
+            extra_sheets.append(struct.detail_sheet)
+        extra_sheets.append(ws.title)  # hoja «ANÁLISIS AGENTES» (se crea después de la de detalle)
+        if struct.shift:
+            shifts.append(struct.shift)
+        guarded = struct.guarded
     if report.evidence_sheet:
         extra_sheets.append(report.evidence_sheet)
-    problems = verify_copy(src, out, written_region=regions, evidence_sheet=extra_sheets)
+    problems = verify_copy(src, out, written_region=regions, evidence_sheet=extra_sheets, shifts=shifts, guarded=guarded)
     if problems:
         out.unlink(missing_ok=True)
         raise FillError("La copia no pasó la verificación y no se entrega: " + "; ".join(problems[:3]))
@@ -486,11 +524,18 @@ def lost_features(src: str | Path, out: str | Path) -> list[str]:
     ]
 
 
-def verify_copy(src: str | Path, out: str | Path, *, written_region, evidence_sheet="") -> list[str]:
+def verify_copy(src: str | Path, out: str | Path, *, written_region, evidence_sheet="", shifts=(), guarded=()) -> list[str]:
     """Compara la copia con el original. Solo pueden diferir los rangos escritos y las hojas agregadas.
 
-    ``written_region``: (hoja, fila, col, alto, ancho) o una lista de ellos. ``evidence_sheet``: nombre o lista de nombres.
+    ``written_region``: (hoja, fila, col, alto, ancho) o una lista de ellos (en filas de la copia).
+    ``evidence_sheet``: nombre o lista de nombres. ``shifts``: filas insertadas ``(hoja, fila, cantidad)``: cada celda
+    del original se busca en su nueva fila y cada fórmula debe ser la original desplazada como lo haría Excel.
+    ``guarded``: celdas ``(hoja, celda)`` cuya fórmula se condicionó con ``=IF(celda="","",fórmula)``.
     """
+    from .sheet_rows import row_map, shift_formula_all, shifted_merges
+
+    shifts = list(shifts or [])
+    guarded = set(guarded or ())
     regions = [written_region] if isinstance(written_region, tuple) else list(written_region)
     added = [evidence_sheet] if isinstance(evidence_sheet, str) else list(evidence_sheet)
     added = [n for n in added if n]
@@ -513,17 +558,24 @@ def verify_copy(src: str | Path, out: str | Path, *, written_region, evidence_sh
             return problems
         for ws_a in a.worksheets:
             ws_b = b[ws_a.title]
-            if {str(r) for r in ws_a.merged_cells.ranges} - {str(r) for r in ws_b.merged_cells.ranges}:
+            if shifted_merges(ws_a.merged_cells.ranges, ws_a.title, shifts) - {str(r) for r in ws_b.merged_cells.ranges}:
                 problems.append(f"se perdieron celdas combinadas en {ws_a.title}")
             for row in ws_a.iter_rows():
                 for cell in row:
                     if cell.value in (None, ""):
                         continue
-                    inside = inside_any(ws_a.title, cell.row, cell.column)
-                    other = ws_b.cell(row=cell.row, column=cell.column)
-                    if cell.value != other.value or cell.data_type != other.data_type:
+                    new_row = row_map(shifts, ws_a.title, cell.row)
+                    inside = inside_any(ws_a.title, new_row, cell.column)
+                    other = ws_b.cell(row=new_row, column=cell.column)
+                    expected = cell.value
+                    if cell.data_type == "f" and isinstance(expected, str) and shifts:
+                        expected = shift_formula_all(expected, ws_a.title, shifts)
+                    if expected != other.value or cell.data_type != other.data_type:
                         if inside and cell.data_type != "f":
-                            continue  # solo se permite en «sobrescribir» y ya se advirtió; una fórmula, nunca
+                            continue  # dato de ejemplo sustituido dentro de la región escrita; una fórmula, nunca
+                        if ((ws_a.title, other.coordinate) in guarded and isinstance(other.value, str)
+                                and other.value.upper().startswith("=IF(") and other.value.endswith("," + str(expected)[1:] + ")")):
+                            continue  # misma fórmula, solo condicionada a que el auditor anote el dato del que depende
                         problems.append(f"cambió {ws_a.title}!{cell.coordinate}")
                         if len(problems) >= 5:
                             return problems

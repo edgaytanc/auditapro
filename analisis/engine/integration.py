@@ -139,4 +139,15 @@ def build(source_name: str, sheet: str, headers: list[str], cols: ColumnMap, row
              sum(1 for r in items if r.n in verified), last],
             "warn" if with_alert else "",
         )
-    return [detail, monthly]
+    # columnas originales de cada fila: con ellas se pega cada transacción en la columna del papel que tiene su nombre
+    fuente = Table(key="integracion_fuente", title=f"Columnas originales · {source_name}", head=["Fila"] + [str(h) for h in headers])
+    for r in valued[:MAX_DETAIL_ROWS]:
+        fuente.add([r.n] + [_cell(v) for v in r.values])
+    return [detail, monthly, fuente]
+
+
+def _cell(v):
+    """Valor guardable en JSON (los Decimal y fechas los maneja ``table_to_dict``)."""
+    if v is None or isinstance(v, (str, int, float, Decimal, date)):
+        return v
+    return str(v)
