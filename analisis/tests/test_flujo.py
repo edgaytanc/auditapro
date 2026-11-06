@@ -6,6 +6,7 @@ con las plantillas reales del sistema.
 import re
 from datetime import date
 
+from django.urls import reverse
 from docx import Document
 from openpyxl import load_workbook
 
@@ -21,6 +22,9 @@ ALERTAS = ["Alta", "Alta", "Media", "Media", "Baja", "Alta", "Media", "Baja", "A
 class FlujoCase(AnalisisCase):
     def setUp(self):
         super().setUp()
+        # auditoría de GRUPO: dos auditores asignados (con uno solo sería auditoría individual)
+        self.auditor2 = self._user("auditor2", self.role_auditor)
+        self.audit.assigned_users.add(self.auditor2)
         self.run_ = self.start(
             auxiliares=[self.upload("Libro_de_egresos_2025.xlsx", fx.libro_xlsx())],
             instruccion="Prueba de gastos del año.", parametros={"limite_autorizacion": "10000"})
@@ -226,6 +230,7 @@ class Financiera(FlujoCase):
     def test_auditoria_individual_el_mismo_usuario_envia_y_aprueba(self):
         self.audit.assigned_users.clear()
         self.assertTrue(fl.es_individual(self.audit))
+        self.assertTrue(fl.es_individual(self.audit))
         fl.enviar_a_papel(self.manager, self.run_, self.ids[:2], destino="caja")
         pks = list(Hallazgo.objects.values_list("pk", flat=True))
         fl.enviar_a_revision(self.manager, self.audit, pks)
@@ -393,3 +398,62 @@ class RevisoriaFiscal(FlujoCase):
         todos = [str(ws.cell(r, 1).value or "") for r in range(1, ws.max_row + 1)]
         self.assertIn("Texto propio del revisor fiscal sobre hallazgos.", todos)
         self.assertTrue(any(t.startswith("HALLAZGO 1") for t in todos))
+
+
+class AuditorIndividual(FlujoCase):
+    """Un solo auditor asignado: él mismo envía, revisa, aprueba y genera el informe (sin bloqueo)."""
+
+    def setUp(self):
+        super().setUp()
+        self.audit.assigned_users.remove(self.auditor2)  # queda solo «auditor1»
+        self.assertTrue(fl.es_individual(self.audit))
+
+    def test_el_auditor_unico_hace_todo_el_proceso_financiera(self):
+        fl.enviar_a_papel(self.auditor, self.run_, self.ids[:3], destino="caja")
+        pks = list(Hallazgo.objects.values_list("pk", flat=True))
+        fl.enviar_a_revision(self.auditor, self.audit, pks)
+        for p in pks:
+            fl.decidir(self.auditor, Hallazgo.objects.get(pk=p), "aprobar")  # aprueba lo suyo
+        r = fl.aprobar_finales(self.auditor, self.audit)
+        self.assertEqual(r["hallazgos"], 3)
+        self.assertTrue(BitacoraProyecto.objects.filter(audit=self.audit, accion="auditoria_individual").exists())
+        h = Hallazgo.objects.get(pk=pks[0])
+        fl.reabrir(self.auditor, h, "Corregir")
+        self.assertEqual(fl.regenerar(self.auditor, self.audit).version, 2)
+
+    def test_la_pantalla_le_muestra_los_botones_de_decision(self):
+        fl.enviar_a_papel(self.auditor, self.run_, self.ids[:1], destino="caja")
+        h = Hallazgo.objects.get()
+        fl.enviar_a_revision(self.auditor, self.audit, [h.pk])
+        self.client.force_login(self.auditor)
+        r = self.client.get(reverse("analisis_hallazgos", args=[self.audit.pk]))
+        self.assertContains(r, "Aprobar")
+        self.assertContains(r, "Auditoría individual")
+        r = self.client.post(reverse("analisis_decidir_hallazgo", args=[self.audit.pk, h.pk]), {"decision": "aprobar"}, follow=True)
+        self.assertContains(r, "decisión registrada")
+        r = self.client.post(reverse("analisis_generar_informe", args=[self.audit.pk]), follow=True)
+        self.assertContains(r, "hallazgo(s) finales")
+
+    def test_interna_y_revisoria_tambien(self):
+        for tipo, destino in (("I", "ventas"), ("R", "")):
+            Hallazgo.objects.all().delete()
+            self.audit.tipoAuditoria = tipo
+            self.audit.save()
+            fl.enviar_a_papel(self.auditor, self.run_, self.ids[:1], destino=destino)
+            h = Hallazgo.objects.get()
+            fl.enviar_a_revision(self.auditor, self.audit, [h.pk])
+            fl.decidir(self.auditor, h, "aprobar")
+            h.refresh_from_db()
+            self.assertEqual(h.estado, config.INCLUIDO)
+
+    def test_en_grupo_el_auditor_sigue_sin_poder_aprobar(self):
+        self.audit.assigned_users.add(self.auditor2)
+        self.assertFalse(fl.es_individual(self.audit))
+        fl.enviar_a_papel(self.auditor, self.run_, self.ids[:1], destino="caja")
+        h = Hallazgo.objects.get()
+        fl.enviar_a_revision(self.auditor, self.audit, [h.pk])
+        with self.assertRaises(fl.FlujoError):
+            fl.decidir(self.auditor, h, "aprobar")
+        with self.assertRaises(fl.FlujoError):
+            fl.decidir(self.auditor2, h, "aprobar")
+        fl.decidir(self.manager, h, "aprobar")

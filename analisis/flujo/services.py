@@ -54,8 +54,10 @@ def miembros(audit: Audit) -> set[int]:
 
 
 def es_individual(audit: Audit) -> bool:
-    """Auditoría individual: un solo usuario en Gestionar Auditores (el jefe, sin auditores aparte)."""
-    return len(miembros(audit)) == 1
+    """Auditoría individual: a lo sumo UN auditor asignado en Gestionar Auditores (con o sin jefe aparte).
+    Esa persona hace todo el proceso: envía al papel de trabajo, revisa, aprueba y genera el informe.
+    Con dos o más auditores asignados es auditoría de grupo: aprueba el jefe y nadie aprueba lo suyo."""
+    return audit.assigned_users.exclude(pk=audit.audit_manager_id).count() <= 1
 
 
 def es_jefe(user, audit: Audit) -> bool:

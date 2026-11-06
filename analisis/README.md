@@ -175,3 +175,5 @@ Sigue las tres guías del cliente (Financiera, Auditoría Interna, Revisoría Fi
 Tablas de configuración: `MapaConfig` (cuentas_fin, areas_ai) sustituye los valores de `flujo/config.py`. La plantilla es la fuente de verdad: lo que el auditor edita se lee de vuelta; los hallazgos aprobados quedan bloqueados (gris) y solo el Jefe los reabre.
 Pantallas: `/analisis/proyecto/<id>/hallazgos/` y `/analisis/proyecto/<id>/monitoreo/`. Pruebas: `test_flujo.py`, `test_flujo_vistas.py`.
 Pendiente (acordado como siguiente): renumeración de la carpeta 5 INFORME de Interna en proyectos existentes, Resumen Ejecutivo/Opinión (5.1.12–13), y mostrar la carpeta «8 MONITOREO CONTINUO» en el árbol de papeles del módulo Auditoría.
+
+**Auditoría individual vs. de grupo.** Individual = a lo sumo un auditor asignado en Gestionar Auditores: esa persona (el auditor único o el jefe) envía al papel de trabajo, revisa, aprueba, genera hallazgos finales/informe y reabre, sin bloqueo; la bitácora anota «Auditoría individual». De grupo (dos o más auditores): aprueba solo el Jefe y nadie aprueba lo suyo.
