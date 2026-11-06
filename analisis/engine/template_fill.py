@@ -302,7 +302,7 @@ def fill_template(
             wb, detail=structure.get("detail"), monthly=structure.get("monthly"), ledger_total=structure.get("ledger_total"),
             observations=structure.get("observations") or [], conclusion=conclusion,
             results_anchor=f"la hoja «{ANALYSIS_SHEET}»", source=structure.get("source"),
-            source_name=structure.get("source_name") or "",
+            source_name=structure.get("source_name") or "", prefer_sheet=options.sheet,
         )
         if struct.detail:
             name, k = ANALYSIS_SHEET, 2

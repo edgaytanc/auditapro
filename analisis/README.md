@@ -86,9 +86,16 @@ transacciones (encabezados con monto y fecha o número de documento, y una fila 
 - **Lo demás va en hojas aparte**: «ANÁLISIS AGENTES» (sumarias, estadísticas, corte, fraude, riesgos, hallazgos,
   resumen y fuentes) y «Evidencia». Nada se pega debajo del papel.
 - Con varios auxiliares, la tabla se llena con el que tiene las columnas de la plantilla (p. ej. el reporte de
-  facturas y no el libro mayor).
+  facturas y no el libro mayor). Si una columna del archivo **se llama igual** que la del papel, esa manda.
+- También las tablas de muestra **sin fila TOTAL** (Auditoría Interna): terminan en la primera fila vacía y los
+  conteos de abajo (`COUNTA`, `COUNTIF`) se amplían solos. Las columnas sin dato en el archivo (p. ej. «¿Tiene 3
+  cotizaciones?») quedan para el auditor y las fórmulas que dependen de ellas (resultado, semáforo) esperan su dato.
+- Si el libro tiene varias hojas con tabla (p. ej. 11 pruebas de detección de fraudes), se llena la que mejor
+  coincide con el archivo, o **la que elige el auditor** en «Hoja» al pegar.
+- 98 de las 538 plantillas tienen tabla de transacciones (Financiera 70 · Auditoría Interna 8 · Revisoría Fiscal 20);
+  las demás (programas, cuestionarios, memorandos, sumarias) reciben los resultados en «ANÁLISIS AGENTES».
 - La copia se verifica contra el original con el desplazamiento de filas: ninguna fórmula del papel se pierde.
-- Pruebas: `test_ingresos_a11.py` (500 facturas, plantilla real PT A-11), `test_egresos_a12.py` (70 egresos, A-12) y
+- Pruebas: `test_ingresos_a11.py` (500 facturas, plantilla real PT A-11), `test_egresos_a12.py` (70 egresos, A-12), `test_interna_pruebas.py` (Compras, Auditoría Interna) y
   la de las 538 plantillas con dos juegos de datos.
 
 En **ingresos** las facturas son de la entidad: no aplica el límite de autorización (es de pagos) ni la numeración
@@ -132,7 +139,7 @@ Migrar: `python manage.py migrate`.
 ```
 python manage.py test analisis --settings=saas_project.settings_test
 ```
-120 pruebas (la de rendimiento y la de las 538 plantillas se saltan salvo `ANALISIS_SLOW_TESTS=1`). Requieren `reportlab` solo para
+125 pruebas (la de rendimiento y la de las 538 plantillas se saltan salvo `ANALISIS_SLOW_TESTS=1`). Requieren `reportlab` solo para
 generar PDFs de ejemplo. `saas_project/settings_test.py` solo desactiva el manifiesto de estáticos.
 
 ## Lo que NO incluye esta versión (decisiones pendientes)

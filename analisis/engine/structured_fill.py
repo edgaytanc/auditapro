@@ -67,23 +67,25 @@ TPL_ROLES: list[tuple[str, re.Pattern]] = [(k, re.compile(p)) for k, p in [
     ("fecha_dep", r"^fecha.*\b(dep|deposito|cobro|pago|banco|acredit)"),
     ("monto_dep", r"^(monto|importe|valor)\b.*\b(dep|deposito|cobr\w*|banco|acredit\w*)\b|^deposit"),
     ("fecha", r"^fecha"),
-    ("tipo_doc", r"^tipo|^clase"),
+    ("tipo_doc", r"^(tipo|clase)( de)?( doc\w*| comprobante| documento)?$"),
+    ("tipo_otro", r"^tipo|^clase"),  # «Tipo Contrato», «Tipo Inversión»…: no es el tipo de documento
     ("doc_del", r"^del( no| n| num\w*)?$"),
     ("doc_al", r"^al( no| n| num\w*)?$"),
     ("referencia", r"boleta|referencia|^no dep|transferencia|autorizaci"),
-    ("documento", r"^(no|n|num|numero|nro) ?(de )?(doc\w*|factura|cheque|comprobante|recibo|partida|poliza|transf\w*)"
+    ("documento", r"^(no|n|num|numero|nro) ?(de )?(doc\w*|factura|cheque|comprobante|recibo|partida|poliza|transf\w*|oc|orden\w*|pedido)\b"
+                  r"|^orden de (compra|pago)|^oc\b"
                   r"|^(documento|factura|cheque|comprobante|recibo|poliza|partida)( no| n| num\w*)?$|^serie"),
     ("banco", r"^banco|cuenta banc|entidad banc"),
     ("nit", r"^nit\b|^rfc\b|^ruc\b|identificaci"),
+    ("cuenta", r"^cuenta|^cta\b|codigo contable|^nombre de (la )?cuenta"),
     ("tercero", r"client|proveedor|beneficiari|tercero|^nombre|razon social|deudor|acreedor"),
     ("descripcion", r"descrip|concepto|detalle|glosa|^motivo"),
-    ("cuenta", r"^cuenta|^cta\b|codigo contable"),
     ("categoria", r"categor|rubro|clasificaci"),
     ("subtotal", r"^sub ?total|base imponible"),
     ("iva", r"^iva\b|impuesto"),
     ("estado", r"^estado|^situaci"),
     ("metodo", r"metodo|forma de (pago|cobro)|medio de (pago|cobro)"),
-    ("monto", r"^(monto|importe|valor|total|saldo|cargo|abono|debe|haber)\b"),
+    ("monto", r"^(monto|importe|valor|total|saldo|debe|haber)\b"),  # «Cargo» no: en muchos papeles es el puesto
     ("num", r"^(no|n|nro|#|item|correlativo|num)$"),
 ]]
 
@@ -98,6 +100,7 @@ SRC_ROLES: list[tuple[str, list[re.Pattern]]] = [(k, [re.compile(p) for p in ps]
     ("referencia", [r"referencia", r"boleta", r"transfer", r"autorizaci"]),
     ("banco", [r"^banco\b", r"cuenta banc", r"cuenta (destino|deposit\w*)", r"banco"]),
     ("documento", [r"factura", r"^(no|num|numero|nro) doc|documento|^doc\b", r"cheque", r"comprobante|poliza|partida",
+                   r"orden de (compra|pago)|^(no|num|numero|nro) (oc|orden)\b|^oc\b|pedido",
                    r"^(no|num|numero|nro)\b|folio|serie", r"recibo"]),
     ("recibo", [r"recibo"]),
     ("tipo_doc", [r"^tipo\b", r"^clase"]),
@@ -239,7 +242,23 @@ def find_detail_table(ws, max_scan: int = 300) -> DetailTable | None:
         if filled and all(c not in cols or cols[c][0] == "atributo" for c in filled) and any(c in cols for c in filled):
             bottom = nxt
         letter = get_column_letter(money)
-        for t in range(bottom + 1, min(bottom + 400, ws.max_row) + 1):
+
+        def build(end: int, growable: bool) -> DetailTable:
+            # columna de numeración sin encabezado (1, 2, 3… en las filas de ejemplo)
+            for c in range(1, min(cols)):
+                vals = [ws.cell(row=s, column=c).value for s in range(bottom + 1, min(bottom + 4, end))]
+                if vals and all(isinstance(v, (int, float)) for v in vals) and list(vals) == list(range(1, len(vals) + 1)):
+                    cols[c] = ("num", "No.")
+            # la tabla llega hasta el último encabezado escrito (también los que no tienen rol: son del auditor)
+            last = max(max(cols), max((c for c in range(1, min(ws.max_column, 40) + 1) if _text(ws.cell(row=r, column=c))), default=0))
+            for c in range(last + 1, min(ws.max_column, 40) + 1):  # observaciones combinadas hacia la derecha
+                rng = _merged_at(ws, r, c)
+                if rng and rng.min_col <= last:
+                    last = c
+            return DetailTable(ws.title, r, bottom, end, dict(sorted(cols.items())), min(cols), last, money, growable)
+
+        span = range(min(cols), max(cols) + 1)
+        for t in range(bottom + 1, min(bottom + 400, ws.max_row + 1) + 1):
             row_text = " ".join(_text(ws.cell(row=t, column=c)) for c in range(1, money))
             total = ws.cell(row=t, column=money)
             is_sum = total.data_type == "f" and "SUM" in str(total.value).upper()
@@ -247,19 +266,22 @@ def find_detail_table(ws, max_scan: int = 300) -> DetailTable | None:
                 if not (is_sum and letter in str(total.value).upper() and t - bottom > 1):
                     break
                 m = re.search(rf"SUM\(\$?{letter}\$?(\d+):\$?{letter}\$?(\d+)\)", str(total.value).upper())
-                growable = bool(m and int(m.group(1)) <= bottom + 1 and int(m.group(2)) == t - 1)
-                # columna de numeración sin encabezado (1, 2, 3… en las filas de ejemplo)
-                first = min(cols)
-                for c in range(1, first):
-                    vals = [ws.cell(row=s, column=c).value for s in range(bottom + 1, min(bottom + 4, t))]
-                    if vals and all(isinstance(v, (int, float)) for v in vals) and list(vals) == list(range(1, len(vals) + 1)):
-                        cols[c] = ("num", "No.")
-                last = max(cols)
-                for c in range(last + 1, min(ws.max_column, 40) + 1):  # observaciones combinadas hacia la derecha
-                    rng = _merged_at(ws, r, c)
-                    if rng and rng.min_col <= last:
-                        last = c
-                return DetailTable(ws.title, r, bottom, t, dict(sorted(cols.items())), min(cols), last, money, growable)
+                return build(t, bool(m and int(m.group(1)) <= bottom + 1 and int(m.group(2)) == t - 1))
+            # tabla de muestra sin fila TOTAL (p. ej. Auditoría Interna): termina en la primera fila vacía;
+            # crecer funciona igual (los rangos como COUNTA(A15:A24) llegan hasta la última fila de ejemplo)
+            if t - bottom > 1 and all(ws.cell(row=t, column=c).value in (None, "") for c in span):
+                # filas vacías de ejemplo antes de un TOTAL: la tabla sigue hasta el TOTAL
+                nxt_row = next((k for k in range(t + 1, min(t + 60, ws.max_row) + 1)
+                                if any(ws.cell(row=k, column=c).value not in (None, "") for c in span)), None)
+                if nxt_row is not None:
+                    nxt_text = " ".join(_text(ws.cell(row=nxt_row, column=c)) for c in range(1, money))
+                    nxt_total = ws.cell(row=nxt_row, column=money)
+                    if _RX_TOTAL.search(nxt_text) or (nxt_total.data_type == "f" and "SUM" in str(nxt_total.value).upper()):
+                        continue
+                example = range(bottom + 1, t)
+                if any(ws.cell(row=s, column=money).value not in (None, "") for s in example):
+                    return build(t, True)
+                break
     return None
 
 
@@ -278,12 +300,15 @@ def map_source(dt: DetailTable, headers: list[str]) -> tuple[dict[str, int], dic
     plan: dict[int, tuple[str, object]] = {}
     doc_header = names[src["documento"]] if "documento" in src else ""
     seen: set[str] = set()
-    for c, (role, _) in dt.columns.items():
+    for c, (role, header) in dt.columns.items():
         if role in seen and role != "atributo":
             plan[c] = ("clear", None)  # encabezado combinado sobre varias columnas: el dato va solo en la primera
             continue
         seen.add(role)
-        if role in ("doc_del", "doc_al", "documento") and "documento" in src:
+        same = next((k for k, h in enumerate(names) if h and h == norm(header)), None)
+        if same is not None and role not in ("fecha", "monto", "num", "observaciones", "marca", "diferencia"):
+            plan[c] = ("src", same)  # la columna del archivo se llama igual que la del papel: esa es
+        elif role in ("doc_del", "doc_al", "documento") and "documento" in src:
             plan[c] = ("src", src["documento"])
         elif role == "tipo_doc":
             if "tipo_doc" in src:
@@ -315,7 +340,14 @@ def match_score(dt: DetailTable, headers: list[str]) -> int:
     """Cuántas columnas de datos del papel se llenan con este archivo (para elegir el archivo correcto)."""
     src, plan = map_source(dt, headers)
     data = sum(1 for c, (kind, _) in plan.items() if kind in ("src", "const") and dt.columns[c][0] in DATA_ROLES)
-    return data + (1 if "fecha" in src else 0) + (2 if "monto" in src else 0)
+    # desempate: la misma palabra en los dos nombres («Proveedor» ↔ «Proveedor (beneficiario)» antes que ↔ «Cliente»)
+    words = 0
+    for c, (kind, ref) in plan.items():
+        if kind == "src" and isinstance(ref, int) and ref < len(headers):
+            a = {w for w in norm(dt.columns[c][1]).split() if len(w) >= 4}
+            b = {w for w in norm(headers[ref]).split() if len(w) >= 4}
+            words += 1 if a & b else 0
+    return data + (1 if "fecha" in src else 0) + (2 if "monto" in src else 0) + words
 
 
 def template_table(path) -> DetailTable | None:
@@ -478,8 +510,8 @@ def _guard(formula: str, row: int, blank_cols: set[int]) -> str | None:
 
     refs = [(m.group(1), int(m.group(2))) for m in _RX_SAME_ROW_REF.finditer(formula.upper())]
     blanks = [f"{col}{r}" for col, r in refs if r == row and column_index_from_string(col) in blank_cols]
-    if not blanks or formula.upper().startswith("=IF("):
-        return None
+    if not blanks or re.match(r'^=IF\(\$?[A-Z]{1,3}\$?\d+="",""', formula.upper()):
+        return None  # sin dependencia del auditor, o ya condicionada
     return f'=IF({blanks[0]}="","",{formula[1:]})'
 
 
@@ -505,7 +537,8 @@ def _fill_params(ws, dt: DetailTable, report: StructureReport, values: dict) -> 
     for r in range(1, dt.header_row):
         for c in range(1, min(ws.max_column, 40) + 1):
             text = _text(ws.cell(row=r, column=c))
-            if not text or len(text) > 60:
+            # solo etiquetas («Población (total documentos):»), no frases como «Muestra: 10 órdenes de compra…»
+            if not text or len(text) > 45 or not text.rstrip().endswith(":"):
                 continue
             for key, rx in PARAMS:
                 if key in report.params or not rx.search(text) or values.get(key) in (None, ""):
@@ -530,7 +563,8 @@ def _fill_params(ws, dt: DetailTable, report: StructureReport, values: dict) -> 
 
 def fill_structure(wb, *, detail: Table | None, monthly: Table | None, ledger_total: Decimal | None,
                    observations: list[str], conclusion: str, results_anchor: str,
-                   source: Table | None = None, source_name: str = "") -> StructureReport:
+                   source: Table | None = None, source_name: str = "", prefer_sheet: str | None = None) -> StructureReport:
+    """``prefer_sheet``: la hoja que eligió el auditor; si tiene tabla de transacciones, los datos van ahí."""
     report = StructureReport()
     if detail is None or not detail.rows:
         return report
@@ -542,6 +576,8 @@ def fill_structure(wb, *, detail: Table | None, monthly: Table | None, ledger_to
         if not found:
             continue
         score = match_score(found, headers) if headers else (4 if is_integration_paper(sheet, found) else 0)
+        if prefer_sheet and sheet.title == prefer_sheet and score >= 4:
+            score += 1000  # la elección del auditor manda
         if score > best:
             ws, dt, best = sheet, found, score
     if ws is None or best < 4:
@@ -598,7 +634,9 @@ def fill_structure(wb, *, detail: Table | None, monthly: Table | None, ledger_to
             copy_row_format(ws, models[(r - slots[0]) % 2], r, max_col, formulas=False)
 
     # 2) columnas del auditor que quedan vacías → las fórmulas que dependen de ellas se condicionan
-    blank_cols = {c for c, (role, _) in dt.columns.items() if role in AUDITOR_ROLES and plan.get(c, ("",))[0] == "clear"}
+    # (las del auditor, las que el archivo no trae y las de encabezado sin rol, p. ej. «¿Tiene 3 cotizaciones?»)
+    span = range(dt.first_col, dt.last_col + 1)
+    blank_cols = {c for c in span if c not in dt.columns or (plan.get(c, ("",))[0] == "clear" and dt.columns[c][0] != "num")}
     for c, (role, header) in dt.columns.items():
         kind, ref = plan.get(c, ("clear", None))
         if kind in ("fecha", "monto") and kind in src and headers:
@@ -622,16 +660,21 @@ def fill_structure(wb, *, detail: Table | None, monthly: Table | None, ledger_to
     for i, (slot, row) in enumerate(zip(slots, items), start=1):
         n_, fecha, tipo, numero, proveedor, desc, cuenta, monto, marca, obs = row
         raw = raw_by_row.get(int(n_), [])
-        for c, (role, _) in dt.columns.items():
+        row_blank = set(blank_cols)
+        for c in span:
+            role = dt.columns.get(c, ("", ""))[0]
             kind, ref = plan.get(c, ("clear", None))
             cell = ws.cell(row=slot, column=c)
             if isinstance(cell, MergedCell):
                 continue
             if cell.data_type == "f":
-                guarded = _guard(str(cell.value), slot, blank_cols) if blank_cols else None
+                guarded = _guard(str(cell.value), slot, row_blank) if row_blank else None
                 if guarded:
                     cell.value = guarded
                     report.guarded.add((ws.title, cell.coordinate))
+                    row_blank.add(c)  # la que depende de esta (p. ej. el semáforo 🟢/🔴) también espera al auditor
+                else:
+                    row_blank.discard(c)
                 continue
             if kind == "num":
                 value = i
@@ -677,7 +720,7 @@ def fill_structure(wb, *, detail: Table | None, monthly: Table | None, ledger_to
         _fit_text_column(ws, obs_col, used_rows)
     # filas de ejemplo que sobran (menos transacciones que filas): se limpian
     for slot in slots[report.rows_written:]:
-        for c in dt.columns:
+        for c in span:
             if _writable(ws, slot, c) and ws.cell(row=slot, column=c).value not in (None, ""):
                 ws.cell(row=slot, column=c).value = None
     report.regions.append((ws.title, slots[0], 1, len(slots), max_col))

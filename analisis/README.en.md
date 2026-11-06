@@ -43,7 +43,7 @@ formats, validations and print area — `engine/sheet_rows.py`). «Observaciones
 transaction; auditor-only columns stay empty and a formula depending on them is guarded (`=IF(J19="","",J19-F19)`);
 test parameters are filled; the template's example conclusion is replaced by the proposal (original kept in a comment);
 everything else goes to the «ANÁLISIS AGENTES» and «Evidencia» sheets. The copy is verified against the original with
-the row shift applied. Tests: `test_ingresos_a11.py` (500 invoices), `test_egresos_a12.py`, all 538 templates.
+the row shift applied. Sample tables without a TOTAL row (Internal Audit) end at the first blank row; an identical column name always wins; with several tables in a workbook the auditor's chosen sheet wins. 98 of 538 templates have a transaction table. Tests: `test_ingresos_a11.py` (500 invoices), `test_egresos_a12.py`, `test_interna_pruebas.py`, all 538 templates.
 
 ## Claude (optional)
 
@@ -60,7 +60,7 @@ volume** for `ANALISIS_STORAGE_ROOT`. Install: `pip install -r requirements.txt 
 
 ## Tests
 
-`python manage.py test analisis --settings=saas_project.settings_test` — 120 tests (performance and all-538-templates tests run with `ANALISIS_SLOW_TESTS=1`).
+`python manage.py test analisis --settings=saas_project.settings_test` — 125 tests (performance and all-538-templates tests run with `ANALISIS_SLOW_TESTS=1`).
 
 ## Not included in this version
 
