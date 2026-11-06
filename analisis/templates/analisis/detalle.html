@@ -147,6 +147,34 @@
   </div></div>
   {% endif %}
 
+  {# ---------- fase 2: enviar a papel de trabajo ---------- #}
+  {% if terminado and hallazgos %}
+  <div class="card mb-3" id="card-enviar"><div class="card-body">
+    <h5 class="card-title">Enviar a papel de trabajo</h5>
+    <p class="small text-body-secondary">Los hallazgos elegidos se escriben en las plantillas de <b>Hallazgos</b> y <b>Evidencias</b> {% if modulo == 'F' %}de la cuenta contable{% elif modulo == 'I' %}(5.2 y 5.3) del área{% else %}(Revisoría Fiscal){% endif %}, en la primera fila libre, sin tocar lo que el auditor ya digitó. Luego pasan a revisión del Jefe de Auditoría y, al aprobarse, al informe.</p>
+    <form method="post" action="{% url 'analisis_enviar_hallazgos' run.pk %}">{% csrf_token %}
+      <div class="row g-2 mb-2">
+        {% if destinos %}<div class="col-md-5"><label class="form-label small mb-0">{% if modulo == 'F' %}Cuenta contable{% else %}Área (obligatoria){% endif %}</label>
+          <select class="form-select form-select-sm" name="destino" required><option value="">— elija —</option>{% for k, n in destinos %}<option value="{{ k }}">{{ n }}</option>{% endfor %}</select></div>{% endif %}
+        <div class="col-md-3"><label class="form-label small mb-0">Plazo de seguimiento (días)</label><input class="form-control form-control-sm" type="number" min="1" max="365" name="plazo_dias" placeholder="opcional"></div>
+        <div class="col-md-4"><label class="form-label small mb-0">Responsable (opcional)</label><input class="form-control form-control-sm" name="responsable" maxlength="200"></div>
+      </div>
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th></th><th>ID</th><th>Hallazgo</th><th>Severidad</th><th>Clasificación</th></tr></thead>
+        <tbody>{% for h in hallazgos %}{% if h.decision != 'descartado' %}
+          <tr>
+            <td>{% if h.pk in ya_enviados %}<span class="badge text-bg-success" title="Ya está en el papel de trabajo">enviado</span>{% else %}<input type="checkbox" name="ids" value="{{ h.pk }}" checked aria-label="Enviar {{ h.codigo }}">{% endif %}</td>
+            <td>{{ h.codigo }}</td><td class="small">{{ h.procedimiento }}</td>
+            <td><select class="form-select form-select-sm" name="sev_{{ h.pk }}">{% for s in severidades %}<option value="{{ s }}" {% if s == h.alerta %}selected{% endif %}>{{ s }}</option>{% endfor %}</select></td>
+            <td><select class="form-select form-select-sm" name="clas_{{ h.pk }}">{% for c in clasificaciones %}<option>{{ c }}</option>{% endfor %}</select></td>
+          </tr>{% endif %}{% endfor %}</tbody>
+      </table></div>
+      <button class="btn btn-primary btn-sm" type="submit">Enviar a papel de trabajo</button>
+      <a class="btn btn-outline-secondary btn-sm" href="{% url 'analisis_hallazgos' run.audit_id %}">Ver hallazgos del proyecto</a>
+    </form>
+  </div></div>
+  {% endif %}
+
   {# ---------- paso 4: papel de trabajo ---------- #}
   <div class="card mb-3"><div class="card-body">
     <h5 class="card-title">Papel de trabajo</h5>

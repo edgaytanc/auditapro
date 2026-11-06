@@ -160,3 +160,18 @@ generar PDFs de ejemplo. `saas_project/settings_test.py` solo desactiva el manif
 - Páginas de **Word** = secciones por saltos de página (Word no guarda páginas fijas).
 - La cola es de hilos en el proceso web. Con varios procesos o mucha carga, migrar a Celery/RQ como propone la guía.
 - La API de Claude se probó en vivo (clasificar, extraer con evidencia, interpretar el pedido, redactar la conclusión).
+
+## Fase 2 · De los hallazgos al informe (`analisis/flujo/`)
+
+Sigue las tres guías del cliente (Financiera, Auditoría Interna, Revisoría Fiscal).
+
+| Paso | Qué hace |
+|---|---|
+| Enviar a papel de trabajo | Desde el detalle de un análisis: cuenta contable (Financiera) o área (Interna, obligatoria); Revisoría no pide destino. Escribe en la primera fila libre de las plantillas de Hallazgos y Evidencias, agrega filas si se acaban, y no duplica (huella análisis + destino + hash de la condición). |
+| Revisión | El auditor envía a revisión (5.5.3 en Financiera, borrador del informe en Interna). El Jefe aprueba, devuelve o rechaza; comentario obligatorio al devolver/rechazar; sin evidencia no se aprueba; nadie aprueba lo suyo salvo auditoría individual (un solo usuario), que queda en bitácora. |
+| Hallazgos finales / informe | Financiera: HF-01… por severidad, 5.5.4 e informe Word sección 5 (versión nueva). Interna: informe del área elegida (CRÍTICO 1…, responsable, plazo). Revisoría: sección 7 de la hoja R-3 (nombre definido `HALLAZGOS_R3`). Todo versionado v1, v2…; el original no se toca. |
+| Monitoreo Continuo (Interna) | Las excepciones del análisis llegan solas; confirmar (seguimiento 7 días, ampliable 5), falso positivo o convertir en hallazgo; panel y descargas Excel/Word/PDF. |
+
+Tablas de configuración: `MapaConfig` (cuentas_fin, areas_ai) sustituye los valores de `flujo/config.py`. La plantilla es la fuente de verdad: lo que el auditor edita se lee de vuelta; los hallazgos aprobados quedan bloqueados (gris) y solo el Jefe los reabre.
+Pantallas: `/analisis/proyecto/<id>/hallazgos/` y `/analisis/proyecto/<id>/monitoreo/`. Pruebas: `test_flujo.py`, `test_flujo_vistas.py`.
+Pendiente (acordado como siguiente): renumeración de la carpeta 5 INFORME de Interna en proyectos existentes, Resumen Ejecutivo/Opinión (5.1.12–13), y mostrar la carpeta «8 MONITOREO CONTINUO» en el árbol de papeles del módulo Auditoría.

@@ -494,3 +494,9 @@ def _execute(run: CorridaAnalisis, ctl: _Control) -> None:
         run, run.creado_por, "terminada",
         {"agentes": [o.agent for o in outputs], "hallazgos": len(hall_table.rows), "riesgos": len(risk_table.rows), "ia_llamadas": ai.calls},
     )
+    try:  # Auditoría Interna: las excepciones llegan solas a «8 MONITOREO CONTINUO» y alimentan el panel
+        from .flujo import monitoreo
+
+        monitoreo.recibir(run)
+    except Exception:  # noqa: BLE001 - el monitoreo nunca debe tumbar un análisis ya terminado
+        logger.exception("Monitoreo Continuo: no se pudieron recibir las excepciones del análisis %s", run.pk)

@@ -41,6 +41,18 @@
         </table>
       </div>
     {% endif %}
+    {% if proyectos %}
+    <div class="card mt-4"><div class="card-body">
+      <h6 class="card-title">Hallazgos y monitoreo por proyecto</h6>
+      <p class="small text-body-secondary">De los hallazgos de Audita Análisis a las plantillas, la revisión del jefe y el informe.</p>
+      <ul class="list-group">
+        {% for a in proyectos %}<li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span><b>{{ a.title }}</b> <span class="text-body-secondary small">{{ a.identidad }}</span></span>
+          <span><a class="btn btn-sm btn-outline-primary" href="{% url 'analisis_hallazgos' a.pk %}">Hallazgos</a>
+            {% if a.es_interna %}<a class="btn btn-sm btn-outline-primary" href="{% url 'analisis_monitoreo' a.pk %}">Monitoreo Continuo</a>{% endif %}</span></li>{% endfor %}
+      </ul>
+    </div></div>
+    {% endif %}
     <p class="text-body-secondary small mt-3">Una alerta no demuestra fraude ni error: la conclusión y la aprobación son siempre del auditor.</p>
   </div>
 {% endblock main_content %}

@@ -1,0 +1,116 @@
+{% extends "common/system-base.html" %}
+{% block title %}Monitoreo Continuo · {{ audit.title }}{% endblock title %}
+{% block page_title %}Monitoreo Continuo <small class="text-body-secondary fs-6">{{ audit.title }}</small>{% endblock page_title %}
+{% block page_subtitle %}Resultados y excepciones recibidos de Audita Análisis · Auditoría Interna (carpeta 8 MONITOREO CONTINUO).{% endblock page_subtitle %}
+
+{% block main_header_content %}
+  <a class="btn btn-outline-secondary" href="{% url 'analisis_home' %}">Audita Análisis</a>
+  <a class="btn btn-outline-secondary" href="{% url 'analisis_hallazgos' audit.pk %}">Hallazgos del proyecto</a>
+  <a class="btn btn-outline-primary" href="{% url 'analisis_monitoreo_excel' audit.pk %}">Descargar todo (Excel)</a>
+{% endblock main_header_content %}
+
+{% block main_content %}
+<style>
+  .mc-kpi{border-left:4px solid var(--bs-primary)} .mc-kpi.alto{border-left-color:#C0392B} .mc-kpi.ok{border-left-color:#2E8B57}
+  .mc-bar{height:10px;border-radius:5px;background:#2F6FE0} .mc-heat td{width:33%;text-align:center;font-weight:700;padding:.6rem}
+  .mc-heat td.h-0{background:#F3F4F6 !important;color:#9CA3AF} .mc-heat td.h-b{background:#EAF2FB !important} .mc-heat td.h-m{background:#FCF1DC !important} .mc-heat td.h-a{background:#FBEAE8 !important;color:#C0392B}
+  .mc-trend{display:flex;align-items:flex-end;gap:6px;height:90px} .mc-trend div{flex:1;background:#2F6FE0;border-radius:3px 3px 0 0;min-height:2px}
+  .pill{border-radius:999px;padding:.1rem .6rem;font-size:.75rem;font-weight:700}
+  .r-Alto{background:#FBEAE8;color:#C0392B} .r-Medio{background:#FCF1DC;color:#B77A12} .r-Bajo{background:#EAF2FB;color:#2E6FB0}
+  .seg-vencido{color:#C0392B} .seg-pronto{color:#B77A12} .seg-plazo{color:#2E8B57}
+</style>
+<div class="w-100">
+  <div class="alert alert-primary py-2 d-flex justify-content-between align-items-center">
+    <span><b>Entrada automática desde Audita Análisis.</b> Las excepciones llegan con resultado, evidencia y trazabilidad para revisión del auditor.</span>
+    <span class="badge text-bg-success">● RECEPCIÓN ACTIVA</span>
+  </div>
+
+  <div class="row g-2 mb-3">
+    <div class="col-6 col-lg-3"><div class="card mc-kpi ok"><div class="card-body py-2"><div class="fs-3 fw-bold">{{ panel.kpis.conformes }}</div><div class="small">Conformes (archivados)</div><div class="small text-body-secondary">registros revisados sin excepción</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card mc-kpi"><div class="card-body py-2"><div class="fs-3 fw-bold">{{ panel.kpis.observaciones }}</div><div class="small">Observaciones</div><div class="small text-body-secondary">{{ panel.kpis.d_observaciones|stringformat:"+d" }} vs. semana anterior</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card mc-kpi alto"><div class="card-body py-2"><div class="fs-3 fw-bold">{{ panel.kpis.riesgo_alto }}</div><div class="small">Riesgo alto</div><div class="small text-body-secondary">{{ panel.kpis.d_riesgo_alto|stringformat:"+d" }} vs. semana anterior</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card mc-kpi alto"><div class="card-body py-2"><div class="fs-3 fw-bold">{{ panel.kpis.incumplimientos }}</div><div class="small">Incumplimientos</div><div class="small text-body-secondary">{{ panel.pendientes }} pendiente{{ panel.pendientes|pluralize }} de revisión</div></div></div></div>
+  </div>
+
+  <div class="row g-3 mb-3">
+    <div class="col-lg-4"><div class="card h-100"><div class="card-body">
+      <h6>Excepciones por proceso <span class="badge text-bg-secondary">{{ panel.total }}</span></h6>
+      {% for proc, n in panel.por_proceso %}
+        <div class="d-flex justify-content-between small"><span>{{ proc }}</span><b>{{ n }}</b></div>
+        <div class="mc-bar mb-2" style="width: {% widthratio n panel.max_proceso 100 %}%"></div>
+      {% empty %}<p class="small text-body-secondary mb-0">Sin excepciones todavía.</p>{% endfor %}
+    </div></div></div>
+    <div class="col-lg-4"><div class="card h-100"><div class="card-body">
+      <h6>Mapa de calor de riesgo (probabilidad × impacto)</h6>
+      <table class="table table-bordered mc-heat mb-1">
+        <thead><tr><th></th><th>Bajo</th><th>Medio</th><th>Alto</th></tr></thead>
+        <tbody>{% for fila in panel.calor %}<tr><th class="small">{{ fila.prob }}</th>{% for c in fila.celdas %}<td class="{% if c.n == 0 %}h-0{% elif c.riesgo == 'Alto' %}h-a{% elif c.riesgo == 'Medio' %}h-m{% else %}h-b{% endif %}">{{ c.n }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+      </table>
+      <div class="small text-body-secondary">Probabilidad: hallazgo ya ocurrido = alta; excepción = media; riesgo = baja.</div>
+    </div></div></div>
+    <div class="col-lg-4"><div class="card h-100"><div class="card-body">
+      <h6>Tendencia de excepciones · últimas 8 semanas</h6>
+      <div class="mc-trend">{% for t in panel.tendencia %}<div style="height: {% widthratio t.n panel.max_tendencia 100 %}%" title="{{ t.semana }}: {{ t.n }}"></div>{% endfor %}</div>
+      <div class="d-flex justify-content-between small text-body-secondary mt-1">{% for t in panel.tendencia %}<span>{{ t.semana }}</span>{% endfor %}</div>
+    </div></div></div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-{% if elegido %}7{% else %}12{% endif %}">
+      <div class="card"><div class="card-body">
+        <h6>Alertas recientes <small class="text-body-secondary">Excepciones provenientes de Audita Análisis</small></h6>
+        <div class="table-responsive"><table class="table table-hover table-sm align-middle mb-0">
+          <thead><tr><th>Caso</th><th>Tarea</th><th>Responsable</th><th>Riesgo</th><th>Fecha</th><th>Estado</th><th>Seguimiento</th></tr></thead>
+          <tbody>{% for e in lista %}
+            <tr {% if elegido and e.pk == elegido.pk %}class="table-active"{% endif %}>
+              <td><a href="?caso={{ e.pk }}"><code>{{ e.caso }}</code></a></td><td>{{ e.tarea }}</td><td>{{ e.responsable }}</td>
+              <td><span class="pill r-{{ e.riesgo }}">{{ e.riesgo }}</span></td><td>{{ e.fecha|date:"d/m/Y" }}</td><td>{{ e.get_estado_display }}</td>
+              <td>{% if e.seg %}<span class="seg-{{ e.seg.clave }} fw-bold">{{ e.seg.corto }}</span><div class="small text-body-secondary">{{ e.fecha_limite|date:"d/m/Y" }}</div>{% else %}—{% endif %}</td>
+            </tr>{% empty %}<tr><td colspan="7" class="text-center text-body-secondary py-4">Aún no llegan excepciones. Se reciben solas al terminar un análisis de este proyecto.</td></tr>{% endfor %}</tbody>
+        </table></div>
+      </div></div>
+    </div>
+
+    {% if elegido %}
+    <div class="col-lg-5"><div class="card"><div class="card-body">
+      <div class="d-flex justify-content-between"><div><code>{{ elegido.caso }}</code><h6 class="mb-0">{{ elegido.tarea }}</h6><div class="small text-body-secondary">{{ elegido.responsable }} · {{ elegido.fecha|date:"d/m/Y" }}</div></div>
+        <a class="btn-close" href="{% url 'analisis_monitoreo' audit.pk %}" aria-label="Cerrar"></a></div>
+      <div class="alert alert-warning mt-2 py-2"><b>Resultado de Audita Análisis · Riesgo {{ elegido.riesgo }}</b><div class="small">{{ elegido.resultado_ia }}</div></div>
+      <div class="small mb-2"><b>Evidencia:</b> 📎 {{ elegido.evidencia }}</div>
+
+      {% if elegido.estado == 'pendiente' %}
+        <form method="post" action="{% url 'analisis_monitoreo_accion' audit.pk elegido.pk %}" class="d-flex gap-2">{% csrf_token %}
+          <button class="btn btn-primary btn-sm" name="accion" value="confirmar">Confirmar excepción</button>
+          <button class="btn btn-outline-secondary btn-sm" name="accion" value="descartar">Falso positivo</button></form>
+      {% elif elegido.estado == 'confirmado' %}
+        <div class="alert alert-success py-2">✓ Excepción confirmada por el auditor</div>
+        <form method="post" action="{% url 'analisis_monitoreo_accion' audit.pk elegido.pk %}" class="d-flex flex-column gap-2">{% csrf_token %}
+          <label class="small">Área (define el informe específico donde llegará el hallazgo)</label>
+          <select class="form-select form-select-sm" name="area">{% for k, n in areas %}<option value="{{ k }}" {% if k == area_sugerida %}selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+          <button class="btn btn-dark btn-sm" name="accion" value="hallazgo">Convertir en Hallazgo →</button></form>
+      {% elif elegido.estado == 'descartado' %}
+        <div class="alert alert-secondary py-2">Marcado como falso positivo. No se generará hallazgo.</div>
+      {% elif elegido.estado == 'hallazgo' %}
+        <div class="alert alert-success py-2">Hallazgo <b>{{ elegido.hallazgo.ref_local }}</b> creado en las plantillas de Hallazgos y Evidencias.
+          <a href="{% url 'analisis_hallazgos' audit.pk %}">Ver hallazgos</a></div>
+      {% endif %}
+
+      {% if elegido.fecha_limite %}
+        <div class="border rounded p-2 mt-2 small"><b>Seguimiento</b>
+          <div class="d-flex justify-content-between"><span>Responsable de seguimiento</span><b>{{ elegido.auditor_seguimiento.get_full_name|default:elegido.auditor_seguimiento.username }}</b></div>
+          <div class="d-flex justify-content-between"><span>Fecha límite</span><b>{{ elegido.fecha_limite|date:"d/m/Y" }}</b></div>
+          <div class="d-flex justify-content-between"><span>Estado del plazo</span><b class="seg-{{ elegido.seg.clave }}">{{ elegido.seg.texto }}</b></div>
+          {% if elegido.estado != 'hallazgo' %}<form method="post" action="{% url 'analisis_monitoreo_accion' audit.pk elegido.pk %}" class="mt-2">{% csrf_token %}<button class="btn btn-outline-secondary btn-sm w-100" name="accion" value="ampliar">Ampliar plazo 5 días</button></form>{% endif %}
+        </div>
+      {% endif %}
+
+      <div class="mt-3"><b class="small">Descargar</b>
+        <div class="d-flex gap-2 mt-1">
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'analisis_monitoreo_descarga' audit.pk elegido.pk 'xlsx' %}">Excel</a>
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'analisis_monitoreo_descarga' audit.pk elegido.pk 'pdf' %}">PDF</a>
+          <a class="btn btn-outline-primary btn-sm" href="{% url 'analisis_monitoreo_descarga' audit.pk elegido.pk 'docx' %}">Word</a></div></div>
+    </div></div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock main_content %}

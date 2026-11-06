@@ -40,3 +40,9 @@ def document_path(instance, filename: str) -> str:
 def version_path(instance, filename: str) -> str:
     ext = Path(filename).suffix.lower()
     return f"corrida_{instance.corrida_id}/salidas/{uuid.uuid4().hex}{ext}"
+
+
+def proyecto_path(instance, filename: str) -> str:
+    """Archivos del flujo de hallazgos: por auditoría, con nombre interno aleatorio."""
+    ext = Path(filename).suffix.lower()
+    return f"auditoria_{instance.audit_id}/flujo/{uuid.uuid4().hex}{ext}"

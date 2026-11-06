@@ -1,0 +1,116 @@
+{% extends "common/system-base.html" %}
+{% block title %}Hallazgos · {{ audit.title }}{% endblock title %}
+{% block page_title %}Hallazgos del proyecto <small class="text-body-secondary fs-6">{{ audit.title }} · {{ modulo_nombre }}</small>{% endblock page_title %}
+{% block page_subtitle %}De Audita Análisis a las plantillas de Hallazgos y Evidencias, a revisión del jefe y al informe. Cada hallazgo conserva su identificador único durante todo el flujo.{% endblock page_subtitle %}
+
+{% block main_header_content %}
+  <a class="btn btn-outline-secondary" href="{% url 'analisis_home' %}">Audita Análisis</a>
+  {% if tiene_monitoreo %}<a class="btn btn-outline-primary" href="{% url 'analisis_monitoreo' audit.pk %}">Monitoreo Continuo</a>{% endif %}
+  <form method="post" action="{% url 'analisis_sincronizar' audit.pk %}" class="d-inline">{% csrf_token %}
+    <button class="btn btn-outline-secondary" type="submit" title="Lee lo que el auditor editó en las plantillas">Leer ediciones de las plantillas</button></form>
+{% endblock main_header_content %}
+
+{% block main_content %}
+<div class="w-100">
+  {% if individual %}<div class="alert alert-info py-2">Auditoría individual: un solo usuario asignado. Esa persona hace todos los pasos, incluida la aprobación, y la bitácora lo registra.</div>{% endif %}
+
+  <div class="row g-2 mb-3">
+    {% for clave, texto in etiquetas.items %}
+      <div class="col-6 col-md"><div class="card text-center"><div class="card-body py-2">
+        <div class="fs-4 fw-bold">{% for k, v in resumen.items %}{% if k == clave %}{{ v }}{% endif %}{% endfor %}</div>
+        <div class="small text-body-secondary">{{ texto }}</div></div></div></div>
+    {% endfor %}
+  </div>
+
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="card-title">Hallazgos</h5>
+    {% if not hallazgos %}
+      <p class="text-body-secondary mb-0">Aún no hay hallazgos. En el detalle de un análisis terminado use «Enviar a papel de trabajo».</p>
+    {% else %}
+    <form method="post" action="{% url 'analisis_a_revision' audit.pk %}" id="form-revision">{% csrf_token %}
+      <div class="table-responsive"><table class="table table-sm align-middle">
+        <thead><tr><th></th><th>Ref.</th><th>{% if modulo == 'I' %}Área{% elif modulo == 'F' %}Cuenta{% else %}Área{% endif %}</th><th>Hallazgo</th><th>Severidad</th><th>Evid.</th><th>Estado</th><th style="min-width:250px">Decisión del Jefe</th></tr></thead>
+        <tbody>
+        {% for h in hallazgos %}
+          <tr>
+            <td>{% if h.estado == 'en_papel' or h.estado == 'devuelto' %}<input type="checkbox" name="ids" value="{{ h.pk }}" form="form-revision" aria-label="Elegir {{ h.ref_local }}">{% endif %}</td>
+            <td><b>{{ h.ref_local }}</b>{% if h.ref_hf %}<div class="small text-success">{{ h.ref_hf }}</div>{% endif %}
+              <div class="small text-body-secondary" title="finding_id">{{ h.finding_id|slice:":8" }}</div></td>
+            <td>{{ h.destino_nombre|default:"—" }}</td>
+            <td><b>{{ h.titulo }}</b>
+              <div class="small text-body-secondary">{{ h.condicion|truncatechars:220 }}</div>
+              {% if h.monto %}<div class="small">Monto: {{ h.monto|floatformat:2 }}</div>{% endif %}</td>
+            <td><span class="badge text-bg-{% if h.severidad == 'Crítica' %}danger{% elif h.severidad == 'Alta' %}warning{% elif h.severidad == 'Media' %}info{% else %}secondary{% endif %}">{{ h.severidad }}</span></td>
+            <td class="text-center">{{ h.ev_n }}</td>
+            <td><span class="badge text-bg-{% if h.estado == 'aprobado' or h.estado == 'incluido' %}success{% elif h.estado == 'devuelto' or h.estado == 'rechazado' %}danger{% elif h.estado == 'en_revision' %}primary{% else %}light text-dark{% endif %}">{{ h.estado_texto }}</span>
+              {% if h.bloqueado %}<div class="small text-body-secondary">🔒 bloqueado</div>{% endif %}</td>
+            <td>
+              {% if h.puedo_decidir %}
+                <div class="d-flex flex-column gap-1">
+                  <input class="form-control form-control-sm" name="comentario" form="dec-{{ h.pk }}" maxlength="1000" placeholder="Comentario (obligatorio si devuelve o rechaza)">
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-success" form="dec-{{ h.pk }}" name="decision" value="aprobar">Aprobar</button>
+                    <button class="btn btn-outline-warning" form="dec-{{ h.pk }}" name="decision" value="devolver">Devolver</button>
+                    <button class="btn btn-outline-danger" form="dec-{{ h.pk }}" name="decision" value="rechazar">Rechazar</button>
+                  </div></div>
+              {% elif h.estado == 'en_revision' %}<span class="small text-body-secondary">Espera la decisión del Jefe de Auditoría{% if not individual %} (nadie aprueba lo suyo){% endif %}.</span>
+              {% elif h.bloqueado and es_jefe %}
+                <input class="form-control form-control-sm mb-1" name="comentario" form="reab-{{ h.pk }}" placeholder="Motivo para reabrir">
+                <button class="btn btn-sm btn-outline-secondary" form="reab-{{ h.pk }}">Reabrir</button>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table></div>
+      <button class="btn btn-primary btn-sm" type="submit">Enviar a revisión los elegidos</button>
+    </form>
+    {% for h in hallazgos %}
+      {% if h.puedo_decidir %}<form id="dec-{{ h.pk }}" method="post" action="{% url 'analisis_decidir_hallazgo' audit.pk h.pk %}">{% csrf_token %}</form>{% endif %}
+      {% if h.bloqueado and es_jefe %}<form id="reab-{{ h.pk }}" method="post" action="{% url 'analisis_reabrir_hallazgo' audit.pk h.pk %}">{% csrf_token %}</form>{% endif %}
+    {% endfor %}
+    {% endif %}
+  </div></div>
+
+  {% if es_jefe and hay_aprobados %}
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="card-title">Informe</h5>
+    {% if modulo == 'F' %}
+      <p class="small text-body-secondary">Numera los hallazgos aprobados (HF-01…) por severidad, escribe <b>5.5.4 Hallazgos_Finales</b> y crea una versión nueva del <b>Informe de Auditoría Financiera</b> (sección 5). La versión anterior se conserva.</p>
+      <form method="post" action="{% url 'analisis_generar_informe' audit.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-success">Aprobar hallazgos finales</button></form>
+      <form method="post" action="{% url 'analisis_generar_informe' audit.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="accion" value="regenerar"><button class="btn btn-outline-secondary">Regenerar sección de hallazgos</button></form>
+    {% elif modulo == 'I' %}
+      <p class="small text-body-secondary">Al aprobar, el hallazgo entra solo al informe específico de su área. Puede regenerarlo aquí (versión nueva; la anterior se conserva).</p>
+      {% for clave, nombre in areas_con_hallazgos %}
+        <form method="post" action="{% url 'analisis_generar_informe' audit.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="area" value="{{ clave }}"><button class="btn btn-outline-secondary btn-sm">Regenerar hallazgos del informe · {{ nombre }}</button></form>
+      {% endfor %}
+    {% else %}
+      <p class="small text-body-secondary">Al aprobar, la sección 7 de la hoja R-3 de 5_COMUNICACION se reemplaza por los hallazgos aprobados (guarda versión nueva).</p>
+      <form method="post" action="{% url 'analisis_generar_informe' audit.pk %}">{% csrf_token %}<button class="btn btn-outline-secondary">Regenerar sección 7 (R-3)</button></form>
+    {% endif %}
+  </div></div>
+  {% endif %}
+
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="card-title">Archivos del flujo <small class="text-body-secondary fs-6">(versión vigente; el original no se modifica)</small></h5>
+    {% if not archivos %}<p class="text-body-secondary mb-0">Todavía no se generó ningún archivo.</p>{% else %}
+    <ul class="list-group mb-2">
+      {% for a in archivos %}<li class="list-group-item d-flex flex-wrap justify-content-between gap-2">
+        <span><b>{{ a.nombre }}</b> <span class="text-body-secondary small">· {{ a.motivo }} · {{ a.creado_en|date:"d/m/Y H:i" }}</span></span>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'analisis_archivo' audit.pk a.pk %}">Descargar</a></li>{% endfor %}
+    </ul>
+    <details><summary class="small">Todas las versiones</summary><ul class="small mt-2">
+      {% for a in historial %}<li><a href="{% url 'analisis_archivo' audit.pk a.pk %}">{{ a.nombre }}</a> · {{ a.motivo }} · {{ a.creado_por.get_full_name|default:a.creado_por.username }} · {{ a.creado_en|date:"d/m/Y H:i" }} · <code>{{ a.sha256|slice:":10" }}</code></li>{% endfor %}
+    </ul></details>
+    {% endif %}
+  </div></div>
+
+  <div class="card mb-3"><div class="card-body">
+    <h5 class="card-title">Bitácora <small class="text-body-secondary fs-6">{% if cadena_valida %}· cadena íntegra{% else %}· <span class="text-danger">cadena alterada</span>{% endif %}</small></h5>
+    <div class="table-responsive"><table class="table table-sm small mb-0">
+      <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Entidad</th><th>Antes → después</th></tr></thead>
+      <tbody>{% for b in bitacora %}<tr><td>{{ b.creado_en|date:"d/m/Y H:i" }}</td><td>{{ b.usuario.get_full_name|default:b.usuario.username }}{% if b.auditoria_individual %} <span class="badge text-bg-info">Auditoría individual</span>{% endif %}</td><td>{{ b.accion }}</td><td>{{ b.entidad }} {{ b.entidad_id|slice:":8" }}</td><td>{{ b.antes }} → {{ b.despues }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div></div>
+</div>
+{% endblock main_content %}

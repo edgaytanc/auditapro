@@ -82,7 +82,10 @@ def _tables_for_ui(run: CorridaAnalisis) -> list[dict]:
 def home(request):
     jobs.mark_stale()
     runs = services.accessible_runs(request.user)[:60]
-    return render(request, "analisis/home.html", {"runs": runs, "tiene_proyectos": services.accessible_audits(request.user).exists()})
+    proyectos = list(services.accessible_audits(request.user).order_by("-id")[:30])
+    for a in proyectos:
+        a.es_interna = (a.tipoAuditoria or "F").upper() == "I"
+    return render(request, "analisis/home.html", {"runs": runs, "tiene_proyectos": bool(proyectos), "proyectos": proyectos})
 
 
 @login_required
@@ -115,6 +118,18 @@ def nuevo(request):
     return render(request, "analisis/nuevo.html", {"form": form, "extensiones": ", ".join(allowed_extensions())})
 
 
+def _contexto_envio(run: CorridaAnalisis) -> dict:
+    """Datos del bloque «Enviar a papel de trabajo» (fase 2): cuenta contable (Financiera) o área (Interna) como lista elegible."""
+    from .flujo import config, services as fl
+
+    mod = fl.modulo_de(run.audit)
+    destinos = ([(k, v["nombre"]) for k, v in config.cuentas_fin().items()] if mod == "F"
+                else [(k, v["nombre"]) for k, v in config.areas_ai().items()] if mod == "I" else [])
+    return {"modulo": mod, "destinos": destinos, "severidades": config.SEVERIDADES,
+            "clasificaciones": config.CLASIFICACIONES_FIN if mod == "F" else config.CLASIFICACIONES_AI,
+            "ya_enviados": set(run.hallazgos_flujo.values_list("origen_id", flat=True))}
+
+
 @login_required
 @require_GET
 def detalle(request, pk: int):
@@ -143,6 +158,7 @@ def detalle(request, pk: int):
         "terminado": run.estado == CorridaAnalisis.Estado.TERMINADO,
         "aprobado": run.revision == CorridaAnalisis.Revision.APROBADO,
     }
+    context.update(_contexto_envio(run))
     return render(request, "analisis/detalle.html", context)
 
 
