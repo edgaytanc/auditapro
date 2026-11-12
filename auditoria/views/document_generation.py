@@ -12,6 +12,9 @@ from django.views.decorators.http import require_GET
 from audits.access import get_audit_for_user_or_404, allowed_audit_type_codes
 from auditoria.views.utils import get_template_path
 from auditoria.utils.replacements_utils import get_replacements_config, build_replacements_dict
+from auditoria.services.agrupacion_plantillas_ui import (
+    carpeta_es_productiva, ruta_es_productiva,
+)
 from docx import Document
 from openpyxl import load_workbook
 logger = logging.getLogger(__name__)
@@ -137,7 +140,9 @@ def obtener_carpetas_auditoria(request, audit_id):
         # Obtener el nombre de la carpeta actual relativa a la base
         for d in dirs:
             relative_path = os.path.relpath(os.path.join(root, d), base_path)
-            carpetas.append(relative_path.replace("\\", "/"))  # formato limpio compatible
+            relative_path = relative_path.replace("\\", "/")
+            if carpeta_es_productiva(audit_type, relative_path):
+                carpetas.append(relative_path)
 
     # Función auxiliar para extraer número de carpeta
     def extraer_numero(nombre):
@@ -182,7 +187,9 @@ def obtener_documentos_auditoria(request, audit_id, carpeta_nombre):
 
     archivos = [
         f for f in os.listdir(carpeta_path)
-        if os.path.isfile(os.path.join(carpeta_path, f)) and f.lower().endswith(('.docx', '.xlsx', '.xlsm'))
+        if os.path.isfile(os.path.join(carpeta_path, f))
+        and f.lower().endswith(('.docx', '.xlsx', '.xlsm'))
+        and ruta_es_productiva(audit_type, f"{carpeta_nombre.rstrip('/')}/{f}")
     ]
 
     # 🔢 Ordenar numéricamente por prefijo

@@ -23,6 +23,8 @@
   const userName = data.currentUser || "AuditaPro";
   const ownEmail = String(data.currentEmail || "").trim().toLowerCase();
   const methods = ["btnPrincipalCorreo", "btnGmail", "btnOutlookWeb", "btnMailto"];
+  const individual = data.individual === true;
+  const ownId = String(data.currentUserId || "");
 
   function showNotice(element, text) {
     if (!element) return;
@@ -46,7 +48,7 @@
     if (preview) {
       preview.textContent = selected.length
         ? selected.map(user => `${label(user)}${user.email ? " · " + user.email : " (sin correo registrado)"}`).join(" | ")
-        : "Selecciona una auditoría y uno o más destinatarios.";
+        : (individual ? "Nota personal: se guardará en tu bandeja." : "Selecciona una auditoría y uno o más destinatarios.");
     }
     showNotice(recipientsNotice, "");
     showNotice(mailNotice, "");
@@ -70,8 +72,9 @@
     // Nunca mezclar usuarios de otra auditoría ni agregar personas que el backend no autoriza.
     recipientSelect.replaceChildren();
     eligibleUsers.forEach(user => {
-      if (!allowed.has(String(user.id))) return;
-      const option = new Option(label(user), String(user.id), false, previouslySelected.has(String(user.id)));
+      if (!allowed.has(String(user.id)) && !(individual && String(user.id) === ownId)) return;
+      const ownAutoSelected = individual && String(user.id) === ownId;
+      const option = new Option(label(user), String(user.id), false, previouslySelected.has(String(user.id)) || ownAutoSelected);
       recipientSelect.add(option);
     });
     mountSelect2();
@@ -88,10 +91,14 @@
       return null;
     }
     const users = selectedUsers();
-    if (!users.length) {
+    if (!users.length && !individual) {
       showNotice(mailNotice, "Selecciona al menos un destinatario de esta auditoría antes de preparar el correo.");
       if (hasSelect2) jq(recipientSelect).select2("open");
       else recipientSelect.focus();
+      return null;
+    }
+    if (externalEmail && !users.length) {
+      showNotice(mailNotice, "Para preparar el correo, elige una dirección registrada. También puedes guardar la nota sin enviar correo.");
       return null;
     }
     if (externalEmail) {
@@ -140,11 +147,17 @@
     });
   }
   function launchMail(provider) {
-    const users = requireRecipients(true);
+    const manual = String(document.getElementById("correo_externo")?.value || "").trim();
+    if (manual && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(manual)) {
+      showNotice(mailNotice, "Escribe una dirección de correo externa válida.");
+      return;
+    }
+    const users = requireRecipients(!manual);
     if (!users) return;
-    const to = users.map(user => String(user.email).trim());
+    const to = manual ? [manual] : users.map(user => String(user.email).trim());
+    if (!to.length) { showNotice(mailNotice, "Indica un destinatario para el correo."); return; }
     const subject = encodeURIComponent(mailSubject());
-    const body = encodeURIComponent(mailBody(users));
+    const body = encodeURIComponent(mailBody(manual ? [] : users));
     highlightMethod(provider);
     if (provider === "gmail") {
       window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to.join(","))}&su=${subject}&body=${body}`, "_blank", "noopener,noreferrer");

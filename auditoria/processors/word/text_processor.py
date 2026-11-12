@@ -1,4 +1,5 @@
 from ..shared.text_replacer import replace_text
+from difflib import SequenceMatcher
 
 def process_standard_text(doc, replacements, config):
     """
@@ -35,9 +36,29 @@ def replace_in_paragraph(paragraph, replacements, regex_patterns=None):
     if not runs:
         return
 
-    # Guardamos el primer run como base para aplicar estilo
-    first_run = runs[0]
-    for run in runs[1:]:
-        paragraph._element.remove(run._element)  # eliminamos los demás
+    # El procesador productivo eliminaba todos los runs salvo el primero.
+    # Eso convertía títulos y valores con estilos distintos en un solo run.
+    # Conservar cada run y reasignar únicamente el tramo modificado.
+    origen = "".join(run.text for run in runs)
+    if origen != full_text:
+        # No arriesgar la pérdida de hipervínculos o campos que no estén en
+        # paragraph.runs. Esos elementos requieren su propio procesador.
+        return
 
-    first_run.text = new_text
+    positions = []
+    for i, run in enumerate(runs):
+        positions.extend([i] * len(run.text))
+    partes = ["" for _ in runs]
+    diferencia = SequenceMatcher(None, full_text, new_text, autojunk=False)
+    for operacion, desde, hasta, nuevo_desde, nuevo_hasta in diferencia.get_opcodes():
+        if operacion == "equal":
+            for j in range(desde, hasta):
+                partes[positions[j]] += full_text[j]
+        elif operacion in ("replace", "insert"):
+            destino = positions[desde] if desde < len(positions) else len(runs) - 1
+            partes[destino] += new_text[nuevo_desde:nuevo_hasta]
+        # Las eliminaciones no se copian.
+
+    for run, contenido in zip(runs, partes):
+        if run.text != contenido:
+            run.text = contenido

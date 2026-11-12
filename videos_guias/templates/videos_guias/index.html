@@ -43,8 +43,8 @@
   <section class="learning-section" aria-labelledby="videos-recientes-title">
     <header class="learning-section-head">
       <div>
-        <h2 id="videos-recientes-title">Videos más recientes</h2>
-        <p>Accesos directos a las principales funciones de Audita IA y AuditaPro.</p>
+        <h2 id="videos-recientes-title">Videos por tema</h2>
+        <p>Busca videos por tema dentro del canal de Sistema Audita.</p>
       </div>
       <a href="{{ youtube_videos }}" target="_blank" rel="noopener noreferrer" class="learning-section-link">
         Ver todos en YouTube <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
@@ -59,13 +59,13 @@
               <i class="bi {{ video.icon }}"></i>
             </span>
             <span class="learning-video-topic">{{ video.eyebrow }}</span>
-            <span class="learning-video-duration">{{ video.duration }}</span>
+            {% if video.duration %}<span class="learning-video-duration">{{ video.duration }}</span>{% endif %}
           </div>
           <div class="learning-video-body">
             <h3>{{ video.title }}</h3>
             <div class="learning-video-meta">
               <i class="bi bi-youtube" aria-hidden="true"></i>
-              Video oficial · Sistema Audita
+              Buscar en el canal · Sistema Audita
             </div>
           </div>
         </a>
@@ -89,13 +89,13 @@
               <i class="bi {{ video.icon }}"></i>
             </span>
             <span class="learning-video-topic">{{ video.eyebrow }}</span>
-            <span class="learning-video-duration">{{ video.duration }}</span>
+            {% if video.duration %}<span class="learning-video-duration">{{ video.duration }}</span>{% endif %}
           </div>
           <div class="learning-video-body">
             <h3>{{ video.title }}</h3>
             <div class="learning-video-meta">
               <i class="bi bi-youtube" aria-hidden="true"></i>
-              Video oficial · Sistema Audita
+              Buscar en el canal · Sistema Audita
             </div>
           </div>
         </a>

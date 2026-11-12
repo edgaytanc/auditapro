@@ -116,27 +116,22 @@
     </span>
   </a>
 
-  <!-- Portal cliente: módulo aún no habilitado (antes "Consultas IA"). -->
-  <span
-    class="ap-nav-item ap-nav-item-disabled"
-    aria-disabled="true"
-    title="Portal cliente: próximamente"
-  >
-    <i class="bi bi-person-workspace" aria-hidden="true"></i>
-    <span class="ap-nav-label">Portal cliente</span>
-    <span class="ap-nav-badge">Próximamente</span>
-  </span>
-
-  <!-- Audita Análisis: módulo de consultas del sistema. -->
-  <a
-    href="{% url 'audita_analisis' %}"
-    class="ap-nav-item {% if request.resolver_match.url_name == 'audita_analisis' %}active{% endif %}"
-    {% if request.resolver_match.url_name == 'audita_analisis' %}aria-current="page"{% endif %}
-  >
-    <i class="bi bi-stars" aria-hidden="true"></i>
-    <span class="ap-nav-label">Audita Análisis</span>
-    
-  </a>
+  <!-- Audita Análisis: únicamente el acceso a Consultas. -->
+  <div class="ap-nav-group {% if '/audita-analisis/' in request.path %}open{% endif %}">
+    <button type="button"
+            class="ap-nav-item ap-nav-group-button {% if '/audita-analisis/' in request.path %}active{% endif %}"
+            data-sidebar-submenu
+            aria-expanded="{% if '/audita-analisis/' in request.path %}true{% else %}false{% endif %}">
+      <i class="bi bi-stars" aria-hidden="true"></i>
+      <span class="ap-nav-label">Audita Análisis</span>
+      <i class="bi bi-chevron-down ap-nav-chevron"></i>
+    </button>
+    <div class="ap-nav-submenu">
+      <a href="{% url 'audita_analisis_consultas' %}" class="ap-nav-subitem {% if request.resolver_match.url_name == 'audita_analisis_consultas' %}active{% endif %}">
+        <span class="ap-nav-subitem-dot"></span>Consultas
+      </a>
+    </div>
+  </div>
 
   <!-- Videos y Guías -->
   <a

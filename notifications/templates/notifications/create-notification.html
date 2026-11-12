@@ -117,6 +117,7 @@
 
             <p class="ap-notif-select-help">
               Puedes seleccionar uno o varios usuarios de la auditoría elegida.
+              {% if request.user.modalidad == 'I' %} En modalidad individual también puedes guardar una nota en tu propia bandeja. {% endif %}
             </p>
 
             <p id="destinatariosAviso" class="ap-recipient-aviso" role="status" aria-live="polite" hidden></p>
@@ -229,7 +230,9 @@
       audits: JSON.parse("{{ audits_json|escapejs }}"),
       notifieds: JSON.parse("{{ notifieds_json|escapejs }}"),
       currentUser: "{{ request.user.get_full_name|default:request.user.username|escapejs }}",
-      currentEmail: "{{ request.user.email|default:''|escapejs }}"
+      currentEmail: "{{ request.user.email|default:''|escapejs }}",
+      currentUserId: "{{ request.user.pk }}",
+      individual: {% if request.user.modalidad == 'I' %}true{% else %}false{% endif %}
     };
   </script>
   {% include "notifications/_compose_interacciones.html" %}

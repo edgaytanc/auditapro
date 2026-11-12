@@ -54,28 +54,45 @@ def create_notification_view(req):
 
 @login_required
 def push_notification(req):
-    note = req.POST.get("notification_note")
+    note = (req.POST.get("notification_note") or "").strip()
     audit_id = req.POST.get("audit_id")
-    notifieds_ids = req.POST.getlist("notifieds_ids")
-
+    requested_ids = req.POST.getlist("notifieds_ids")
     try:
-        create_notification(audit_id, notifieds_ids, req.user.id, note)
-        messages.success(req, "La notificación fue creada correctamente.")
-        return redirect("create_notification")
-    except ValueError:
-        messages.error(
-            req,
-            "Alguno de los valores ingresados es inválido, por favor, ingrese los valores correctamente.",
-        )
-    except Exception as exc:
-        error_message = str(exc)
-        if isinstance(exc, CREATE_NOTIFICATION_ERRORS_INSTANCES):
-            messages.error(req, error_message)
+        # Validate audit membership and recipients on the server, not only in JS.
+        role_name = getattr(getattr(req.user, "role", None), "name", None)
+        if role_name == "audit_manager":
+            audit = get_object_or_404(Audit, pk=audit_id, audit_manager=req.user)
+            eligible = set(audit.assigned_users.filter(role__name="auditor", is_deleted=False, is_active=True).values_list("pk", flat=True))
+            individual = req.user.modalidad == "I"
+            if individual:
+                eligible.add(req.user.pk)
+        elif role_name == "auditor":
+            audit = get_object_or_404(Audit, pk=audit_id, assigned_users=req.user)
+            eligible = {audit.audit_manager_id} if audit.audit_manager_id else set()
+            individual = False
         else:
-            messages.error(
-                req, "Ocurrió un error inesperado, por favor inténtelo de nuevo."
-            )
+            raise ValueError("Tu rol no permite enviar notificaciones de este encargo.")
 
+        try:
+            recipient_ids = set(int(value) for value in requested_ids)
+        except (TypeError, ValueError):
+            raise ValueError("Los destinatarios seleccionados no son válidos.")
+        if not recipient_ids and individual:
+            recipient_ids = {req.user.pk}
+        if not recipient_ids or not recipient_ids.issubset(eligible):
+            raise ValueError("Selecciona destinatarios autorizados para esta auditoría.")
+        if not note:
+            raise ValueError("Escribe una nota antes de guardarla.")
+
+        create_notification(audit.id, [str(pk) for pk in sorted(recipient_ids)], req.user.id, note)
+        messages.success(req, "La notificación fue guardada correctamente.")
+    except (ValueError, Http404) as exc:
+        messages.error(req, str(exc) if isinstance(exc, ValueError) else "No tienes acceso a esa auditoría.")
+    except Exception as exc:
+        if isinstance(exc, CREATE_NOTIFICATION_ERRORS_INSTANCES):
+            messages.error(req, str(exc))
+        else:
+            messages.error(req, "No se pudo guardar la notificación. Inténtalo de nuevo.")
     return redirect("create_notification")
 
 
@@ -144,10 +161,15 @@ def create_notification_page(req):
             User.objects.filter(
                 assigned_users__in=assigned_audits,
                 role=auditor_role,
+                is_deleted=False,
+                is_active=True,
             )
             .distinct()
         )
         notifieds.extend(auditores)
+        if req.user.modalidad == "I":
+            # A lone auditor needs an inbox entry for their own saved notes.
+            notifieds.append(req.user)
     elif user_role == "auditor":
         notifieds.extend(
             audit.audit_manager

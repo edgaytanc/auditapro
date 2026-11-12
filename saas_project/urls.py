@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from common.views import soporte
-from analisis_ia.views import audita_analisis, enviar_consulta
+from analisis_ia.views import audita_analisis, enviar_consulta, consultas, consultas_entorno
 from analisis_ia.admin_views import administrar_cupos
 from notifications import urls as notifications_urls
 from users import urls as users_urls
@@ -17,6 +17,8 @@ urlpatterns = [
     # Consultas reales Claude y pantalla de cupos separadas de auditorías y Superadmin.
     path("audita-analisis/", audita_analisis, name="audita_analisis"),
     path("audita-analisis/consultar/", enviar_consulta, name="audita_analisis_consultar"),
+    path("audita-analisis/consultas/", consultas, name="audita_analisis_consultas"),
+    path("audita-analisis/consultas/entorno/", consultas_entorno, name="audita_analisis_consultas_entorno"),
     path("usuarios/audita-analisis-cupos/", administrar_cupos, name="audita_analisis_cupos"),
     path("admin/", admin.site.urls, name="admin"),
     path("", include(users_urls)),

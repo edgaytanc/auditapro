@@ -105,6 +105,13 @@ def process_centralizadora_file(workbook, balances, ajustes_reclasificaciones,
             cuentas = filtrar_cuentas_por_seccion(balances, fecha, seccion)
             cuentas_por_fecha[fecha] = cuentas
 
+    # Respetar el comportamiento productivo con ausencia de datos del rubro:
+    # si existe balance de otra sección pero ninguna cuenta de esta
+    # centralizadora, NO invocar el insertador con diccionarios vacíos
+    # (la versión anterior lanzaba IndexError y devolvía HTTP 500).
+    if not any(cuentas_por_fecha.values()):
+        return workbook
+
     # Procesar el archivo con la función correspondiente
     funcion_procesamiento(
         workbook,

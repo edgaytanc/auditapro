@@ -5,6 +5,10 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_GET, require_POST
 from django.shortcuts import render
+from django.http import HttpResponse
+from django.views.decorators.clickjacking import xframe_options_sameorigin
+from django.conf import settings
+from pathlib import Path
 
 from .claude_service import (
     ErrorEntradaIA, ErrorProveedorIA, preparar_adjuntos,
@@ -83,3 +87,24 @@ def enviar_consulta(request):
 
     cupo = obtener_cupo(request.user)
     return JsonResponse({"respuesta": respuesta, "restantes": cupo.restantes, "realizadas": cupo.realizadas})
+
+
+@login_required
+@require_GET
+@never_cache
+def consultas(request):
+    """Muestra únicamente el entorno local original de Consultas del cliente."""
+    return render(request, "analisis_ia/consultas.html")
+
+
+@login_required
+@require_GET
+@never_cache
+@xframe_options_sameorigin
+def consultas_entorno(request):
+    """Entrega el HTML guiado, sin servicios externos de IA ni contador de backend."""
+    document_path = Path(settings.BASE_DIR) / "analisis_ia" / "templates" / "analisis_ia" / "consulta_workspace.html"
+    html = document_path.read_text(encoding="utf-8")
+    response = HttpResponse(html, content_type="text/html; charset=utf-8")
+    response["Cache-Control"] = "no-store"
+    return response

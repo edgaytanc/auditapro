@@ -1,0 +1,10 @@
+{% extends "common/v2/system-base-v2.html" %}
+{% load static %}
+{% block title %}Consultas | Audita Análisis{% endblock title %}
+{% block page_title %}Consultas{% endblock page_title %}
+{% block page_subtitle %}Orientación y asistentes guiados de Planeación, Control Interno, Procedimientos y Cierre.{% endblock page_subtitle %}
+{% block v2_content %}
+  <iframe src="{% url 'audita_analisis_consultas_entorno' %}"
+          title="Consultas y asistentes por fases de auditoría" loading="eager"
+          style="display:block;width:100%;height:calc(100vh - 170px);min-height:700px;border:0;border-radius:12px;background:#f7f8fa"></iframe>
+{% endblock v2_content %}

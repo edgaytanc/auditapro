@@ -1407,14 +1407,13 @@
 
                   <div>
 
-                    <strong>
-                      Asignación automática
-                    </strong>
-
-                    <p>
-                      La auditoría quedará bajo el Jefe de tu equipo
-                      y será asignada automáticamente a tu usuario.
-                    </p>
+                    {% if request.user.modalidad == 'I' %}
+                      <strong>Auditor individual (sin equipo)</strong>
+                      <p>Trabajarás en esta auditoría de forma individual. El encargo se asignará a tu cuenta sin requerir integrantes adicionales.</p>
+                    {% else %}
+                      <strong>Asignación automática</strong>
+                      <p>La auditoría quedará bajo el Jefe de tu equipo y será asignada automáticamente a tu usuario.</p>
+                    {% endif %}
 
                   </div>
 

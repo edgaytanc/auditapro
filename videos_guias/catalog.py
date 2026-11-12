@@ -1,8 +1,8 @@
 """Catálogo visible del módulo Videos y Guías.
 
-No contiene lógica de negocio ni modifica datos del sistema. Los enlaces de video
-provienen del archivo de enlaces entregado junto con el módulo y las guías se
-sirven desde archivos PDF incluidos en esta misma aplicación.
+Enlaces de acceso a búsquedas temáticas dentro del canal indicado por el cliente.
+Se evita enlazar videos individuales que puedan haber sido retirados.
+Las guías se sirven desde los PDF incluidos en la aplicación.
 """
 
 YOUTUBE_CHANNEL = "https://www.youtube.com/@SistemaAudita"
@@ -12,43 +12,43 @@ VIDEOS = (
     {
         "title": "Revisión de Contratos",
         "eyebrow": "Pregunta a la IA sobre los hallazgos",
-        "duration": "3:17",
-        "url": "https://www.youtube.com/watch?v=U6n272pMbLM&t=16s",
+        "duration": "",
+        "url": "https://www.youtube.com/@SistemaAudita/search?query=Revisi%C3%B3n%20de%20Contratos",
         "icon": "bi-file-earmark-check",
     },
     {
         "title": "Papeles de Trabajo",
         "eyebrow": "Descarga de informe",
-        "duration": "3:00",
-        "url": "https://www.youtube.com/watch?v=LclNrYZyoyk&t=11s",
+        "duration": "",
+        "url": "https://www.youtube.com/@SistemaAudita/search?query=Papeles%20de%20Trabajo",
         "icon": "bi-journal-text",
     },
     {
         "title": "Informes Automatizados",
         "eyebrow": "Pregunta a la IA sobre el informe",
-        "duration": "3:13",
-        "url": "https://www.youtube.com/watch?v=YoOEwdrE_U0&t=4s",
+        "duration": "",
+        "url": "https://www.youtube.com/@SistemaAudita/search?query=Informes%20Automatizados",
         "icon": "bi-file-earmark-bar-graph",
     },
     {
         "title": "Análisis Masivo de Datos",
         "eyebrow": "Analiza grandes volúmenes de información",
-        "duration": "3:00",
-        "url": "https://www.youtube.com/watch?v=vFZlQi6VioA",
+        "duration": "",
+        "url": "https://www.youtube.com/@SistemaAudita/search?query=An%C3%A1lisis%20Masivo%20de%20Datos",
         "icon": "bi-database-check",
     },
     {
         "title": "Análisis Predictivo",
         "eyebrow": "Pregunta a la IA con el resumen del análisis",
-        "duration": "2:38",
-        "url": "https://www.youtube.com/watch?v=Cgkt-pN-sSQ&t=12s",
+        "duration": "",
+        "url": "https://www.youtube.com/@SistemaAudita/search?query=An%C3%A1lisis%20Predictivo",
         "icon": "bi-graph-up-arrow",
     },
     {
         "title": "Detección de Fraudes",
         "eyebrow": "Detección de patrones críticos",
-        "duration": "2:56",
-        "url": "https://www.youtube.com/watch?v=O5kkLNW-9dg",
+        "duration": "",
+        "url": "https://www.youtube.com/@SistemaAudita/search?query=Detecci%C3%B3n%20de%20Fraudes",
         "icon": "bi-shield-check",
     },
 )
@@ -57,8 +57,8 @@ PRESENTATIONS = (
     {
         "title": "AuditaPro",
         "eyebrow": "Presentación general del sistema",
-        "duration": "8:33",
-        "url": "https://www.youtube.com/watch?v=8SWHj2sF7NI&t=242s",
+        "duration": "",
+        "url": "https://www.youtube.com/@SistemaAudita/search?query=AuditaPro",
         "icon": "bi-play-btn",
     },
 )

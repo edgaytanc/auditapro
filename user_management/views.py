@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from users.models import User, Roles
@@ -552,64 +553,53 @@ def superadmin_dashboard(request):
 @admin_or_superadmin_required
 @require_POST
 def hard_delete_users(request):
-    """
-    Borra definitivamente (DELETE) usuarios seleccionados,
-    pero SOLO si están dados de baja (is_deleted=True)
-    y cumpliendo reglas de seguridad (blindaje).
-    """
-    # El borrado físico es una operación exclusiva del superadministrador.
-    if not (request.user.is_superuser or (request.user.role and request.user.role.name == 'superadmin')):
-        messages.error(request, 'Solo el Super Administrador puede eliminar usuarios definitivamente.')
-        return redirect('user_list')
+    """Elimina cuentas inactivas seleccionadas; jamás borra auditorías en cascada."""
+    if not (request.user.is_superuser or getattr(getattr(request.user, "role", None), "name", None) == "superadmin"):
+        messages.error(request, "Solo Superadmin puede realizar eliminaciones definitivas.")
+        return redirect(f"{reverse('user_list')}?status=inactive")
+    if request.POST.get("confirmar_eliminacion") != "ELIMINAR":
+        messages.error(request, "Debes confirmar la eliminación definitiva.")
+        return redirect(f"{reverse('user_list')}?status=inactive")
 
-    ids = request.POST.getlist("selected_user_ids")
-
-    if not ids:
-        messages.error(request, "No seleccionaste usuarios.")
-        return redirect("user_list")
-
+    raw_ids = request.POST.getlist("selected_user_ids")
     try:
-        ids = list({int(pk) for pk in ids if pk})
-    except ValueError:
-        messages.error(request, 'La selección de usuarios no es válida.')
-        return redirect('user_list')
-    qs = User.objects.filter(id__in=ids)
+        ids = set(int(value) for value in raw_ids)
+    except (TypeError, ValueError):
+        messages.error(request, "La selección contiene identificadores incorrectos.")
+        return redirect(f"{reverse('user_list')}?status=inactive")
+    if not ids or len(ids) > 1000:
+        messages.error(request, "Selecciona entre 1 y 1000 usuarios dados de baja.")
+        return redirect(f"{reverse('user_list')}?status=inactive")
+
+    qs = User.objects.filter(pk__in=ids).select_related("role")
     if qs.count() != len(ids):
-        messages.error(request, 'Algunos usuarios seleccionados ya no existen.')
-        return redirect('user_list')
+        messages.error(request, "Uno o más usuarios ya no existen. Actualiza el listado.")
+        return redirect(f"{reverse('user_list')}?status=inactive")
+    if qs.filter(is_deleted=False).exists() or qs.filter(is_staff=True).exists() or qs.filter(is_superuser=True).exists() or qs.filter(role__name="superadmin").exists():
+        messages.error(request, "La selección contiene usuarios activos o cuentas protegidas.")
+        return redirect(f"{reverse('user_list')}?status=inactive")
 
-    # 1) Nunca permitir hard-delete de superusers
-    if qs.filter(is_superuser=True).exists() or qs.filter(is_staff=True).exists():
-        messages.error(request, "No puedes eliminar definitivamente cuentas superusuario.")
-        return redirect("user_list")
+    deleted = 0
+    blocked = []
+    for user in qs:
+        # No borrar expedientes cuyo responsable obligatorio es este usuario.
+        # Una baja definitiva de un auditor elimina sus asignaciones M2M,
+        # pero NO elimina el expediente ni su jefe responsable.
+        if (Audit.objects.filter(audit_manager=user).exists()
+                or User.objects.filter(administrador=user).exists()):
+            blocked.append(user.username)
+            continue
+        try:
+            with transaction.atomic():
+                user.delete()
+            deleted += 1
+        except (ProtectedError, RestrictedError, IntegrityError):
+            blocked.append(user.username)
 
-    # 2) Solo permitir hard-delete de usuarios dados de baja
-    if qs.filter(is_deleted=False).exists():
-        messages.error(request, "Solo puedes eliminar definitivamente usuarios que estén dados de baja.")
-        return redirect("user_list")
-
-    # 3) Evitar borrar usuarios con auditorías asociadas como audit_manager (evita CASCADE)
-    user_ids = list(qs.values_list("id", flat=True))
-    if Audit.objects.filter(audit_manager_id__in=user_ids).exists():
-        messages.error(
-            request,
-            "No puedes eliminar definitivamente usuarios que tengan auditorías asociadas. "
-            "Reasigna o cierra esas auditorías primero."
-        )
-        return redirect("user_list")
-
-    # 4) (Opcional recomendado) Evitar borrar rol superadmin aunque NO sea is_superuser
-    if qs.filter(role__name__iexact="superadmin").exists():
-        messages.error(request, "No puedes eliminar definitivamente cuentas con rol Super Admin.")
-        return redirect("user_list")
-
-    try:
-        with transaction.atomic():
-            number_of_users = qs.count()
-            qs.delete()
-    except (ProtectedError, RestrictedError, IntegrityError):
-        messages.error(request, "No se puede eliminar la cuenta porque tiene registros protegidos asociados. Revisa sus relaciones antes de eliminarla.")
-        return redirect("user_list")
-
-    messages.success(request, f"Se eliminaron definitivamente {number_of_users} usuarios.")
-    return redirect("user_list")
+    if deleted:
+        messages.success(request, f"Se eliminaron definitivamente {deleted} usuario(s).")
+    if blocked:
+        names = ", ".join(blocked[:6])
+        suffix = "…" if len(blocked) > 6 else ""
+        messages.warning(request, f"No se eliminaron {len(blocked)} cuenta(s) con auditorías o relaciones protegidas: {names}{suffix}. Revisa sus asignaciones antes de repetir la operación.")
+    return redirect(f"{reverse('user_list')}?status=inactive")

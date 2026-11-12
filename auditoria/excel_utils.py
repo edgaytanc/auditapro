@@ -60,7 +60,14 @@ def modify_document_excel(template_path, audit):
     print(data_bd)
     # Procesar el documento Excel
     process_excel_sheets(wb, tables_config, replacements, data_bd, template_path)
-    
+
+    # Mantener intactas las fórmulas; pedir a Excel el recálculo al abrir.
+    # openpyxl no calcula ni almacena por sí mismo los resultados de fórmulas.
+    if wb.calculation is not None:
+        wb.calculation.calcMode = "auto"
+        wb.calculation.fullCalcOnLoad = True
+        wb.calculation.forceFullCalc = True
+
     return wb
 
 def modify_document_excel_with_macros(template_path, audit):

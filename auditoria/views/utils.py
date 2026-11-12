@@ -5,10 +5,12 @@ Contiene funciones de normalización, rutas, mensajes de error y generación de 
 
 import os
 import html
+import html as html_module
 import urllib.parse
 import unicodedata
 from django.conf import settings
 from auditoria.services.referencias import obtener_ref, ref_manual, vinculos_de
+from auditoria.services.agrupacion_plantillas_ui import agrupar_entradas, etiqueta_visual
 
 def normalize_text(text):
     """
@@ -158,7 +160,9 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
     if not estructura:
         return ""
     html = "<ul>"
-    for nombre, contenido in estructura.items():
+    for nombre, contenido in agrupar_entradas(
+        estructura, current_path, tipo_auditoria
+    ):
         if isinstance(contenido, dict):  # Es una carpeta
             # Usar os.path.join para construir la ruta
             new_path = os.path.join(current_path, nombre) if current_path else nombre
@@ -167,10 +171,12 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
             # Generar un ID único y seguro para la carpeta
             escaped_path = new_path.replace('\\', '_')
             folder_id = f"folder_{urllib.parse.quote(escaped_path)}"
+            # Corregir únicamente el rótulo visible, nunca la ruta real.
+            nombre_visible = nombre.replace(" Preliminar agregar", " Preliminar")
             html += f"""
             <li class="folder-item">
                 <button class="folder-button" onclick="toggleFolder('{folder_id}')">
-                    <img src="/static/icons/carpeta.svg" class="icon-img" alt="📂"/> {nombre}
+                    <img src="/static/icons/carpeta.svg" class="icon-img" alt="📂"/> {html_module.escape(nombre_visible)}
                 </button>
                 <div id="{folder_id}" style="display: none;">
                     {generar_html_estructura(contenido, audit_id, new_path, user_verified, tipo_auditoria)}
@@ -210,7 +216,7 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
                 html += f"""
                 <li class="file-item">
                     <a href="{download_url}" class="file-link">
-                        <img src="{icono}" class="icon-img" alt="{alt}"/> {nombre}
+                        <img src="{icono}" class="icon-img" alt="{alt}"/> {html_module.escape(etiqueta_visual(nombre))}
                     </a>{ref_pill}
                 </li>"""
             else:
@@ -219,9 +225,10 @@ def generar_html_estructura(estructura, audit_id, current_path='', user_verified
                 <li class="file-item file-locked">
                     <div class="file-link-disabled" style="display: flex; align-items: center; color: #999; cursor: not-allowed; position: relative; padding: 5px 8px; border-radius: 4px; background-color: rgba(0,0,0,0.03);" title="Usuario no verificado. Contacte al administrador para desbloquear el acceso.">
                         <img src="{icono}" class="icon-img" alt="{alt}" style="opacity: 0.5; margin-right: 5px;"/> 
-                        <span style="margin-right: 25px;">{nombre}</span>{ref_pill}
+                        <span style="margin-right: 25px;">{html_module.escape(etiqueta_visual(nombre))}</span>{ref_pill}
                         <i class="fas fa-lock" style="position: absolute; right: 10px; color: #e74c3c; font-size: 14px;"></i>
                     </div>
                 </li>"""
+
     html += "</ul>"
     return html

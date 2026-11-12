@@ -24,8 +24,11 @@ def admin_or_superadmin_required(view_func):
     """
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        if request.user.is_authenticated and request.user.role:
-            if request.user.role.name in ["audit_manager", "superadmin"]:
-                return view_func(request, *args, **kwargs)
+        if request.user.is_authenticated and (
+            request.user.is_superuser or (
+                request.user.role and request.user.role.name in ["audit_manager", "superadmin"]
+            )
+        ):
+            return view_func(request, *args, **kwargs)
         return redirect('dashboard')  # Redirigir a la página principal si no tiene permisos
     return _wrapped_view

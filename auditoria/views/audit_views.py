@@ -33,6 +33,7 @@ from .utils import (
     crear_mensaje_error,
     generar_html_estructura,
 )
+from auditoria.services.agrupacion_plantillas_ui import filtrar_estructura_visible_productivo
 
 
 def _get_audits_for_user(
@@ -303,9 +304,15 @@ def auditoria_detalle_view(
         )
     )
 
+    # El árbol mostrado respeta los 430 documentos referenciados por el
+    # catálogo productivo. El catálogo operativo y las descargas no cambian.
+    estructura_visible = filtrar_estructura_visible_productivo(
+        estructura_carpetas, current_type,
+    )
+
     estructura_html = (
         generar_html_estructura(
-            estructura_carpetas,
+            estructura_visible,
             audit.id,
             user_verified=user_verified,
             tipo_auditoria=current_type,

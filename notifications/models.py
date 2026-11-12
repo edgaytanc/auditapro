@@ -79,6 +79,15 @@ class NotificationStatus(models.Model):
         self.save()
 
     def save(self, *args, **kwargs):
+        # La modalidad individual puede registrar notas propias en su bandeja,
+        # incluso sin otros integrantes del equipo. El resto de los permisos sigue igual.
+        audit = self.notification.audit
+        if (
+            self.notification.notifier_id == self.user_id
+            and audit.audit_manager_id == self.user_id
+            and getattr(self.user, "modalidad", None) == "I"
+        ):
+            return super().save(*args, **kwargs)
         if (
             self.user not in self.notification.audit.assigned_users.all()
             and self.user.role.name == "auditor"

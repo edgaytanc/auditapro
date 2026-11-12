@@ -142,6 +142,45 @@ def _rellenar_etiquetas_de_encabezado(sheet, replacements):
             destino.value = texto
 
 
+def _actualizar_ejemplos_de_encabezado(sheet, replacements):
+    """Rellena SOLO dos valores de demostración en cabeceras etiquetadas.
+
+    Las plantillas productivas de Evaluación de Procesos traen en la fila 6
+    nombres/ejercicios de ejemplo incluso cuando se actualizan A1..A3.
+    No se modifican años del cuerpo, fórmulas o nombres de otras entidades.
+    """
+    from openpyxl.cell.cell import MergedCell
+
+    labels = {
+        "entidad auditada": (
+            re.compile(r"^Empresa Auditada,\s*S\.?A\.?$", re.I),
+            replacements.get("[IDENTIDAD]"),
+        ),
+        "periodo de auditoria": (
+            re.compile(r"^Año terminado al\s+\d{1,2}\s+de\s+[a-záéíóú]+\s+de\s+\d{4}$", re.I),
+            replacements.get("[FECHA_RANGO]"),
+        ),
+    }
+    for fila in range(1, min(sheet.max_row or 1, 15) + 1):
+        for columna in range(1, min(sheet.max_column or 1, 12) + 1):
+            celda = sheet.cell(row=fila, column=columna)
+            if not isinstance(celda.value, str) or not celda.value.strip().endswith(":"):
+                continue
+            etiqueta = _etiqueta_normalizada(celda.value)
+            if etiqueta not in labels:
+                continue
+            patron, valor = labels[etiqueta]
+            if not valor:
+                continue
+            for siguiente_col in range(columna + 1, min(columna + 4, (sheet.max_column or 1) + 1)):
+                destino = sheet.cell(row=fila, column=siguiente_col)
+                if isinstance(destino, MergedCell):
+                    continue
+                if isinstance(destino.value, str) and patron.fullmatch(destino.value.strip()):
+                    destino.value = valor
+                    break
+
+
 def process_excel_sheets(workbook, tables_config, replacements, data_bd,
                          file_path=None, audit_id=None):
     """
@@ -200,6 +239,7 @@ def process_excel_sheets(workbook, tables_config, replacements, data_bd,
 
         # Encabezados rotulados ('Entidad Auditada:' + celda vacía al lado)
         _rellenar_etiquetas_de_encabezado(sheet, replacements)
+        _actualizar_ejemplos_de_encabezado(sheet, replacements)
 
     if file_path:
         file_name = os.path.basename(file_path)
